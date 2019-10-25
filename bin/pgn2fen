@@ -1,0 +1,132 @@
+#!/usr/bin/env lua
+---------------------------------------------------------------------
+--     This Lua5 script is Copyright (c) 2018, Peter J Billam      --
+--                       www.pjb.com.au                            --
+--  This script is free software; you can redistribute it and/or   --
+--         modify it under the same terms as Lua5 itself.          --
+---------------------------------------------------------------------
+local Version = '1.6  for Lua5'
+local VersionDate  = '20191013'
+local Synopsis = [[
+  pgn2fen.lua  1. d4 f5 2. g3
+]]
+
+local FEN = require 'chess.fen'
+
+---------------------------------------------------------------------
+
+function warn(...)
+    local a = {}
+    for k,v in pairs{...} do table.insert(a, tostring(v)) end
+    io.stderr:write(table.concat(a),'\n') ; io.stderr:flush()
+end
+function die(...) warn(...);  os.exit(1) end
+
+---------------------------------------------------------------------
+
+local iarg=1; while arg[iarg] ~= nil do
+	if not string.find(arg[iarg], '^-[a-z]') then break end
+	local first_letter = string.sub(arg[iarg],2,2)
+	if first_letter == 'v' then
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate)
+		os.exit(0)
+	else
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
+		os.exit(0)
+	end
+	iarg = iarg+1
+end
+local pgn
+if iarg <= #arg then
+	local a = {}
+	for i = iarg,#arg do a[#a+1] = arg[i] end
+	pgn = table.concat(a, ' ')
+else
+	pgn = io.read('a')
+end
+
+local start = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+local newfen = start
+local eco
+for v in FEN.pgn_moves(pgn) do
+	local msg
+	newfen, msg = FEN.fenstr_move(newfen, v)
+	if not newfen then die('sorry, ',msg) end
+end
+print(newfen)
+
+os.exit()
+
+--[=[
+
+=pod
+
+=head1 NAME
+
+pgn2fen.lua - Constructs PGN into its resulting FEN position
+
+=head1 SYNOPSIS
+
+  ~> pgn2fen 1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cd5 d6
+  rnbqkb1r/pp3ppp/3p1n2/2pP4/8/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 6
+  ~> pgn2fen e4 e6 d4 d5 Nd2 c5
+  rnbqkbnr/pp3ppp/4p3/2pp4/3PP3/8/PPPN1PPP/R1BQKBNR w KQkq c6 0 4
+  ~> pgn2fen foo.png 
+
+  ~> pgn2fen -v    # displays the manual
+
+=head1 DESCRIPTION
+
+Constructs PGN in a file, or on the standard input,
+into its resulting FEN position on standard output.
+
+=back
+
+=head1 ARGUMENTS
+
+=over 3
+
+=item I<-v>
+
+Print the Version
+
+=back
+
+=head1 DOWNLOAD
+
+This at is available at
+http://www.pjb.com.au/comp/lua/pgn2fen
+
+It requires the B<chess-fen> module :
+
+    luarocks install chess-fen
+
+=head1 CHANGES
+
+ 20191013 1.6 uses /usr/bin/env lua, and gets its own perldoc
+ 20180407 1.2 uses FEN.fenstr2key() - first released version
+ 20180403 1.1 several important bugs fixed
+ 20180326 1.0 first half-working vesion
+
+=head1 AUTHOR
+
+Peter J Billam, http://www.pjb.com.au/comp/contact.html
+
+=head1 SEE ALSO
+
+ http://www.enpassant.dk/chess/palview/manual/p3eco.htm
+ http://www.neerpeltersk.be/palview4/p4sets/P3eco.txt
+ http://rybkaforum.net/cgi-bin/rybkaforum/topic_show.pl?tid=7579
+ http://pgn.freeservers.com/ECOMast.txt
+ http://www.pjb.com.au/comp/lua/pgn2eco
+ http://www.pjb.com.au/comp/lua/fen.html
+ http://www.bookup.com/downloads.htm
+ https://www.chesshere.com/forums_topic.php?id=6582
+ http://www.pjb.com.au/
+
+=cut
+
+]=]
