@@ -406,3 +406,26 @@ if not ok(close(rc, should_be),
 	print('  was', rc, ' should be', should_be)
 end
 
+rc = assert(RA.mat2x2det({1,3,4,11}))
+should_be = -1
+if not ok(close(rc, should_be),
+	string.format('mat2x2det({1,3,4,11}) returns %g',should_be)) then
+	print('  was', rc, ' should be', should_be)
+end
+
+rc = assert(RA.mat2x2mul({1,3,4,11},{1,0,0,1}))
+should_be = '1,3,4,11'
+if not ok(table.concat(rc,',') == should_be,
+	string.format('mat2x2mul({1,3,4,11},{1,0,0,1}) returns %s',should_be)) then
+	print('  was', table.concat(rc,','), ' should be', should_be)
+end
+
+rc = assert(RA.mat2x2inv({1,2,3,4}))
+should_be = {-2, 1, 1.5, -0.5}
+s = table.concat(should_be,',')
+if not ok(rc[1]==should_be[1] and rc[2]==should_be[2]
+      and close(rc[3],should_be[3]) and close(rc[4],should_be[4]),
+	string.format('mat2x2inv({1,2,3,4}) returns %s',s)) then
+	print('  was', table.concat(rc,','), ' should be', s)
+end
+

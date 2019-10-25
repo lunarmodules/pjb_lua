@@ -253,6 +253,8 @@ function M.binomial (n, r)   -- 20191014 tweaking for speed and robustness
 		end
 		return round(product / couldnt_be_found)
 	else
+		warn('binomial(n,r): n was a '..type(n))
+	end
 --    	if 2*r > n then r = n - r end
 --		local b = 1
 --		local f = M.factorial (r)
@@ -266,9 +268,7 @@ function M.binomial (n, r)   -- 20191014 tweaking for speed and robustness
 --			end
 --		end
 --		return round(b)
-		warn('binomial(n,r): n was a '..type(n))
-	end
-	-- return round( M.factorial(n)/(M.factorial(r)*M.factorial(n-r)) )
+-- return round( M.factorial(n)/(M.factorial(r)*M.factorial(n-r)) )
 end
 
 -- \frac{te^{tx}}{e^t - 1} = \sum_{k=0}^{intfy} B_k(x) \frac{t^k}{f!}  p.60
@@ -421,6 +421,22 @@ function M.rat2latek(rat)
 	else
 		return string.format('%d \\frac{%d}{%d}', integ, numer, denom)
 	end
+end
+
+function M.mat2x2mul (j,k)   -- only handles 2x2 matrices !
+-- a b    1 2   see p.139-146
+-- c d    3 4
+	return( { j[1]*k[1]+j[2]*k[3], j[1]*k[2]+j[2]*k[4],
+              j[3]*k[1]+j[4]*k[3], j[3]*k[2]+j[4]*k[4] } )
+end
+
+function M.mat2x2det (j)   -- only handles 2x2 matrices !
+	return( j[1]*j[4] - j[2]*j[3] )
+end
+
+function M.mat2x2inv (j)   -- only handles 2x2 matrices !
+	local det = M.mat2x2det (j)  -- p.140
+	return( { j[4]/det, (0-j[2])/det, (0-j[3])/det, j[1]/det } )
 end
 
 return M
