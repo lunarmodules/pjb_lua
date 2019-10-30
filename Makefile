@@ -15,7 +15,7 @@ RANDVER = 1.5
 RLVER   = 2.6
 RUNGEVER = 1.09
 SOXVER  = 0.1
-TIVER   = 1.6
+TIVER   = 1.7
 TCVER   = 0.1
 WTVER   = 1.19
 
