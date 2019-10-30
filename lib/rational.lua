@@ -423,21 +423,25 @@ function M.rat2latek(rat)
 	end
 end
 
-function M.mat2x2mul (j,k)   -- only handles 2x2 matrices !
+function M.mat2x2mul (j,k) -- only handles 2x2 matrices ! aimed at SL2(Z)
 -- a b    1 2   see p.139-146
 -- c d    3 4
 	return( { j[1]*k[1]+j[2]*k[3], j[1]*k[2]+j[2]*k[4],
               j[3]*k[1]+j[4]*k[3], j[3]*k[2]+j[4]*k[4] } )
 end
 
-function M.mat2x2det (j)   -- only handles 2x2 matrices !
+function M.mat2x2det (j)   -- only handles 2x2 matrices ! aimed at SL2(Z)
 	return( j[1]*j[4] - j[2]*j[3] )
 end
 
-function M.mat2x2inv (j)   -- only handles 2x2 matrices !
+function M.mat2x2inv (j)   -- only handles 2x2 matrices ! aimed at SL2(Z)
 	local det = M.mat2x2det (j)  -- p.140
 	return( { j[4]/det, (0-j[2])/det, (0-j[3])/det, j[1]/det } )
 end
+
+-- could also do gamma(matrix, z) p.149,155 but this needs complex numbers
+-- likewise the Eisenstein series p.167-169
+-- complex numbers are arrays with 2 elements, just like rationals :-(
 
 return M
 
@@ -451,8 +455,7 @@ rational.lua - Rational arithmetic
 
 =head1 SYNOPSIS
 
- local RAT = require 'rational'
- local f = {1.618, 2.718, 3.142, 4.669}  -- must be power-of-two long
+ local RA = require 'rational'
 
 =head1 DESCRIPTION
 
@@ -470,6 +473,8 @@ For example 22/7 is expressed as {22,7}
 If the table has three elements, the number is taken to be the first element
 plus the ratio of the second and third elements.
 For example 22/7 can also be expressed as {3,1,7}
+
+The routines are all motivated by "Summing it Up" by Ash and Gross.
 
 Version 1.18
 
@@ -489,12 +494,7 @@ and between the Walsh Power Spectrum and the normal Fourier Power Spectrum.
 
 =head1 INSTALLATION
 
-This module is available as a LuaRock:
-http://luarocks.org/modules/peterbillam/math-rational
 
-Or, the source is available in
-http://cpansearch.perl.org/src/PJB/math-rational-1.18/lua/
-for you to install by hand in your LUA_PATH
 
 =head1 AUTHOR
 
