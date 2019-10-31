@@ -11,8 +11,8 @@
 --  the $TERM parameter is passed as an optional second argument.
 
 local M = {} -- public interface
-M.Version     = '1.6' -- 
-M.VersionDate = '20150425'
+M.Version     = '1.7' -- 
+M.VersionDate = '20191031'
 
 local Cache = {}  -- Cache[term] maintained by update_cache()
 local ThisTerm = os.getenv('TERM') or 'vt100' -- if no idea, call it a VT100
@@ -40,10 +40,11 @@ local function deepcopy(object)  -- http://lua-users.org/wiki/CopyTable
     end
     return _copy(object)
 end
+local sort = table.sort
 local function sorted_keys(t)
 	local a = {}
 	for k,v in pairs(t) do a[#a+1] = k end
-	table.sort(a)
+	sort(a)
 	return  a
 end
 
@@ -68,9 +69,11 @@ end
 
 ---------------- public functions from Terminfo.pm  ---------------
 
+local len  = string.len
+local find = string.find
 function M.get ( name, term )  -- not in the Perl module; looks everywhere
 	-- most varnames contain an underscore...
-	if (string.len(name) > 5) or string.find(name, '_') then
+	if (len(name) > 5) or find(name, '_') then
 		local x = M.str_by_varname ( name, term )
 		if x ~= nil then return x end
 		x = M.flag_by_varname ( name, term )
@@ -99,6 +102,8 @@ function M.get ( name, term )  -- not in the Perl module; looks everywhere
 	end
 end
 
+local unpack = table.unpack
+local gsub   = string.gsub
 function M.tparm ( capability, ... )
 	-- nine params for portability, says man tparm, so:
 	local args = {tostring(capability), 0,0,0,0,0,0,0,0,0}
@@ -106,8 +111,8 @@ function M.tparm ( capability, ... )
 		if i > 9 then break end -- could print a warning ?
 		args[i+1] = tonumber(v)
 	end
-	local  str = prv.tparm(table.unpack(args))
-	str = string.gsub(str, '%$<%d+[*/]?>', '') -- remove the $<33> padding
+	local  str = prv.tparm(unpack(args))
+	str = gsub(str, '%$<%d+[*/]?>', '') -- remove the $<33> padding
 	return str
 end
 -- could do a cap2varname, perhaps also varname2cap; probably not useful.
