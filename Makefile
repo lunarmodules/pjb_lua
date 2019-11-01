@@ -15,7 +15,7 @@ RANDVER = 1.5
 RLVER   = 2.6
 RUNGEVER = 1.09
 SOXVER  = 0.1
-TIVER   = 1.7
+TIVER   = 1.8
 TCVER   = 0.1
 WTVER   = 1.19
 
@@ -319,7 +319,6 @@ distsox : ${SOXDIR}/sox.html ${SOXROCKSPEC}
 	#  box8 (debian) lua> luarocks upload sox-${SOXVER}-0.rockspec
 
 ${RUNGEDIR}/RungeKutta.lua: lib/RungeKutta.lua
-	# lualint lib/RungeKutta.lua
 	perl -pe "s/VERSION/${RUNGEVER}/ ; s/DATESTAMP/${DATESTAMP}/" \
 	  lib/RungeKutta.lua > $@
 ${RUNGEDIR}/test_runge.lua: test/test_runge.lua
@@ -340,7 +339,6 @@ ${RUNGEROCKSPEC} : ${RUNGETARBALL} dist/math-rungekutta.rockspec
 	lua $@
 
 ${WTDIR}/WalshTransform.lua: lib/WalshTransform.lua
-	# lualint lib/WalshTransform.lua
 	perl -pe "s/VERSION/${WTVER}/ ; s/DATESTAMP/${DATESTAMP}/" \
 	  lib/WalshTransform.lua > $@
 ${WTDIR}/test_wt.lua: test/test_wt.lua
@@ -361,7 +359,6 @@ ${WTROCKSPEC} : ${WTTARBALL} dist/math-walshtransform.rockspec
 	lua $@
 
 ${EVDIR}/Evol.lua: lib/Evol.lua
-	# lualint lib/Evol.lua
 	perl -pe "s/VERSION/${EVVER}/ ; s/DATESTAMP/${DATESTAMP}/" \
 	  lib/Evol.lua > $@
 ${EVDIR}/test_ev.lua: test/test_ev.lua
@@ -382,7 +379,6 @@ ${EVROCKSPEC} : ${EVTARBALL} dist/math-evol.rockspec
 	lua $@
 
 ${FENDIR}/fen.lua: lib/fen.lua
-	# lualint lib/fen.lua
 	perl -pe "s/VERSION/${FENVER}/ ; s/DATESTAMP/${DATESTAMP}/" \
 	  lib/fen.lua > $@
 ${FENDIR}/test_fen.lua: test/test_fen.lua
@@ -406,10 +402,8 @@ ${FENROCKSPEC} : ${FENTARBALL} dist/chess-fen.rockspec
 	lua $@
 
 ${MIDIDIR}/MIDI.lua: lib/MIDI.lua
-	# lualint lib/MIDI.lua
 	perl -pe "s/VERSION/${MIDIVER}/ ; s/DATESTAMP/${DATESTAMP}/" \
 	  lib/MIDI.lua > $@
-	# md5sum lib/MIDI.lua
 	cp $@ /home/pjb/www/midi/free/MIDI.lua
 ${MIDIDIR}/test_mi.lua: test/test_mi.lua
 	cp test/test_mi.lua ${MIDIDIR}/test_mi.lua
@@ -431,7 +425,6 @@ ${MIDIROCKSPEC} : ${MIDITARBALL} dist/midi.rockspec
 
 ${ALSATARBALL} : ${ALSASRC}/midialsa.lua ${ALSASRC}/C-midialsa.c \
  ${ALSASRC}/test_al.lua ${ALSADIR}/midialsa.html
-	# lualint ${ALSASRC}/midialsa.lua
 	md5sum ${ALSASRC}/midialsa.lua
 	mkdir midialsa-${ALSAVER}
 	mkdir midialsa-${ALSAVER}/test
@@ -453,7 +446,6 @@ ${ALSAROCKSPEC} : ${ALSATARBALL} ${ALSASRC}/midialsa.rockspec
 
 ${ECASTARBALL} : ${ECASSRC}/ecasound.lua ${ECASSRC}/C-ecasound.c \
  ${ECASSRC}/test_ecasound.lua ${ECASDIR}/ecasound.html
-	# lualint ${ECASSRC}/ecasound.lua
 	md5sum ${ECASSRC}/ecasound.lua
 	mkdir ecasound-${ECASVER}
 	mkdir ecasound-${ECASVER}/test
@@ -475,7 +467,6 @@ ${ECASROCKSPEC} : ${ECASTARBALL} ${ECASSRC}/ecasound.rockspec
 
 ${FSTARBALL} : ${FSSRC}/fluidsynth.lua ${FSSRC}/C-fluidsynth.c \
  ${FSSRC}/test_fs.lua ${FSDIR}/fluidsynth.html
-	# lualint ${FSSRC}/fluidsynth.lua
 	md5sum ${FSSRC}/fluidsynth.lua
 	mkdir fluidsynth-${FSVER}
 	mkdir fluidsynth-${FSVER}/test
@@ -507,7 +498,6 @@ ${DOCDIR}/Sequence.lua : lib/Sequence.lua
 	pod2html lib/Sequence.lua | sed 's/h1>/h2>/g' > ${DOCDIR}/Sequence.html
 
 ${KEYDIR}/readkey.lua: lib/readkey.lua
-	# lualint lib/readkey.lua
 	md5sum lib/readkey.lua
 	cp lib/readkey.lua $@
 ${KEYDIR}/test_key.lua: test/test_key.lua
@@ -534,7 +524,6 @@ ${DBMROCKSPEC} : dist/lgdbm.rockspec
 
 ${TITARBALL} : ${TISRC}/terminfo.lua ${TISRC}/C-terminfo.c \
  ${TISRC}/test_ti.lua ${TIDIR}/terminfo.html
-	# lualint ${TISRC}/terminfo.lua
 	md5sum ${TISRC}/terminfo.lua
 	mkdir terminfo-${TIVER}
 	mkdir terminfo-${TIVER}/test
@@ -556,7 +545,6 @@ ${TIROCKSPEC} : ${TITARBALL} ${TISRC}/terminfo.rockspec
 
 ${TCTARBALL} : ${TCSRC}/testcases.lua ${TCSRC}/C-testcases.c \
  ${TCSRC}/test_tc.lua ${DISTDIR}/testcases.html
-	# lualint ${TCSRC}/testcases.lua
 	md5sum ${TCSRC}/testcases.lua
 	mkdir testcases-${TCVER}
 	mkdir testcases-${TCVER}/test
@@ -578,7 +566,6 @@ ${TCROCKSPEC} : ${TCTARBALL} ${TCSRC}/testcases.rockspec
 
 ${RLTARBALL} : ${RLSRC}/readline.lua ${RLSRC}/C-readline.c \
  ${RLSRC}/test_rl.lua ${RLDIR}/readline.html
-	# lualint ${RLSRC}/readline.lua
 	md5sum ${RLSRC}/readline.lua
 	mkdir readline-${RLVER}
 	mkdir readline-${RLVER}/test
@@ -600,7 +587,6 @@ ${RLROCKSPEC} : ${RLTARBALL} ${RLSRC}/readline.rockspec
 
 ${CLUITARBALL} : ${CLUISRC}/CommandLineUI.lua ${CLUIDIR}/commandlineui.html \
   /home/pjb/lua/test/test_clui
-	# lualint ${CLUISRC}/CommandLineUI.lua
 	md5sum ${CLUISRC}/CommandLineUI.lua
 	mkdir CommandLineUI-${CLUIVER}
 	mkdir CommandLineUI-${CLUIVER}/test
@@ -618,7 +604,6 @@ ${CLUIROCKSPEC} : ${CLUITARBALL} /home/pjb/lua/dist/commandlineui.rockspec
 #	pod2html ${CLUISRC}/CommandLineUI.lua | sed 's/h1>/h2>/g' > $@
 
 ${DFILTARBALL} : ${DFILSRC}/digitalfilter.lua test/test_digitalfilter.lua
-	# lualint ${DFILSRC}/digitalfilter.lua
 	md5sum ${DFILSRC}/digitalfilter.lua
 	mkdir digitalfilter-${DFILVER}
 	mkdir digitalfilter-${DFILVER}/test
@@ -632,7 +617,6 @@ ${DFILROCKSPEC} : ${DFILTARBALL} /home/pjb/lua/dist/digitalfilter.rockspec
 	lua $@
 
 ${DUMPTARBALL} : ${DUMPSRC}/DataDumper.lua test/test_dump
-	# lualint ${DUMPSRC}/DataDumper.lua
 	md5sum ${DUMPSRC}/DataDumper.lua
 	mkdir DataDumper-${DUMPVER}
 	mkdir DataDumper-${DUMPVER}/test
@@ -646,7 +630,6 @@ ${DUMPROCKSPEC} : ${DUMPTARBALL} /home/pjb/lua/dist/datadumper.rockspec
 	lua $@
 
 ${RANDTARBALL} : ${RANDSRC}/randomdist.lua test/test_randomdist.lua
-	# lualint ${RANDSRC}/randomdist.lua
 	md5sum ${RANDSRC}/randomdist.lua
 	mkdir randomdist-${RANDVER}
 	mkdir randomdist-${RANDVER}/test
@@ -661,7 +644,6 @@ ${RANDROCKSPEC} : ${RANDTARBALL} /home/pjb/lua/dist/randomdist.rockspec
 
 ${SOXTARBALL} : ${SOXSRC}/sox.lua ${SOXSRC}/C-sox.c \
  ${SOXSRC}/test_sox.lua ${SOXDIR}/sox.html
-	# lualint ${SOXSRC}/sox.lua
 	md5sum ${SOXSRC}/sox.lua
 	mkdir sox-${SOXVER}
 	mkdir sox-${SOXVER}/test
