@@ -41,22 +41,22 @@ dx,dy = VTF.show(1, line, 'UVWXYZ', 3)
 line = line + dy
 dx,dy = VTF.show(1, line, '?!:.;,-0123', 4)
 line = line + dy
-dx,dy = VTF.show(1,line, '45678\t9+',  5)
+dx,dy = VTF.show(1,line, '456789+',  5)
 VTF.go_to(0, VTF.lines-1)
--- os.execute('sleep 5')
+os.execute('sleep 5')
 os.execute('clear')
 line = 6
-dx,dy = VTF.show(0, line, '\t/\t\\\t_| =',   math.random(7)-1)
+dx,dy = VTF.show(1, line, '/\\_| =@%', 6)
 line = line + dy
-dx,dy = VTF.show(0, line, 'abcdefghi',  math.random(7)-1)
+dx,dy = VTF.show(1, line, 'abcdefghi',  5)
 line = line + dy
-dx,dy = VTF.show(0, line, 'jklmnopqr',  math.random(7)-1)
+dx,dy = VTF.show(1, line, 'jklmnopqr',  4)
 line = line + dy
-dx,dy = VTF.show(0, line, 'stuvwxyz',   math.random(7)-1)
+dx,dy = VTF.show(1, line, 'stuvwxyz',   3)
 line = line + dy
-dx,dy = VTF.show(0, line, 'pjb.com.au', 'black')
+dx,dy = VTF.show(1, line, 'pjb.com.au', 2)
 line = line + dy
-dx,dy = VTF.show(0, line, '[x][o]\tm\t', 'blue')
+dx,dy = VTF.show(0, line, '[x][o]m', 'blue')
 VTF.go_to(0, VTF.lines-1)
 os.exit()
 
