@@ -17,6 +17,7 @@ RUNGEVER = 1.09
 SOXVER  = 0.1
 TIVER   = 1.8
 TCVER   = 0.1
+VTFVER   = 0.1
 WTVER   = 1.19
 
 # NO! should make these Math-* modules independent of their CPAN equivalents!
@@ -87,6 +88,8 @@ TCROCKSPEC   = ${TIDIR}/testcases-${TCVER}-0.rockspec
 TCTARBALL    = ${DISTDIR}/testcases-${TCVER}.tar.gz
 SOXROCKSPEC  = ${SOXDIR}/sox-${SOXVER}-0.rockspec
 SOXTARBALL   = ${SOXDIR}/sox-${SOXVER}.tar.gz
+VTFROCKSPEC  = ${VTFDIR}/chess-fen-${FENVER}-0.rockspec
+VTFTARBALL   = ${VTFDIR}/chess-fen-${FENVER}.tar.gz
 WTROCKSPEC   = ${WTDIR}/math-walshtransform-${WTVER}-0.rockspec
 WTTARBALL    = ${WTDIR}/math-walshtransform-${WTVER}.tar.gz
 
@@ -107,6 +110,7 @@ FENMD5  ?= $(shell md5sum -b ${FENTARBALL} | sed 's/\s.*//')
 TIMD5   ?= $(shell md5sum -b ${TITARBALL} | sed 's/\s.*//')
 TCMD5   ?= $(shell md5sum -b ${TCTARBALL} | sed 's/\s.*//')
 SOXMD5  ?= $(shell md5sum -b ${SOXTARBALL} | sed 's/\s.*//')
+VTFMD5  ?= $(shell md5sum -b ${VTFTARBALL} | sed 's/\s.*//')
 DATESTAMP ?= $(shell /home/pbin/datestamp)
 
 all: \
@@ -118,7 +122,7 @@ all: \
  ${FENDIR}/fen.lua ${FENDIR}/fen.html \
  ${MIDIDIR}/MIDI.lua ${MIDIDIR}/test_mi.lua ${MIDIROCKSPEC} ${MIDITARBALL} \
  ${RUNGEROCKSPEC} ${RUNGETARBALL} \
- ${WTROCKSPEC} ${WTTARBALL} ${SOXROCKSPEC} ${SOXTARBALL} 
+ ${WTROCKSPEC} ${WTTARBALL} ${SOXROCKSPEC} ${SOXTARBALL} ${VTFTARBALL}
 
 dev : ${SOXROCKSPEC}
 
@@ -317,6 +321,16 @@ distsox : ${SOXDIR}/sox.html ${SOXROCKSPEC}
 	#  luarocks install http://www.pjb.com.au/comp/lua/sox-${SOXVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload sox-${SOXVER}-0.rockspec
+
+distvtf : ${DISTDIR}/vtfonts.html ${VTFROCKSPEC}
+	/home/pbin/upload ${DISTDIR}/vtfonts.html
+	/home/pbin/upload ${DISTDIR}/vtfonts-${VTFVER}-0.rockspec
+	/home/pbin/upload ${DISTDIR}/vtfonts-${VTFVER}.tar.gz
+	# If a trial install works on 5.1, 5.2 and 5.3:
+	#  luarocks remove vtfonts
+	#  luarocks install http://www.pjb.com.au/comp/lua/vtfonts-${VTFVER}-0.rockspec
+	#  box8 (debian) ~> cd ~/www/comp/lua/
+	#  box8 (debian) lua> luarocks upload vtfonts-${VTFVER}-0.rockspec
 
 ${RUNGEDIR}/RungeKutta.lua: lib/RungeKutta.lua
 	perl -pe "s/VERSION/${RUNGEVER}/ ; s/DATESTAMP/${DATESTAMP}/" \
@@ -662,3 +676,16 @@ ${SOXROCKSPEC} : ${SOXTARBALL} ${SOXSRC}/sox.rockspec
 ${SOXDIR}/sox.html : ${SOXSRC}/sox.lua
 	pod2html ${SOXSRC}/sox.lua | sed 's/h1>/h2>/g' > ${SOXSRC}/sox.html
 	cp ${SOXSRC}/sox.html $@
+
+${VTFTARBALL} : ${VTFSRC}/randomdist.lua test/test_randomdist.lua
+	md5sum ${VTFSRC}/randomdist.lua
+	mkdir randomdist-${VTFVER}
+	mkdir randomdist-${VTFVER}/test
+	cp ${VTFSRC}/randomdist.lua randomdist-${VTFVER}/
+	cp /home/pjb/lua/test/test_randomdist.lua randomdist-${VTFVER}/test/
+	tar cvzf $@ randomdist-${VTFVER}
+	rm -rf randomdist-${VTFVER}
+${VTFROCKSPEC} : ${VTFTARBALL} /home/pjb/lua/dist/randomdist.rockspec
+	perl -pe \
+	 "s/VERSION/${VTFVER}/ ; s/TARBALL/randomdist-${VTFVER}.tar.gz/ ; s/MD5/${VTFMD5}/" /home/pjb/lua/dist/randomdist.rockspec > $@
+	lua $@

@@ -43,10 +43,10 @@ dx,dy = VTF.show(1, line, '?!:.;,-0123', 4)
 line = line + dy
 dx,dy = VTF.show(1,line, '456789+',  5)
 VTF.go_to(0, VTF.lines-1)
-os.execute('sleep 5')
+-- os.execute('sleep 5')
 os.execute('clear')
 line = 6
-dx,dy = VTF.show(1, line, '/\\_| =@%', 6)
+dx,dy = VTF.show(1, line, '/\\_|=@%&', 6)
 line = line + dy
 dx,dy = VTF.show(1, line, 'abcdefghi',  5)
 line = line + dy
@@ -56,7 +56,7 @@ dx,dy = VTF.show(1, line, 'stuvwxyz',   3)
 line = line + dy
 dx,dy = VTF.show(1, line, 'pjb.com.au', 2)
 line = line + dy
-dx,dy = VTF.show(0, line, '[x][o]m', 'blue')
+dx,dy = VTF.show(0, line, '[x][o]\t(\t', 'blue')
 VTF.go_to(0, VTF.lines-1)
 os.exit()
 

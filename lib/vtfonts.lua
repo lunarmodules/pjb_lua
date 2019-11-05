@@ -1180,6 +1180,22 @@ local function char_percent (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['%']
 end
+local function char_ampersand (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	go_to(col+4, line-5) ; TTY:write('    ')
+	go_to(col+3, line-4) ; TTY:write('  ')
+	go_to(col+7, line-4) ; TTY:write('  ')
+	go_to(col+4, line-3) ; TTY:write('    ')
+	go_to(col+2, line-2) ; TTY:write('   ')
+	go_to(col+7, line-2) ; TTY:write('  ')
+	go_to(col+1, line-1) ; TTY:write('  ')
+	go_to(col+6, line-1) ; TTY:write('  ')
+	go_to(col+2, line)   ; TTY:write('     ')
+	go_to(col+8, line)   ; TTY:write('  ')
+	TTY:write(sgr0)
+	return c2width['&']
+end
 
 local function char_opensquare (col,line, colour)
 	if colour then fg_color(colour) end
