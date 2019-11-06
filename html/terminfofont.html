@@ -1,0 +1,181 @@
+<HTML><HEAD><TITLE>terminfofont.lua</TITLE>
+<LINK rel=stylesheet type="text/css"
+href="../styles.css" title="PJB Computing Styles">
+<META HTTP-EQUIV="Keywords"
+CONTENT="terminfofont, Lua, module, gaussian, randomget">
+</HEAD>
+<BODY LINK="#000066" VLINK="#000066" ALINK="#000066">
+<DIV>
+<H1><IMG SRC="../logo.jpg" ALT=" " WIDTH=126 HEIGHT=52>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<FONT COLOR="#800000"><I>terminfofont.lua</I></FONT>
+</H1>
+<p><a name="__index__"></a></p>
+
+<!-- INDEX BEGIN -->
+<TABLE ALIGN="center" WIDTH="85%" BORDER=0 CELLSPACING=0>
+<TR><TD ALIGN="left">
+<ul>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<li><a href="#constants">CONSTANTS</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+	<li><a href="#download">DOWNLOAD</a></li>
+	<li><a href="#changes">CHANGES</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+</TD></TR>
+</TABLE>
+<!-- INDEX END -->
+
+<h2><a name="name">NAME</a></h2>
+<p>terminfofont.lua - a big font for use in a console or an xterm </p>
+
+<h2><a name="synopsis">SYNOPSIS</a></h2>
+<pre>
+ local TIF = require 'terminfofont'</pre>
+<pre>
+ os.execute('clear')
+ local line = 6
+ local dx, dy
+ dx,dy = TIF.<A HREF="#show">show(1, line, 'ABCDEFG', 0)</A>
+ line = line + dy
+ dx,dy = TIF.<A HREF="#show">show(1, line, 'HIJKLMN', 1)</A>
+ TIF.<A HREF="#go_to">go_to(0, TIF.lines-1)</A>
+
+ local width,height = TIF.<A HREF="#stringwidth">stringwidth('HIJKLMN')</A>
+</pre>
+<p>
+</p>
+<hr />
+<h2><a name="description">DESCRIPTION</a></h2>
+<p>
+This module implements in Lua a big font, seven lines high,
+for use when <I>terminfo</I> is supported,
+such as in a console, or an xterm.
+</P><P>
+terminfofont.lua was inspired by the
+<I>Bitfont5x7</I> font in the PostScript module
+<A HREF="http://pjb.com.au/comp/ps/fonts.html">fonts.ps</A>
+</P><P>
+The functions were inspired by PostScript procedures.
+</P><P>
+Version 0.1 is a very early pre-release version&nbsp;;
+there is only one font,
+and many useful characters are still missing.
+</P>
+<p>
+</p>
+<hr />
+
+<h2><a name="functions">FUNCTIONS</a></h2><P>
+<a href="#show"><B>show()</B></a>, &nbsp;
+<a href="#stringwidth"><B>stringwidth()</B></a>, &nbsp;
+<a href="#go_to"><B>go_to()</B></a>, &nbsp;
+</P>
+<dl>
+<dt><strong><a name="show" class="item">
+width, height = TIF.<em>show</em> (x,y, string, colour)</a></strong></dt>
+<dd>
+<p>
+This displays the <B>string</B>,
+starting at column <B>x</B> and line <B>y</B>,
+in the ANSI colour <B>colour</B>.<BR>
+It returns the width and height (in columns and lines) of the string.
+</P><P>
+The available colours are: &nbsp;
+black=0, red=1, green=2, yellow=3, blue=4, violet=5, cyan=6, and white=7<BR>
+See <B>man terminfo</B> in the <B>Colour Handling</B> section,
+where it discusses the <B>setaf</B> and <B>setbf</B> capabilites.<BR>
+However, <B>show</B> also supports the colours begin given as strings,
+for example 'red'
+</P>
+</dd>
+
+<DT><strong><a name="stringwidth" class="item">
+width, height = TIF.<em>stringwidth</em> (string)</a></strong></DT>
+<DD><P>
+This returns the width and height (in columns and lines) that the string
+would have if it were displayed. &nbsp;
+It's like the <A HREF="#show">show</A> function,
+except that nothing is displayed.
+</P></dd>
+
+<DT><strong><a name="go_to" class="item">
+TIF.<em>go_to</em> (x, y) </a></strong></DT>
+<DD><P>
+This moves the cursor to a given position, specified as column and line.
+<BR>
+It's like the <A HREF="#show">show</A> function,
+except that nothing is displayed and no values are returned.
+<BR>
+<B>x</B> and <B>y</B> are 0, 0 in the top left corner,
+and increasing <B>y</B> moves downwards, &nbsp;
+unlike in PostScript where they are 0, 0 in the bottom left corner,
+and unlike <I>terminfo</I> where they are expected in the
+<I>line,column</I> order.
+See <B>man terminfo</B> where it discusses the <B>cup</B> capability.<BR>
+</P></dd>
+</dl>
+
+<hr />
+<h2><a name="constants">CONSTANTS</a></h2><P>
+To save you from having to <CODE>require 'terminfo'</CODE>,
+some constants:
+line, cols
+</P>
+
+<hr />
+<h2><a name="download">DOWNLOAD</a></h2>
+<p>This module exists as a LuaRock in
+<A HREF="http://luarocks.org/modules/peterbillam">
+luarocks.org/modules/peterbillam</A>
+so you can install it with the command:<BR>
+<CODE>
+&nbsp; sudo luarocks install terminfofont</CODE></P>
+<p>or:<BR>
+<CODE>
+&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.1-0.rockspec
+</CODE>
+</P><P>
+You will also need the <I>terminfo</I> module:<BR>
+<CODE> &nbsp; sudo luarocks install terminfo</CODE>
+</P><P>
+The test script used during development is
+<a href="http://pjb.com.au/comp/lua/test_terminfofont.lua">
+pjb.com.au/comp/lua/test_terminfofont.lua</a>
+</P>
+
+<hr />
+<h2><a name="changes">CHANGES</a></h2><pre>
+ 20191106 0.1 first released version
+</pre>
+<hr />
+<h2><a name="author">AUTHOR</a></h2>
+<p>Peter J Billam, &nbsp;
+<a href="http://pjb.com.au/comp/contact.html">pjb.com.au/comp/contact.html</a>
+</p>
+
+<hr />
+<h2><a name="see_also">SEE ALSO</a></h2>
+<P>
+<CODE>man terminfo</CODE><BR>
+<A HREF="http://pjb.com.au/comp/lua/terminfo.html">
+pjb.com.au/comp/lua/terminfo.html</A><BR>
+<A HREF="http://pjb.com.au">pjb.com.au</A><BR>
+
+</P>
+
+</body>
+
+</html>

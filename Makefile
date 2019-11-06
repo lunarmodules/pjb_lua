@@ -17,29 +17,30 @@ RUNGEVER = 1.09
 SOXVER  = 0.1
 TIVER   = 1.8
 TCVER   = 0.1
-VTFVER   = 0.1
+TIFVER  = 0.1
 WTVER   = 1.19
 
 # NO! should make these Math-* modules independent of their CPAN equivalents!
 # and give them dist* targets!
-ALSADIR = /home/pjb/www/comp/lua
-CLUIDIR = /home/pjb/www/comp/lua
-DFILDIR = /home/pjb/www/comp/lua
-DUMPDIR = /home/pjb/www/comp/lua
-ECASDIR = /home/pjb/www/comp/lua
-EVDIR   = /home/pjb/www/comp/lua
-FENDIR  = /home/pjb/www/comp/lua
-FSDIR   = /home/pjb/www/comp/lua
-KEYDIR  = /home/pjb/www/comp/lua
-DBMDIR  = /home/pjb/www/comp/lua
-MIDIDIR = /home/pjb/www/comp/lua
-RANDDIR = /home/pjb/www/comp/lua
-RLDIR   = /home/pjb/www/comp/lua
+ALSADIR  = /home/pjb/www/comp/lua
+CLUIDIR  = /home/pjb/www/comp/lua
+DFILDIR  = /home/pjb/www/comp/lua
+DUMPDIR  = /home/pjb/www/comp/lua
+ECASDIR  = /home/pjb/www/comp/lua
+EVDIR    = /home/pjb/www/comp/lua
+FENDIR   = /home/pjb/www/comp/lua
+FSDIR    = /home/pjb/www/comp/lua
+KEYDIR   = /home/pjb/www/comp/lua
+DBMDIR   = /home/pjb/www/comp/lua
+MIDIDIR  = /home/pjb/www/comp/lua
+RANDDIR  = /home/pjb/www/comp/lua
+RLDIR    = /home/pjb/www/comp/lua
 RUNGEDIR = /home/pjb/www/comp/lua
-TIDIR   = /home/pjb/www/comp/lua
-WTDIR   = /home/pjb/www/comp/lua
-SOXDIR  = /home/pjb/www/comp/lua
-DISTDIR = /home/pjb/www/comp/lua
+TIDIR    = /home/pjb/www/comp/lua
+WTDIR    = /home/pjb/www/comp/lua
+SOXDIR   = /home/pjb/www/comp/lua
+DISTDIR  = /home/pjb/www/comp/lua
+TESTDIR  = /home/pjb/lua/test
 
 ALSASRC = midialsa-0.0
 CLUISRC = /home/pjb/lua/lib
@@ -52,6 +53,7 @@ RLSRC   = readline-0.0
 SOXSRC  = sox-0.0
 TISRC   = terminfo-0.0
 TCSRC   = testcases-0.0
+TIFSRC  = /home/pjb/lua/lib
 
 DOCDIR = /home/pjb/www/comp/lua
 
@@ -88,8 +90,8 @@ TCROCKSPEC   = ${TIDIR}/testcases-${TCVER}-0.rockspec
 TCTARBALL    = ${DISTDIR}/testcases-${TCVER}.tar.gz
 SOXROCKSPEC  = ${SOXDIR}/sox-${SOXVER}-0.rockspec
 SOXTARBALL   = ${SOXDIR}/sox-${SOXVER}.tar.gz
-VTFROCKSPEC  = ${VTFDIR}/chess-fen-${FENVER}-0.rockspec
-VTFTARBALL   = ${VTFDIR}/chess-fen-${FENVER}.tar.gz
+TIFROCKSPEC  = ${DISTDIR}/terminfofont-${TIFVER}-0.rockspec
+TIFTARBALL   = ${DISTDIR}/terminfofont-${TIFVER}.tar.gz
 WTROCKSPEC   = ${WTDIR}/math-walshtransform-${WTVER}-0.rockspec
 WTTARBALL    = ${WTDIR}/math-walshtransform-${WTVER}.tar.gz
 
@@ -110,7 +112,7 @@ FENMD5  ?= $(shell md5sum -b ${FENTARBALL} | sed 's/\s.*//')
 TIMD5   ?= $(shell md5sum -b ${TITARBALL} | sed 's/\s.*//')
 TCMD5   ?= $(shell md5sum -b ${TCTARBALL} | sed 's/\s.*//')
 SOXMD5  ?= $(shell md5sum -b ${SOXTARBALL} | sed 's/\s.*//')
-VTFMD5  ?= $(shell md5sum -b ${VTFTARBALL} | sed 's/\s.*//')
+TIFMD5  ?= $(shell md5sum -b ${TIFTARBALL} | sed 's/\s.*//')
 DATESTAMP ?= $(shell /home/pbin/datestamp)
 
 all: \
@@ -122,7 +124,7 @@ all: \
  ${FENDIR}/fen.lua ${FENDIR}/fen.html \
  ${MIDIDIR}/MIDI.lua ${MIDIDIR}/test_mi.lua ${MIDIROCKSPEC} ${MIDITARBALL} \
  ${RUNGEROCKSPEC} ${RUNGETARBALL} \
- ${WTROCKSPEC} ${WTTARBALL} ${SOXROCKSPEC} ${SOXTARBALL} ${VTFTARBALL}
+ ${WTROCKSPEC} ${WTTARBALL} ${SOXROCKSPEC} ${SOXTARBALL} ${TIFTARBALL}
 
 dev : ${SOXROCKSPEC}
 
@@ -322,15 +324,19 @@ distsox : ${SOXDIR}/sox.html ${SOXROCKSPEC}
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload sox-${SOXVER}-0.rockspec
 
-distvtf : ${DISTDIR}/vtfonts.html ${VTFROCKSPEC}
-	/home/pbin/upload ${DISTDIR}/vtfonts.html
-	/home/pbin/upload ${DISTDIR}/vtfonts-${VTFVER}-0.rockspec
-	/home/pbin/upload ${DISTDIR}/vtfonts-${VTFVER}.tar.gz
+${DISTDIR}/test_terminfofont.lua : ${TESTDIR}/test_terminfofont.lua
+	cp ${TESTDIR}/test_terminfofont.lua $@
+	upload $@
+disttif : ${DISTDIR}/terminfofont.html \
+  ${DISTDIR}/test_terminfofont.lua ${TIFROCKSPEC}
+	/home/pbin/upload ${DISTDIR}/terminfofont.html
+	/home/pbin/upload ${DISTDIR}/terminfofont-${TIFVER}-0.rockspec
+	/home/pbin/upload ${DISTDIR}/terminfofont-${TIFVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
-	#  luarocks remove vtfonts
-	#  luarocks install http://www.pjb.com.au/comp/lua/vtfonts-${VTFVER}-0.rockspec
+	#  luarocks remove terminfofont
+	#  luarocks install http://www.pjb.com.au/comp/lua/terminfofont-${TIFVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
-	#  box8 (debian) lua> luarocks upload vtfonts-${VTFVER}-0.rockspec
+	#  box8 (debian) lua> luarocks upload terminfofont-${TIFVER}-0.rockspec
 
 ${RUNGEDIR}/RungeKutta.lua: lib/RungeKutta.lua
 	perl -pe "s/VERSION/${RUNGEVER}/ ; s/DATESTAMP/${DATESTAMP}/" \
@@ -677,15 +683,17 @@ ${SOXDIR}/sox.html : ${SOXSRC}/sox.lua
 	pod2html ${SOXSRC}/sox.lua | sed 's/h1>/h2>/g' > ${SOXSRC}/sox.html
 	cp ${SOXSRC}/sox.html $@
 
-${VTFTARBALL} : ${VTFSRC}/randomdist.lua test/test_randomdist.lua
-	md5sum ${VTFSRC}/randomdist.lua
-	mkdir randomdist-${VTFVER}
-	mkdir randomdist-${VTFVER}/test
-	cp ${VTFSRC}/randomdist.lua randomdist-${VTFVER}/
-	cp /home/pjb/lua/test/test_randomdist.lua randomdist-${VTFVER}/test/
-	tar cvzf $@ randomdist-${VTFVER}
-	rm -rf randomdist-${VTFVER}
-${VTFROCKSPEC} : ${VTFTARBALL} /home/pjb/lua/dist/randomdist.rockspec
+${TIFTARBALL} : ${TIFSRC}/terminfofont.lua test/test_terminfofont.lua
+	md5sum ${TIFSRC}/terminfofont.lua
+	mkdir terminfofont-${TIFVER}
+	mkdir terminfofont-${TIFVER}/test
+	mkdir terminfofont-${TIFVER}/doc
+	cp ${DISTDIR}/terminfofont.html terminfofont-${TIFVER}/doc
+	cp ${TIFSRC}/terminfofont.lua terminfofont-${TIFVER}/
+	cp /home/pjb/lua/test/test_terminfofont.lua terminfofont-${TIFVER}/test/
+	tar cvzf $@ terminfofont-${TIFVER}
+	rm -rf terminfofont-${TIFVER}
+${TIFROCKSPEC} : ${TIFTARBALL} /home/pjb/lua/dist/terminfofont.rockspec
 	perl -pe \
-	 "s/VERSION/${VTFVER}/ ; s/TARBALL/randomdist-${VTFVER}.tar.gz/ ; s/MD5/${VTFMD5}/" /home/pjb/lua/dist/randomdist.rockspec > $@
+	 "s/VERSION/${TIFVER}/ ; s/TARBALL/terminfofont-${TIFVER}.tar.gz/ ; s/MD5/${TIFMD5}/" /home/pjb/lua/dist/terminfofont.rockspec > $@
 	lua $@
