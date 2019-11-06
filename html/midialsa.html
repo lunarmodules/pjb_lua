@@ -775,6 +775,16 @@ and then invoke:<BR><CODE>
  &nbsp; ALSA_LIBDIR=/usr/lib/i386-linux-gnu/   # or wherever</CODE><BR>
 accordingly.
 </P><P>
+Or if it results in an error message such as:<BR>
+<CODE>
+ &nbsp; Error: Could not find header file for ALSA<BR>
+ &nbsp; No file alsa/asoundlib.h in /usr/local/include<BR>
+ &nbsp; No file alsa/asoundlib.h in /usr/include</CODE><BR>
+then you need to install your distribution's package with the asoundlib
+development files, eg on debian that would be:<BR>
+<CODE>
+ &nbsp; aptitude install libasound-dev</CODE><BR>
+</P><P>
 You can see the source-code in:<BR>
 <CODE> &nbsp; https://pjb.com.au/comp/lua/midialsa-1.23.tar.gz</CODE>
 </p>
