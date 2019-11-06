@@ -66,7 +66,7 @@ CONTENT="terminfo, Lua, module, luarock">
  end
  local P = require 'posix'
  local tty = io.open(P.ctermid(), 'a+') -- the controlling terminal
- tty:write(T<A HREF="#tparm">.tparm</A>(<A HREF="#get">T.get('cursor_address')</A>,20,30))
+ tty:write(T<A HREF="#tparm">.tparm</A>(<A HREF="#get">T.get('cup')</A>,20,30))
  tty:write(T.tparm(T.get('setaf'), 1)) -- set foreground colour to red
 </pre><p>
 </p>
@@ -107,6 +107,28 @@ It also, unlike the Perl module, provides a general-purpose function
 <B><A HREF="#get">get(name)</A></B> which returns
 the capability whether it is a flag, number or string,
 and whether the name is a <em>capname</em> or a <em>varname</em>.
+</p><p>
+Some of the many useful <em>capname</em>s are: &nbsp;
+<I>cols</I> (number of columns),
+<I>lines</I> (number of lines)<BR>
+<I>el</I> (clear to end of line),
+<I>ed</I> (clear to end of screen)<BR>
+<I>cub1</I> (cursor left),
+<I>cud1</I> (cursor down),
+<I>cuf1</I> (cursor right),
+<I>cuu1</I> (cursor up)<BR>
+<I>cup</I> (move the cursor :
+line and column are numbered from 0,0 in the top left corner,
+and remember the parameters are needed in <I>line,column</I> order,
+so if you're thinking in <I>x,y</I>&nbsp; then it's &nbsp;
+<CODE>tty:write(T<A HREF="#tparm">.tparm</A>(<A HREF="#get">T.get('cup')</A>,y,x)</CODE> )<BR>
+<I>civis</I> (make cursor invisible),
+<I>cnorm</I> (cursor normal)<BR>
+<I>rev</I> (reverse video),
+<I>setaf</I> (set foreground color),
+<I>setbf</I> (set background color),
+<I>sgr0</I> (exit attribute mode)<BR>
+For more details, see <em>man terminfo</em>.
 </p><p>
 Unlike the Perl <em>
 <a href="http://search.cpan.org/perldoc?Term::Terminfo">Term::Terminfo</a></em>
