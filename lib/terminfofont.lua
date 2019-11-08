@@ -32,11 +32,14 @@ local lines = TI.get('lines')
 local cup   = TI.get('cup')    -- cursor_address
 local rev   = TI.get('rev')    -- reverse_video
 local sgr0  = TI.get('sgr0')   -- exit_attribute_mode
+local civis = TI.get('civis')  -- cursor_invisible
 local cnorm = TI.get('cnorm')  -- cursor_normal
-local function go_to (col, line)
+
+function moveto (col, line)
 	TTY:write(TI.tparm(cup, line, col))
 	TTY:flush()
 end
+
 local format = string.format
 local function bg_color(i)
 	local c =
@@ -75,25 +78,27 @@ local c2width = {
 	['p']=9,  ['q']=9,  ['r']=7,  ['s']=8,  ['t']=7,
 -- XXX
 	['u']=9,  ['v']=10, ['w']=11, ['x']=9,  ['y']=10,
-	['z']=8,  [' ']=11, ["'"]=11, ['"']=11,
+	['z']=8,  [' ']=11, ["'"]=3, ['"']=5,
 	['.']=4,  [',']=5,  [':']=4,  [';']=5, ['-']=7,
 	['!']=4,  ['?']=10, ['_']=11,
 	['0']=12, ['1']=8,  ['2']=9,  ['3']=9, ['4']=10,
 	['5']=9,  ['6']=9,  ['7']=8,  ['8']=9,  ['9']=9,
 	['+']=8,  ['=']=8,  ['>']=11, ['<']=11,
 	['/']=9,  ['\\']=9, ['$']=11, 
-	['|']=4,  ['@']=10, ['#']=7,  ['~']=11,
-	['%']=9, ['&']=11,  ['*']=11, ['^']=8,
+	['|']=4,  ['@']=10, ['#']=7,  ['~']=9,
+	['%']=9, ['&']=11,  ['*']=7, ['^']=8,
 	['(']=6, ['[']=6, ['{']=6,
 	[')']=6, [']']=6, ['}']=6,
 }
 local function is_good_fit (a,b)
 	if not b then return false end
-	if (a=='F' or a=='T') and
-	 (b=='A' or b=='C' or b=='G' or b=='O' or b=='Q' or b=='0' or b=='4') then
+	if (a=='F' or a=='T' or a=='"' or a=="'" or a=='/') and
+	 (b=='A' or b=='C' or b=='G' or b=='O' or b=='.' or b==';' or
+	  b=='Q' or b=='0' or b=='4' or b=='_' or b=='/' ) then
 		return true
-	elseif (a=='L' or a=='Q' or a=='1') and
-	 (b=='C' or b=='O' or b=='Q' or b=='T' or b=='U' or b=='V' or b=='Y') then
+	elseif (a=='L' or a=='Q' or a=='1' or a=='\\' or a=='_') and
+	 (b=='C' or b=='O' or b=='Q' or b=='T' or
+	  b=='U' or b=='V' or b=='Y' or b=='\\') then
 		return true
 	end
 	return false
@@ -102,7 +107,7 @@ local function spaces (x, y, n)
 	if y   < 0 or y >= lines then return nil end
 	if x+n < 0 or x >= cols  then return nil end
 	if x < 0 then n=n+x ; x=0 elseif x+n >= cols then n = n-(x+n-cols) end
-	go_to(x,y) ; TTY:write(string.rep(' ',n))
+	moveto(x,y) ; TTY:write(string.rep(' ',n))
 end
 
 ------------------------- uppercase ---------------------
@@ -1101,7 +1106,6 @@ local function char_9 (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['9']
 end
--- XXX
 local function char_slash (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1313,17 +1317,56 @@ local function char_hash (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['#']
 end
+local function char_asterisc (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	spaces(col+2, line-3, 1)
+	spaces(col+4, line-3, 1)
+	spaces(col+1, line-2, 1)
+	spaces(col+3, line-2, 1)
+	spaces(col+5, line-2, 1)
+	spaces(col+2, line-1, 1)
+	spaces(col+4, line-1, 1)
+	TTY:write(sgr0)
+	return c2width['*']
+end
+local function char_tilde (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	spaces(col+3, line-5, 1)
+	spaces(col+1, line-4, 2)
+	spaces(col+4, line-4, 1)
+	spaces(col+6, line-4, 2)
+	spaces(col+5, line-3, 1)
+	TTY:write(sgr0)
+	return c2width['~']
+end
+local function char_quote (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	spaces(col+1, line-5, 1)
+	TTY:write(sgr0)
+	return c2width["'"]
+end
+local function char_doublequote (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	spaces(col+1, line-5, 1)
+	spaces(col+3, line-5, 1)
+	TTY:write(sgr0)
+	return c2width['"']
+end
 
 -- XXX
 local function char_test (col,line, colour)
 	TTY:write(rev)
-	fg_color('black')  ; go_to(col, line-5) ; TTY:write('  ')
-	fg_color('yellow') ; go_to(col, line-4) ; TTY:write('  ')
-	fg_color('black')  ; go_to(col, line-3) ; TTY:write('  ')
-	fg_color('yellow') ; go_to(col, line-2) ; TTY:write('  ')
-	fg_color('black')  ; go_to(col, line-1) ; TTY:write('  ')
-	fg_color('yellow') ; go_to(col, line)   ; TTY:write('  ')
-	fg_color('black')  ; go_to(col, line+1) ; TTY:write('  ')
+	fg_color('black')  ; moveto(col, line-5) ; TTY:write('  ')
+	fg_color('yellow') ; moveto(col, line-4) ; TTY:write('  ')
+	fg_color('black')  ; moveto(col, line-3) ; TTY:write('  ')
+	fg_color('yellow') ; moveto(col, line-2) ; TTY:write('  ')
+	fg_color('black')  ; moveto(col, line-1) ; TTY:write('  ')
+	fg_color('yellow') ; moveto(col, line)   ; TTY:write('  ')
+	fg_color('black')  ; moveto(col, line+1) ; TTY:write('  ')
 	TTY:write(sgr0)
 	return 2
 end
@@ -1357,13 +1400,14 @@ local c2height = {
 	[',']=8, [';']=8, ['f']=8, ['g']=8, ['j']=8, ['p']=8, ['q']=8, ['y']=8,
 	['[']=8, [']']=8, ['(']=8, [')']=8, ['{']=8, ['}']=8, ['#']=8,
 }
--- for better kerning in M.show() ...
+-- for better kerning in M.show(), see also function is_good_fit(a,b) ...
 local convex_right = {
 	['b']=true, ['o']=true, ['p']=true, ['-']=true, ['+']=true, ['^']=true,
 }
 local concave_left = {
 	['I']=true, ['J']=true, ['L']=true, ['T']=true, ['j']=true,
 	['.']=true, [',']=true, [')']=true, [']']=true, ['_']=true,
+	["'"]=true, ['"']=true,
 }
 local convex_left = {
 	['a']=true, ['c']=true, ['d']=true, ['e']=true, ['o']=true,
@@ -1372,6 +1416,7 @@ local convex_left = {
 local concave_right = {
 	['C']=true, ['F']=true, ['I']=true, ['T']=true,
 	['c']=true, ['.']=true, ['(']=true, ['[']=true, ['_']=true,
+	["'"]=true, ['"']=true,
 }
 
 ------------------------------ public ------------------------------
@@ -1381,6 +1426,7 @@ function M.show_char (col,line, c, colour)
 	if not func then return 0 end
 	return func(col,line,colour)
 end
+
 function M.show (col,line, str, colour)
 	local width = 0
 	local height = 7
@@ -1390,7 +1436,6 @@ function M.show (col,line, str, colour)
 		if previous_c then  -- kerning
 			if  (concave_right[previous_c] and convex_left[c])
 			  or (convex_right[previous_c] and concave_left[c])
-			  -- or is_good_fit(c, string.sub(str,i+1,i+1))  then ??
 			  or is_good_fit(previous_c, c)  then
 				col = col - 1
 			end
@@ -1404,6 +1449,7 @@ function M.show (col,line, str, colour)
 	TTY:flush()
 	return width, height
 end
+
 function M.stringwidth (str)
 	local width  = 0
 	local height = 7
@@ -1424,9 +1470,32 @@ function M.stringwidth (str)
 	return width, height
 end
 
-M.lines = lines
-M.cols  = cols
-M.go_to = go_to
+function M.rectfill (col,line, width,height, colour)
+	if not col    then return nil,'rectfill: col was nil'    end
+	if not line   then return nil,'rectfill: line was nil'   end
+	if not width  then return nil,'rectfill: width was nil'  end
+	if not height then return nil,'rectfill: height was nil' end
+	-- print(col,line,width,height,colour) ; os.execute('sleep 3')
+	TTY:write(rev)
+	if colour then fg_color(colour) end
+	for i = 0, height-1 do spaces(col, line-i, width) end
+	TTY:write(sgr0)
+	TTY:flush()
+	return true
+end
+
+function M.civis ()
+	TTY:write(civis)
+	TTY:flush()
+end
+function M.cnorm ()
+	TTY:write(cnorm)
+	TTY:flush()
+end
+
+M.lines  = lines
+M.cols   = cols
+M.moveto = moveto
 
 return M
 

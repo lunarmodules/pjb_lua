@@ -27,42 +27,47 @@ local iarg=1; while arg[iarg] ~= nil do
 	end
 	iarg = iarg+1
 end
-local VTF = require 'terminfofont'
+local TIF = require 'terminfofont'
 os.execute('clear')
 local line = 6
 local dx, dy
-dx,dy = VTF.show(1, line, 'ABCDEFG', 6)
-line = line + dy
-dx,dy = VTF.show(1, line, 'HIJKLMN', 1)
-line = line + dy
-dx,dy = VTF.show(1, line, 'OPQRST4',  2)
-line = line + dy
-dx,dy = VTF.show(1, line, 'UVWXYZ', 3)
-line = line + dy
-dx,dy = VTF.show(1, line, '?!:.;,-0123', 4)
-line = line + dy
-dx,dy = VTF.show(1,line, '456789+',  5)
+TIF.civis()
 
--- VTF.go_to(0, VTF.lines-1) ; os.exit()
+TIF.rectfill(10,21, 40,15, 'black')
+
+dx,dy = TIF.show(1, line, 'ABCDEFG', 6)
+line = line + dy
+dx,dy = TIF.show(1, line, 'HIJKLMN', 1)
+line = line + dy
+dx,dy = TIF.show(1, line, '"OPQRST"',  2)
+line = line + dy
+dx,dy = TIF.show(1, line, 'UVWXYZ', 3)
+line = line + dy
+dx,dy = TIF.show(1, line, '?!:.;,-0123', 4)
+line = line + dy
+dx,dy = TIF.show(1,line, '456789+',  5)
+
+-- TIF.moveto(0, TIF.lines-1) ; os.exit()
 os.execute('sleep 5')
 os.execute('clear')
 line = 6
-dx,dy = VTF.show(1, line, '/\\_|=@%&', 6)
+dx,dy = TIF.show(1, line, '/\\_|=@%&', 6)
 line = line + dy
-dx,dy = VTF.show(1, line, 'abcdefghi',  5)
-line = line + dy -1
-dx,dy = VTF.show(1, line, 'jklmnopqr',  4)
+dx,dy = TIF.show(1, line, 'abcdefghi',  5)
 line = line + dy-1
-dx,dy = VTF.show(1, line, 'stuvwxyz',   3)
-line = line + dy -1
-dx,dy = VTF.show(1, line, 'pjb.com.au', 2)
+dx,dy = TIF.show(1, line, 'jklmnopqr',  4)
 line = line + dy
-dx,dy = VTF.show(0, line, '[x][o]()^{}', 'blue')
+dx,dy = TIF.show(1, line, "'stuvwxyz'",   3)
+line = line + dy -1
+dx,dy = TIF.show(1, line, 'pjb.com.au', 2)
+line = line + dy
+dx,dy = TIF.show(0, line, '[x][o]()^{}', 'blue')
 os.execute('sleep 5')
 os.execute('clear')
 
 line = 6
-dx,dy = VTF.show(1, line, '\t#\t*\'~"', 6)
-VTF.go_to(0, VTF.lines-1)
+dx,dy = TIF.show(1, line, '#*\'~"', 6)
+TIF.cnorm()
+TIF.moveto(0, TIF.lines-1)
 os.exit()
 
