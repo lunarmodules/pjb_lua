@@ -40,20 +40,25 @@ CONTENT="terminfofont, Lua, module, gaussian, randomget">
 
 <h2><a name="name">NAME</a></h2>
 <p>terminfofont.lua - a big font for use in a console or an xterm </p>
-
+<HR>
 <h2><a name="synopsis">SYNOPSIS</a></h2>
 <pre>
- local TIF = require 'terminfofont'</pre>
-<pre>
- os.execute('clear')
+ local TIF = require 'terminfofont'
+
+ TIF.<A HREF="#clear">clear()</A>
+ TIF.<A HREF="#civis">civis()</A>
+ TIF.<A HREF="#rectfill">rectfill</A>(TIF.cols*0.2, 18, TIF.cols*0.6, 15, 'cyan')
  local line = 6
  local dx, dy
- dx,dy = TIF.<A HREF="#show">show(1, line, 'ABCDEFG', 0)</A>
+ dx,dy = TIF.<A HREF="#show">show</A>(1, line, 'ABCDEFG', 1)
  line = line + dy
- dx,dy = TIF.<A HREF="#show">show(1, line, 'HIJKLMN', 1)</A>
- TIF.<A HREF="#moveto">moveto(0, TIF.lines-1)</A>
+ dx,dy = TIF.<A HREF="#show">show</A>(1, line, 'HIJKLMN', 4)
+ line = line + dy
+ local x = (TIF.cols - TIF.<A HREF="#stringwidth">stringwidth</A>('Goog')) / 2  -- place centrally
+ dx,dy = TIF.<A HREF="#show">show</A>(x, line, 'GooG', 'violet')
 
- local width,height = TIF.<A HREF="#stringwidth">stringwidth('HIJKLMN')</A>
+ TIF.<A HREF="#moveto">moveto(0, TIF.lines-1)</A>
+ TIF.<A HREF="#cnorm">cnorm()</A>
 </pre>
 <p>
 </p>
@@ -74,18 +79,17 @@ These are some screenshots on a 79x23 <I>xterm</I> .&nbsp;.&nbsp;.
 <IMG WIDTH="31%" SRC="img/terminfofont_screenshot_2.png"></A>
 <A HREF="img/terminfofont_screenshot_3.png">
 <IMG WIDTH="31%" SRC="img/terminfofont_screenshot_3.png"></A>
-</P><P>
-Version 0.2 is a very early version.
 </P>
 <hr />
 
 <h2><a name="functions">FUNCTIONS</a></h2><P>
-<a href="#show"><B>show()</B></a>, &nbsp;
-<a href="#stringwidth"><B>stringwidth()</B></a>, &nbsp;
-<a href="#moveto"><B>moveto()</B></a>, &nbsp;
+<a href="#show"><B>show()</B></a>,
+<a href="#stringwidth"><B>stringwidth()</B></a>,
+<a href="#moveto"><B>moveto()</B></a>,
 <a href="#rectfill"><B>rectfill()</B></a>, &nbsp;
-<a href="#civis"><B>civis()</B></a> and
-<a href="#cnorm"><B>civis()</B></a>
+<a href="#clear"><B>clear()</B></a>,
+<a href="#civis"><B>civis()</B></a>,
+<a href="#cnorm"><B>cnorm()</B></a>
 </P>
 <dl>
 <dt><strong><a name="show" class="item">
@@ -102,8 +106,8 @@ specifies the bottom-left corner of the letters.
 The available colours are: &nbsp;
 black=0, red=1, green=2, yellow=3, blue=4, violet=5, cyan=6, and white=7<BR>
 See <B>man terminfo</B> in the <B>Colour Handling</B> section,
-where it discusses the <B>setaf</B> and <B>setbf</B> capabilites.<BR>
-However, <B>show</B> also supports the colours begin given as strings,
+where it discusses the <B>setaf</B> and <B>setbf</B> capabilites,
+and <B>show</B> also supports the colours begin given as strings,
 for example 'red'
 </P>
 </dd>
@@ -122,15 +126,8 @@ TIF.<em>moveto</em> (x, y) </a></strong></DT>
 <DD><P>
 This moves the cursor to a given position, specified as column and line.
 <BR>
-It's like the <A HREF="#show">show</A> function,
-except that nothing is displayed and no values are returned.
-<BR>
 <B>x</B> and <B>y</B> are 0, 0 in the top left corner,
-and increasing <B>y</B> moves downwards, &nbsp;
-unlike in PostScript where they are 0, 0 in the bottom left corner,
-and unlike <I>terminfo</I> where they are expected in the
-<I>line,column</I> order.
-See <B>man terminfo</B> where it discusses the <B>cup</B> capability.<BR>
+and increasing <B>y</B> moves downwards.
 </P></dd>
 
 <dt><strong><a name="rectfill" class="item">
@@ -149,15 +146,21 @@ specifies the bottom-left corner of the rectangle
 </P>
 </dd>
 
+<dt><strong><a name="clear" class="item">
+TIF.<em>clear</em> ()</a></strong></dt>
+<dd><P> This clears the screen,
+just like &nbsp; <CODE>os.execute('clear')</CODE>
+</P></dd>
+
 <dt><strong><a name="civis" class="item">
-TIF.<em>civis</em>()</a></strong></dt>
-<dd><p> This makes the cursor invisible </P>
-</dd>
+TIF.<em>civis</em> ()</a></strong></dt>
+<dd><P> This makes the cursor invisible
+</P> </dd>
 
 <dt><strong><a name="cnorm" class="item">
-TIF.<em>cnorm</em>()</a></strong></dt>
-<dd><p> This makes the cursor normal again </P>
-</dd>
+TIF.<em>cnorm</em> ()</a></strong></dt>
+<dd><P> This makes the cursor normal again
+</P></dd>
 
 </dl>
 
@@ -177,7 +180,7 @@ so you can install it with the command:<BR>
 &nbsp; sudo luarocks install terminfofont</CODE></P>
 <p>or:<BR>
 <CODE>
-&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.2-0.rockspec
+&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.3-0.rockspec
 </CODE>
 </P><P>
 You will also need the <I>terminfo</I> module:<BR>
@@ -190,6 +193,7 @@ pjb.com.au/comp/lua/test_terminfofont.lua</a>
 
 <hr />
 <h2><a name="changes">CHANGES</a></h2><pre>
+ 20191109 0.3 introduce clear() and $
  20191108 0.2 rename go_to as moveto, introduce rectfill
  20191106 0.1 first released version
 </pre>

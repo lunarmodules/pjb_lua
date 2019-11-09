@@ -45,7 +45,7 @@ dx,dy = TIF.show(1, line, 'UVWXYZ', 3)
 line = line + dy
 dx,dy = TIF.show(1, line, '?!:.;,-0123', 4)
 line = line + dy
-dx,dy = TIF.show(1,line, '456789+',  5)
+dx,dy = TIF.show(1,line, '456789+$',  5)
 
 -- TIF.moveto(0, TIF.lines-1) ; os.exit()
 os.execute('sleep 5')
