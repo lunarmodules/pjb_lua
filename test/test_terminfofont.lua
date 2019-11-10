@@ -46,6 +46,7 @@ line = line + dy
 dx,dy = TIF.show(1, line, '?!:.;,-0123', 4)
 line = line + dy
 dx,dy = TIF.show(1,line, '456789+$',  5)
+--[[
 
 -- TIF.moveto(0, TIF.lines-1) ; os.exit()
 os.execute('sleep 5')
@@ -62,12 +63,21 @@ line = line + dy -1
 dx,dy = TIF.show(1, line, 'pjb.com.au', 2)
 line = line + dy
 dx,dy = TIF.show(0, line, '[x][o]()^{}', 'blue')
+]]
+
 os.execute('sleep 5')
 os.execute('clear')
-
 line = 6
 dx,dy = TIF.show(1, line, '#*\'~"', 6)
-TIF.cnorm()
-TIF.moveto(0, TIF.lines-1)
+line = line + dy
+dx,dy = TIF.show(3, line, 'iso:\228\246\252', 0)
+line = line + dy
+dx,dy = TIF.show(1, line, 'utf:äöü', 1)
+line = line + dy
+dx,dy = TIF.show(1, line, 'Lärm', 2)
+line = line + dy
+dx,dy = TIF.show(1, line, 'Gör Züge', 3)
+
+TIF.cnorm() ; TIF.moveto(0, TIF.lines-1)
 os.exit()
 

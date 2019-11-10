@@ -4,13 +4,10 @@
 --  This module is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
--- Example usage:
--- local MM = require 'terminfofont'
--- MM.foo()
 
 local M = {} -- public interface
-M.Version = '1.0'
-M.VersionDate = '1nov2019'
+M.Version     = '0.3'
+M.VersionDate = '9nov2019'
 
 local TI = require 'terminfo'
 
@@ -23,6 +20,10 @@ end
 function die(...) warn(...);  os.exit(1) end
 function qw(s)  -- t = qw[[ foo  bar  baz ]]
     local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
+end
+local function round(x)
+	if not x then return nil end
+	return math.floor(x+0.5)
 end
 
 local TTY = assert(io.open('/dev/tty', 'a+'))
@@ -78,7 +79,7 @@ local c2width = {
 	['p']=9,  ['q']=9,  ['r']=7,  ['s']=8,  ['t']=7,
 -- XXX
 	['u']=9,  ['v']=10, ['w']=11, ['x']=9,  ['y']=10,
-	['z']=8,  [' ']=11, ["'"]=3, ['"']=5,
+	['z']=8,  [' ']=9,  ["'"]=3, ['"']=5,
 	['.']=4,  [',']=5,  [':']=4,  [';']=5, ['-']=7,
 	['!']=4,  ['?']=10, ['_']=11,
 	['0']=12, ['1']=8,  ['2']=9,  ['3']=9, ['4']=10,
@@ -93,12 +94,13 @@ local c2width = {
 local function is_good_fit (a,b)
 	if not b then return false end
 	if (a=='F' or a=='T' or a=='"' or a=="'" or a=='/') and
-	 (b=='A' or b=='C' or b=='G' or b=='O' or b=='.' or b==';' or
-	  b=='Q' or b=='0' or b=='4' or b=='_' or b=='/' ) then
+	 (b=='A' or b=='C' or b=='G' or b=='O' or b=='.' or b==',' or
+	  b=='Q' or b=='0' or b=='4' or b=='_' or b=='/') then
 		return true
-	elseif (a=='L' or a=='Q' or a=='1' or a=='\\' or a=='_') and
-	 (b=='C' or b=='O' or b=='Q' or b=='T' or
-	  b=='U' or b=='V' or b=='Y' or b=='\\') then
+	elseif (a=='L' or a=='Q' or a=='1' or a=='\\' or
+	        a=='_' or a=='.' or a==',') and
+	 (b=='C' or b=='O' or b=='Q'  or b=='T' or b=='U' or
+	  b=='V' or b=='Y' or b=='\\' or b=='0') then
 		return true
 	end
 	return false
@@ -109,6 +111,21 @@ local function spaces (x, y, n)
 	if x < 0 then n=n+x ; x=0 elseif x+n >= cols then n = n-(x+n-cols) end
 	moveto(x,y) ; TTY:write(string.rep(' ',n))
 end
+local function utf2iso (raw_str)
+	if string.match(raw_str, '[\194,\195]') then
+		-- http://lua-users.org/lists/lua-l/2015-02/msg00173.html
+		-- fails on euro-sign 
+		local s_iso = string.gsub(raw_str, utf8.charpattern,
+			function (c)
+				return string.char(utf8.codepoint(c))
+		 	end)
+		return s_iso
+	else
+		return raw_str
+	end
+end
+-- \344 ä  \353 ë  \366 ö  \374 ü   lowercase
+-- \304 Ä  \313 Ë  \326 Ö  \334 Ü   uppercase
 
 ------------------------- uppercase ---------------------
 local function char_A (col,line, colour)
@@ -535,6 +552,25 @@ local function char_a (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['a']
 end
+local function char_a_uml (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	spaces(col+3, line-5, 1)
+	spaces(col+6, line-5, 1)
+	-- spaces(col+3, line-4, 4)
+	spaces(col+4, line-4, 2)
+	spaces(col+8, line-4, 1)
+	spaces(col+2, line-3, 2)
+	spaces(col+6, line-3, 3)
+	spaces(col+1, line-2, 2)
+	spaces(col+7, line-2, 2)
+	spaces(col+2, line-1, 2)
+	spaces(col+6, line-1, 3)
+	spaces(col+3, line,   4)
+	spaces(col+8, line,   1)
+	TTY:write(sgr0)
+	return c2width['a']
+end
 
 local function char_b (col,line, colour)
 	if colour then fg_color(colour) end
@@ -733,6 +769,24 @@ local function char_o (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['o']
 end
+local function char_o_uml (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	spaces(col+3, line-5, 1)
+	spaces(col+6, line-5, 1)
+	-- spaces(col+3, line-4, 4)
+	spaces(col+4, line-4, 2)
+	spaces(col+2, line-3, 2)
+	spaces(col+6, line-3, 2)
+	spaces(col+1, line-2, 2)
+	spaces(col+7, line-2, 2)
+	spaces(col+2, line-1, 2)
+	spaces(col+6, line-1, 2)
+	spaces(col+3, line,   4)
+	TTY:write(sgr0)
+	return c2width['o']
+end
+
 local function char_p (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -815,6 +869,24 @@ local function char_u (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['u']
 end
+local function char_u_uml (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	spaces(col+3, line-5, 1)
+	spaces(col+5, line-5, 1)
+	spaces(col+1, line-4, 1)
+	spaces(col+7, line-4, 1)
+	spaces(col+1, line-3, 2)
+	spaces(col+6, line-3, 2)
+	spaces(col+1, line-2, 2)
+	spaces(col+6, line-2, 2)
+	spaces(col+1, line-1, 2)
+	spaces(col+6, line-1, 2)
+	spaces(col+2, line,   5)
+	TTY:write(sgr0)
+	return c2width['u']
+end
+
 local function char_v (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1208,6 +1280,21 @@ local function char_ampersand (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['&']
 end
+local function char_dollar (col,line, colour)
+	if colour then fg_color(colour) end
+	TTY:write(rev)
+	spaces(col+4, line-5, 1) ; spaces(col+6, line-5, 1)
+	spaces(col+2, line-4, 8)
+	spaces(col+1, line-3, 2)
+	spaces(col+4, line-3, 1) ; spaces(col+6, line-3, 1)
+	spaces(col+2, line-2, 7)
+	spaces(col+8, line-1, 2)
+	spaces(col+4, line-1, 1) ; spaces(col+6, line-1, 1)
+	spaces(col+1, line,   8)
+	spaces(col+4, line+1, 1) ; spaces(col+6, line+1, 1)
+	TTY:write(sgr0)
+	return c2width['$']
+end
 
 local function char_opensquare (col,line, colour)
 	if colour then fg_color(colour) end
@@ -1395,6 +1482,8 @@ local c2func = {
 	['(']=char_openbracket,  ['[']=char_opensquare,  ['{']=char_opencurly,
 	[')']=char_closebracket, [']']=char_closesquare, ['}']=char_closecurly,
 	['\t']=char_test,
+	['\196']=char_A_uml, ['\214']=char_O_uml, ['\220']=char_U_uml,
+	['\228']=char_a_uml, ['\246']=char_o_uml, ['\252']=char_u_uml,
 }
 local c2height = {
 	[',']=8, [';']=8, ['f']=8, ['g']=8, ['j']=8, ['p']=8, ['q']=8, ['y']=8,
@@ -1403,6 +1492,7 @@ local c2height = {
 -- for better kerning in M.show(), see also function is_good_fit(a,b) ...
 local convex_right = {
 	['b']=true, ['o']=true, ['p']=true, ['-']=true, ['+']=true, ['^']=true,
+	['6']=true,
 }
 local concave_left = {
 	['I']=true, ['J']=true, ['L']=true, ['T']=true, ['j']=true,
@@ -1428,6 +1518,10 @@ function M.show_char (col,line, c, colour)
 end
 
 function M.show (col,line, str, colour)
+	col = round(col) ; line = round(line)  -- should be integers
+	str = utf2iso(str) -- the string has to be either iso OR utf, not a mix !
+	-- str = string.gsub(str, '\194', '')
+	-- str = string.gsub(str, '\195(.)', '') -- see p.210, add 128 to byte(.)
 	local width = 0
 	local height = 7
 	local previous_c = nil
@@ -1475,7 +1569,8 @@ function M.rectfill (col,line, width,height, colour)
 	if not line   then return nil,'rectfill: line was nil'   end
 	if not width  then return nil,'rectfill: width was nil'  end
 	if not height then return nil,'rectfill: height was nil' end
-	-- print(col,line,width,height,colour) ; os.execute('sleep 3')
+	col   = round(col)   ; line   = round(line)    -- should be integers
+	width = round(width) ; height = round(height)  -- should be integers
 	TTY:write(rev)
 	if colour then fg_color(colour) end
 	for i = 0, height-1 do spaces(col, line-i, width) end
@@ -1484,6 +1579,11 @@ function M.rectfill (col,line, width,height, colour)
 	return true
 end
 
+function M.clear ()
+	M.moveto(0,0)
+	TTY:write(TI.get('ed'))
+	TTY:flush()
+end
 function M.civis ()
 	TTY:write(civis)
 	TTY:flush()
