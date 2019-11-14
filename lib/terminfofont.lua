@@ -35,6 +35,10 @@ local rev   = TI.get('rev')    -- reverse_video
 local sgr0  = TI.get('sgr0')   -- exit_attribute_mode
 local civis = TI.get('civis')  -- cursor_invisible
 local cnorm = TI.get('cnorm')  -- cursor_normal
+local fontsize = 7
+local both  = '\xe2\x96\x88'   -- by experiment with qrencode -t UTF8
+local lower = '\xe2\x96\x84'
+local upper = '\xe2\x96\x80'
 
 function moveto (col, line)
 	TTY:write(TI.tparm(cup, line, col))
@@ -67,7 +71,7 @@ local function fg_color(i)
 	TTY:write(format("\027[3%dm", i))
 end
 
-local c2width = {
+local c2width_7 = {
 	['A']=12, ['B']=11, ['C']=10, ['D']=11, ['E']=10,
 	['F']=10, ['G']=11, ['H']=11, ['I']=8,  ['J']=10,
 	['K']=10, ['L']=10, ['M']=12, ['N']=12, ['O']=12,
@@ -77,7 +81,6 @@ local c2width = {
 	['f']=8,  ['g']=10, ['h']=9,  ['i']=4,  ['j']=6,
 	['k']=8,  ['l']=4,  ['m']=11, ['n']=9,  ['o']=10,
 	['p']=9,  ['q']=9,  ['r']=7,  ['s']=8,  ['t']=7,
--- XXX
 	['u']=9,  ['v']=10, ['w']=11, ['x']=9,  ['y']=10,
 	['z']=8,  [' ']=9,  ["'"]=3, ['"']=5,
 	['.']=4,  [',']=5,  [':']=4,  [';']=5, ['-']=7,
@@ -91,6 +94,8 @@ local c2width = {
 	['(']=6, ['[']=6, ['{']=6,
 	[')']=6, [']']=6, ['}']=6,
 }
+local c2width = c2width_7
+
 local function is_good_fit (a,b)
 	if not b then return false end
 	if (a=='F' or a=='T' or a=='"' or a=="'" or a=='/') and
@@ -144,7 +149,6 @@ local function char_A (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['A']
 end
-
 local function char_B (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -160,7 +164,6 @@ local function char_B (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['B']
 end
-
 local function char_C (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -173,7 +176,6 @@ local function char_C (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['C']
 end
-
 local function char_D (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -190,7 +192,6 @@ local function char_D (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['D']
 end
-
 local function char_E (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -203,7 +204,6 @@ local function char_E (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['E']
 end
-
 local function char_F (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -247,7 +247,6 @@ local function char_H (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['H']
 end
-
 local function char_I (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -260,7 +259,6 @@ local function char_I (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['I']
 end
-
 local function char_J (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -273,7 +271,6 @@ local function char_J (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['J']
 end
-
 local function char_K (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -291,7 +288,6 @@ local function char_K (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['K']
 end
-
 local function char_L (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -360,7 +356,6 @@ local function char_O (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['O']
 end
-
 local function char_P (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -466,7 +461,6 @@ local function char_V (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['V']
 end
-
 local function char_W (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -488,7 +482,6 @@ local function char_W (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['W']
 end
-
 local function char_X (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -506,7 +499,6 @@ local function char_X (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['X']
 end
-
 local function char_Y (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -522,7 +514,6 @@ local function char_Y (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['Y']
 end
-
 local function char_Z (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -535,6 +526,7 @@ local function char_Z (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['Z']
 end
+
 -------------- lower case -------------------
 local function char_a (col,line, colour)
 	if colour then fg_color(colour) end
@@ -571,7 +563,6 @@ local function char_a_uml (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['a']
 end
-
 local function char_b (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -598,7 +589,6 @@ local function char_c (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['c']
 end
-
 local function char_d (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -679,7 +669,6 @@ local function char_i (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['i']
 end
-
 local function char_j (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -754,7 +743,6 @@ local function char_n (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['n']
 end
-
 local function char_o (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -786,7 +774,6 @@ local function char_o_uml (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['o']
 end
-
 local function char_p (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -803,7 +790,6 @@ local function char_p (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['p']
 end
-
 local function char_q (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -886,7 +872,6 @@ local function char_u_uml (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['u']
 end
-
 local function char_v (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -972,7 +957,6 @@ local function char_question (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['?']
 end
-
 local function char_exclamation (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -984,7 +968,6 @@ local function char_exclamation (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['!']
 end
-
 local function char_colon (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1106,7 +1089,6 @@ local function char_4 (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['4']
 end
-
 local function char_5 (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1120,7 +1102,6 @@ local function char_5 (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['5']
 end
-
 local function char_6 (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1135,7 +1116,6 @@ local function char_6 (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['6']
 end
-
 local function char_7 (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1148,7 +1128,6 @@ local function char_7 (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['7']
 end
-
 local function char_8 (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1164,7 +1143,6 @@ local function char_8 (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['8']
 end
-
 local function char_9 (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1209,7 +1187,6 @@ local function char_underscore (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['_']
 end
-
 local function char_bar (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1222,7 +1199,6 @@ local function char_bar (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['|']
 end
-
 local function char_equals (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1295,7 +1271,7 @@ local function char_dollar (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['$']
 end
-
+------------------brackets -------------------
 local function char_opensquare (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1374,7 +1350,7 @@ local function char_closecurly (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['}']
 end
-
+--------------------misc ----------------------
 local function char_caret (col,line, colour)
 	if colour then fg_color(colour) end
 	TTY:write(rev)
@@ -1443,7 +1419,6 @@ local function char_doublequote (col,line, colour)
 	TTY:write(sgr0)
 	return c2width['"']
 end
-
 -- XXX
 local function char_test (col,line, colour)
 	TTY:write(rev)
@@ -1457,6 +1432,8 @@ local function char_test (col,line, colour)
 	TTY:write(sgr0)
 	return 2
 end
+
+-------------------- spacing, kerning -----------------
 local c2func = {
 	['A']=char_A, ['B']=char_B, ['C']=char_C, ['D']=char_D, ['E']=char_E,
 	['F']=char_F, ['G']=char_G, ['H']=char_H, ['I']=char_I, ['J']=char_J,
@@ -1508,6 +1485,261 @@ local concave_right = {
 	['c']=true, ['.']=true, ['(']=true, ['[']=true, ['_']=true,
 	["'"]=true, ['"']=true,
 }
+
+---------------------- 4-line utf8-based font ----------------------
+
+function M.utf8char_A (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(lower..upper..upper..lower)
+	moveto(col, line-1) ; TTY:write(both..lower..lower..both)
+	moveto(col, line)   ; TTY:write(both..'  '..both)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_B (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..upper..upper..lower)
+	moveto(col, line-1) ; TTY:write(both..upper..upper..lower)
+	moveto(col, line)   ; TTY:write(both..lower..lower..upper)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_C (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(lower..upper..upper..upper)
+	moveto(col, line-1) ; TTY:write(both)
+	moveto(col, line)   ; TTY:write(upper..lower..lower..lower)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_D (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..upper..upper..lower)
+	moveto(col, line-1) ; TTY:write(both..'  '..both)
+	moveto(col, line)   ; TTY:write(both..lower..lower..upper)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_E (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..upper..upper..upper)
+	moveto(col, line-1) ; TTY:write(both..upper..upper)
+	moveto(col, line)   ; TTY:write(both..lower..lower..lower)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_F (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..upper..upper..upper)
+	moveto(col, line-1) ; TTY:write(both..upper..upper)
+	moveto(col, line)   ; TTY:write(both)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_G (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(lower..upper..upper..upper)
+	moveto(col, line-1) ; TTY:write(both..' '..lower..lower)
+	moveto(col, line)   ; TTY:write(upper..lower..lower..upper)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_H (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..'  '..both)
+	moveto(col, line-1) ; TTY:write(both..upper..upper..both)
+	moveto(col, line)   ; TTY:write(both..'  '..both)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_I (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(upper..both..upper)
+	moveto(col, line-1) ; TTY:write(' '..both)
+	moveto(col, line)   ; TTY:write(lower..both..lower)
+	TTY:flush()
+	return 4
+end
+function M.utf8char_J (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(' '..upper..both..upper)
+	moveto(col, line-1) ; TTY:write('  '..both)
+	moveto(col, line)   ; TTY:write(lower..lower..upper)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_K (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..' '..lower..upper)
+	moveto(col, line-1) ; TTY:write(both..upper..lower)
+	moveto(col, line)   ; TTY:write(both..'  '..upper..lower)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_L (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both)
+	moveto(col, line-1) ; TTY:write(both)
+	moveto(col, line)   ; TTY:write(both..lower..lower..lower)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_M (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..lower..' '..lower..both)
+	moveto(col, line-1) ; TTY:write(both..' '..upper..' '..both)
+	moveto(col, line)   ; TTY:write(both..'   '..both)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_N (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..lower..'  '..both)
+	moveto(col, line-1) ; TTY:write(both..' '..upper..lower..both)
+	moveto(col, line)   ; TTY:write(both..'   '..both)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_O (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(lower..upper..upper..lower)
+	moveto(col, line-1) ; TTY:write(both..'  '..both)
+	moveto(col, line)   ; TTY:write(upper..lower..lower..upper)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_P (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..upper..upper..lower)
+	moveto(col, line-1) ; TTY:write(both..lower..lower..upper)
+	moveto(col, line)   ; TTY:write(both)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_Q (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(lower..upper..upper..upper..lower)
+	moveto(col, line-1) ; TTY:write(both..'  '..lower..both)
+	moveto(col, line)   ; TTY:write(upper..lower..both..upper..lower)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_R (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..upper..upper..upper..lower)
+	moveto(col, line-1) ; TTY:write(both..upper..both..upper)
+	moveto(col, line)   ; TTY:write(both..'  '..upper..both)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_S (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(lower..upper..upper..upper)
+	moveto(col, line-1) ; TTY:write(' '..upper..upper..lower)
+	moveto(col, line)   ; TTY:write(lower..lower..lower..upper)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_T (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(upper..upper..both..upper..upper)
+	moveto(col+2, line-1) ; TTY:write(both)
+	moveto(col+2, line)   ; TTY:write(both)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_U (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..'  '..both)
+	moveto(col, line-1) ; TTY:write(both..'  '..both)
+	moveto(col, line)   ; TTY:write(upper..lower..lower..upper)
+	TTY:flush()
+	return 5
+end
+function M.utf8char_V (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..'   '..both)
+	moveto(col+1, line-1) ; TTY:write(both..' '..both)
+	moveto(col+2, line)   ; TTY:write(both)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_W (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..'   '..both)
+	moveto(col, line-1) ; TTY:write(both..' '..both..' '..both)
+	moveto(col, line)   ; TTY:write(both..lower..upper..lower..both)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_X (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..'   '..both)
+	moveto(col+1, line-1) ; TTY:write(upper..lower..upper)
+	moveto(col, line)   ; TTY:write(lower..upper..' '..upper..lower)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_Y (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both..'   '..both)
+	moveto(col+1, line-1) ; TTY:write(upper..lower..upper)
+	moveto(col+2, line)   ; TTY:write(both)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_Z (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(upper..upper..upper..both..upper)
+	moveto(col+1, line-1) ; TTY:write(lower..upper)
+	moveto(col, line)   ; TTY:write(both..lower..lower..lower..lower)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_question (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(lower..upper..upper..upper..lower)
+	moveto(col+2, line-1) ; TTY:write(lower..upper)
+	moveto(col+2, line)   ; TTY:write(lower)
+	TTY:flush()
+	return 6
+end
+function M.utf8char_exclamation (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-2) ; TTY:write(both)
+	moveto(col, line-1) ; TTY:write(both)
+	moveto(col, line)   ; TTY:write(lower)
+	TTY:flush()
+	return 2
+end
+function M.utf8char_dot (col,line, colour)
+	fg_color(colour)
+	moveto(col, line)   ; TTY:write(lower)
+	TTY:flush()
+	return 2
+end
+function M.utf8char_comma (col,line, colour)
+	fg_color(colour)
+	moveto(col+1, line)   ; TTY:write(lower)
+	moveto(col, line+1) ; TTY:write(upper)
+	TTY:flush()
+	return 3
+end
+function M.utf8char_colon (col,line, colour)
+	fg_color(colour)
+	moveto(col, line-1) ; TTY:write(lower)
+	moveto(col, line)   ; TTY:write(lower)
+	TTY:flush()
+	return 2
+end
+function M.utf8char_semicolon (col,line, colour)
+	fg_color(colour)
+	moveto(col+1, line-1) ; TTY:write(lower)
+	moveto(col+1, line)   ; TTY:write(lower)
+	moveto(col, line+1)   ; TTY:write(upper)
+	TTY:flush()
+	return 3
+end
 
 ------------------------------ public ------------------------------
 
@@ -1579,6 +1811,14 @@ function M.rectfill (col,line, width,height, colour)
 	return true
 end
 
+function M.setfontsize (nlines)
+	if nlines == 4 or nlines == 7 then
+		fontsize = nlines
+	else
+		warn('fontsize must be either 7 or 4, not', nlines)
+	end
+end
+
 function M.clear ()
 	M.moveto(0,0)
 	TTY:write(TI.get('ed'))
@@ -1617,6 +1857,12 @@ terminfofont.lua - does whatever
 =head1 DESCRIPTION
 
 This module does whatever
+
+note:
+  echo -n 'https://pjb.com.au' | qrencode -m 1 -t UTF8 -o /tmp/t.txt
+shows that UTF8 can give me the half-height characters !
+  print('\xe2\x96\x88\x20\xe2\x96\x84\xe2\x96\x80')
+prints black, white, lower-half black, upper-half black
 
 =head1 FUNCTIONS
 

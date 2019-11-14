@@ -49,7 +49,7 @@ dx,dy = TIF.show(1,line, '456789+$',  5)
 --[[
 
 -- TIF.moveto(0, TIF.lines-1) ; os.exit()
-os.execute('sleep 5')
+tmp = io.stdin:read('l')
 os.execute('clear')
 line = 6
 dx,dy = TIF.show(1, line, '/\\_|=@%&', 6)
@@ -65,7 +65,7 @@ line = line + dy
 dx,dy = TIF.show(0, line, '[x][o]()^{}', 'blue')
 ]]
 
-os.execute('sleep 5')
+tmp = io.stdin:read('l')
 os.execute('clear')
 line = 6
 dx,dy = TIF.show(1, line, '#*\'~"', 6)
@@ -78,6 +78,63 @@ dx,dy = TIF.show(1, line, 'Lärm', 2)
 line = line + dy
 dx,dy = TIF.show(1, line, 'Gör Züge', 3)
 
-TIF.cnorm() ; TIF.moveto(0, TIF.lines-1)
+tmp = io.stdin:read('l')
+os.execute('clear')
+-- Weimarer Republic
+TIF.rectfill(0,TIF.lines-1, TIF.cols, TIF.lines, 'black')
+TIF.rectfill(0,TIF.lines-1, TIF.cols, TIF.lines*0.66667, 'red')
+TIF.rectfill(0,TIF.lines-1, TIF.cols, TIF.lines*0.33333, 'yellow')
+-- could also do Eire, France, Switzerland, Belgium, Netherland, Russia,
+-- Finland, Crimea, Catalunia, Turingia etc etc
+-- many others. See   https://en.wikipedia.org/wiki/Flags_of_Europe
+-- note the many flags of the European Coal and Steel Community :-(
+
+tmp = io.stdin:read('l')
+os.execute('clear')
+TIF.civis()
+x=0 ; y = 4
+x = x + TIF.utf8char_A(x, y, 'red')
+x = x + TIF.utf8char_B(x, y, 'blue')
+x = x + TIF.utf8char_C(x, y, 'green')
+x = x + TIF.utf8char_D(x, y, 'violet')
+x = x + TIF.utf8char_E(x, y, 'red')
+x = x + TIF.utf8char_F(x, y, 'blue')
+x = x + TIF.utf8char_G(x, y, 'green')
+x = x + TIF.utf8char_H(x, y, 'violet')
+x = x + TIF.utf8char_I(x, y, 'red')
+x = x + TIF.utf8char_J(x, y, 'blue')
+x = x + TIF.utf8char_K(x, y, 'green')
+x = x + TIF.utf8char_L(x, y, 'violet')
+x = x + TIF.utf8char_M(x, y, 'red')
+x = x + TIF.utf8char_N(x, y, 'green')
+x = x + TIF.utf8char_O(x, y, 'blue')
+x=0 ; y = y + 4
+x = x + TIF.utf8char_P(x, y, 'violet')
+x = x + TIF.utf8char_Q(x, y, 'red')
+x = x + TIF.utf8char_R(x, y, 'blue')
+x = x + TIF.utf8char_dot(x, y, 'black')
+x = x + TIF.utf8char_S(x, y, 'green')
+x = x + TIF.utf8char_T(x, y, 'violet')
+x = x + TIF.utf8char_U(x, y, 'red')
+x = x + TIF.utf8char_V(x, y, 'green')
+x = x + TIF.utf8char_W(x, y, 'blue')
+x = x + TIF.utf8char_comma(x, y, 'black')
+x = x + TIF.utf8char_X(x, y, 'green')
+x = x + TIF.utf8char_Y(x, y, 'violet')
+x = x + TIF.utf8char_Z(x, y, 'red')
+x = x + TIF.utf8char_question(x, y, 'green')
+x = x + TIF.utf8char_exclamation(x, y, 'blue')
+x=0 ; y = y + 4
+x = x + TIF.utf8char_X(x, y, 'green')
+x = x + TIF.utf8char_colon(x, y, 'blue')
+x = x + TIF.utf8char_Z(x, y, 'black')
+x = x + TIF.utf8char_semicolon(x, y, 'red')
+x = x + TIF.utf8char_W(x, y, 'black')
+
+
+
+tmp = io.stdin:read('l')
+TIF.cnorm() ; TIF.moveto(0, TIF.lines)
+
 os.exit()
 
