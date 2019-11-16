@@ -65,26 +65,42 @@ CONTENT="terminfofont, Lua, module, gaussian, randomget">
 <hr />
 <h2><a name="description">DESCRIPTION</a></h2>
 <p>
-This module implements in Lua a big font, seven lines high,
+This module implements in Lua two big font
 for use when <I>terminfo</I> is supported,
 such as in a console, or an xterm. &nbsp;
 It was inspired by the <I>Bitfont5x7</I> font in the PostScript module
 <A HREF="http://pjb.com.au/comp/ps/fonts.html">fonts.ps</A>,
-and the functions were inspired by PostScript procedures. &nbsp;
-These are some screenshots on a 79x23 <I>xterm</I> .&nbsp;.&nbsp;.
+except that these are variable-width fonts because they're very big
+and space is at a premium.
+<BR>
+The functions were inspired by PostScript procedures. &nbsp;
+</P><TABLE WIDTH="99%"><TR><TD>
+<A HREF="img/terminfofont_screenshot_5.png">
+<IMG ALIGN="right" WIDTH="32%" SRC="img/terminfofont_screenshot_5.png"></A>
+<A HREF="img/terminfofont_screenshot_4.png">
+<IMG ALIGN="right" WIDTH="32%" SRC="img/terminfofont_screenshot_4.png"></A>
+These are some screenshots on a 79x23 <I>xterm</I> .&nbsp;.&nbsp;.<BR>
+The default big font is four lines high.<BR>
+It uses some <I>utf-8</I> characters,
+and therefore depends on your <I>xterm</I> using a <I>utf-8</I> font:
+</TD></TR></TABLE>
+<TABLE WIDTH="99%"><TR><TD>
+The other font is seven lines high
+( see <a href="#setfontsize"><B>setfontsize()</B></a> ) :
 </P><P>
 <A HREF="img/terminfofont_screenshot_1.png">
-<IMG WIDTH="31%" SRC="img/terminfofont_screenshot_1.png"></A>
+<IMG WIDTH="32%" SRC="img/terminfofont_screenshot_1.png"></A>
 <A HREF="img/terminfofont_screenshot_2.png">
-<IMG WIDTH="31%" SRC="img/terminfofont_screenshot_2.png"></A>
+<IMG WIDTH="32%" SRC="img/terminfofont_screenshot_2.png"></A>
 <A HREF="img/terminfofont_screenshot_3.png">
-<IMG WIDTH="31%" SRC="img/terminfofont_screenshot_3.png"></A>
-</P>
+<IMG WIDTH="32%" SRC="img/terminfofont_screenshot_3.png"></A>
+</TD></TR></TABLE>
 <hr />
 
 <h2><a name="functions">FUNCTIONS</a></h2><P>
 <a href="#show"><B>show()</B></a>,
 <a href="#stringwidth"><B>stringwidth()</B></a>,
+<a href="#setfontsize"><B>setfontsize()</B></a>,
 <a href="#moveto"><B>moveto()</B></a>,
 <a href="#rectfill"><B>rectfill()</B></a>, &nbsp;
 <a href="#clear"><B>clear()</B></a>,
@@ -97,6 +113,7 @@ width, height = TIF.<em>show</em> (x,y, string, colour)</a></strong></dt>
 <dd>
 <p>
 This displays the <B>string</B>,
+in the current font-size,
 starting at column <B>x</B> and line <B>y</B>,
 in the ANSI colour <B>colour</B>.<BR>
 It returns the width and height (in columns and lines) of the string.<BR>
@@ -119,6 +136,13 @@ This returns the width and height (in columns and lines) that the string
 would have if it were displayed. &nbsp;
 It's like the <A HREF="#show">show</A> function,
 except that nothing is displayed.
+</P></dd>
+
+<DT><strong><a name="setfontsize" class="item">
+TIF.<em>setfontsize</em> (n)</a></strong></DT>
+<DD><P>
+The font size <B>n</B> must be either <B>4</B> or <B>7</B><BR>
+The default is <B>4</B>
 </P></dd>
 
 <DT><strong><a name="moveto" class="item">
@@ -180,7 +204,7 @@ so you can install it with the command:<BR>
 &nbsp; sudo luarocks install terminfofont</CODE></P>
 <p>or:<BR>
 <CODE>
-&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.3-0.rockspec
+&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.4-0.rockspec
 </CODE>
 </P><P>
 You will also need the <I>terminfo</I> module:<BR>
@@ -193,6 +217,7 @@ pjb.com.au/comp/lua/test_terminfofont.lua</a>
 
 <hr />
 <h2><a name="changes">CHANGES</a></h2><pre>
+ 20191116 0.4 introduce setfontsize() and the 4-line utf8-based font
  20191109 0.3 introduce clear() and $
  20191108 0.2 rename go_to as moveto, introduce rectfill
  20191106 0.1 first released version
