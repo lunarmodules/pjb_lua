@@ -29,7 +29,7 @@ local iarg=1; while arg[iarg] ~= nil do
 end
 local TIF = require 'terminfofont'
 os.execute('clear')
-local line = 6
+local line = 0
 local dx, dy
 TIF.civis()
 TIF.setfontsize(7)
@@ -68,7 +68,7 @@ dx,dy = TIF.show(0, line, '[x][o]()^{}', 'blue')
 
 tmp = io.stdin:read('l')
 os.execute('clear')
-line = 6
+line = 0
 dx,dy = TIF.show(1, line, '#*\'~"', 6)
 line = line + dy
 dx,dy = TIF.show(3, line, 'iso:\228\246\252', 0)
@@ -82,9 +82,9 @@ dx,dy = TIF.show(1, line, 'Gör Züge', 3)
 tmp = io.stdin:read('l')
 os.execute('clear')
 -- Weimarer Republic
-TIF.rectfill(0,TIF.lines-1, TIF.cols, TIF.lines, 'black')
-TIF.rectfill(0,TIF.lines-1, TIF.cols, TIF.lines*0.66667, 'red')
-TIF.rectfill(0,TIF.lines-1, TIF.cols, TIF.lines*0.33333, 'yellow')
+TIF.rectfill(0,0, TIF.cols, TIF.lines, 'black')
+TIF.rectfill(0,0, TIF.cols, TIF.lines*0.66667, 'red')
+TIF.rectfill(0,0, TIF.cols, TIF.lines*0.33333, 'yellow')
 -- could also do Eire, France, Switzerland, Belgium, Netherland, Russia,
 -- Finland, Crimea, Catalunia, Turingia etc etc
 -- many others. See   https://en.wikipedia.org/wiki/Flags_of_Europe
@@ -96,9 +96,9 @@ TIF.civis()
 -- TIF.rectfill(0,TIF.lines-1, TIF.cols, TIF.lines, 'cyan')
 -- TIF.bg_color('cyan')
 width,height = TIF.stringwidth('Size=4...')
-dx,dy = TIF.show((TIF.cols-width)/2, height, 'Size=4...', 'cyan')
+dx,dy = TIF.show((TIF.cols-width)/2, 0, 'Size=4...', 'cyan')
 TIF.setfontsize(4)
-x=0 ; y = height + 5
+x=0 ; y = dy
 dx,dy = TIF.show(x, y, 'ABCDEFGHIJKLMNO', 'red')
 x=0 ; y = y+dy
 x = x + TIF.show(x, y, 'P', 'violet')

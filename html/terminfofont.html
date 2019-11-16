@@ -47,17 +47,23 @@ CONTENT="terminfofont, Lua, module, gaussian, randomget">
 
  TIF.<A HREF="#clear">clear()</A>
  TIF.<A HREF="#civis">civis()</A>
- TIF.<A HREF="#rectfill">rectfill</A>(TIF.cols*0.2, 18, TIF.cols*0.6, 15, 'cyan')
- local line = 6
+ TIF.<A HREF="#setfontsize">setfontsize(4)</A>
+ local line = 0
  local dx, dy
+ dx,dy = TIF.<A HREF="#show">show</A>(1, line, 'AbcdEfghIjklMnoP', 1)
+ TIF.<A HREF="#setfontsize">setfontsize(7)</A>
+ line = line + dy
+ TIF.<A HREF="#rectfill">rectfill</A>(TIF.cols*0.2, line+3, TIF.cols*0.6, 11, 'cyan')
  dx,dy = TIF.<A HREF="#show">show</A>(1, line, 'ABCDEFG', 1)
  line = line + dy
- dx,dy = TIF.<A HREF="#show">show</A>(1, line, 'HIJKLMN', 4)
+ dx,dy = TIF.<A HREF="#show">show</A>(0, line, 'HijkLmnoP', 4)
  line = line + dy
+ TIF.<A HREF="#setfontsize">setfontsize(4)</A>
  local x = (TIF.cols - TIF.<A HREF="#stringwidth">stringwidth</A>('Goog')) / 2  -- place centrally
  dx,dy = TIF.<A HREF="#show">show</A>(x, line, 'GooG', 'violet')
 
  TIF.<A HREF="#moveto">moveto(0, TIF.lines-1)</A>
+ TIF.<A HREF="#sgr0">sgr0()</A>
  TIF.<A HREF="#cnorm">cnorm()</A>
 </pre>
 <p>
@@ -65,7 +71,7 @@ CONTENT="terminfofont, Lua, module, gaussian, randomget">
 <hr />
 <h2><a name="description">DESCRIPTION</a></h2>
 <p>
-This module implements in Lua two big font
+This module implements in Lua two big fonts
 for use when <I>terminfo</I> is supported,
 such as in a console, or an xterm. &nbsp;
 It was inspired by the <I>Bitfont5x7</I> font in the PostScript module
@@ -102,10 +108,13 @@ The other font is seven lines high
 <a href="#stringwidth"><B>stringwidth()</B></a>,
 <a href="#setfontsize"><B>setfontsize()</B></a>,
 <a href="#moveto"><B>moveto()</B></a>,
-<a href="#rectfill"><B>rectfill()</B></a>, &nbsp;
+<a href="#rectfill"><B>rectfill()</B></a>,<BR>
 <a href="#clear"><B>clear()</B></a>,
 <a href="#civis"><B>civis()</B></a>,
-<a href="#cnorm"><B>cnorm()</B></a>
+<a href="#cnorm"><B>cnorm()</B></a>,
+<a href="#sgr0"><B>sgr0()</B></a>,
+<a href="#fg_color"><B>fg_color()</B></a>,
+<a href="#bg_color"><B>bg_color()</B></a>
 </P>
 <dl>
 <dt><strong><a name="show" class="item">
@@ -117,14 +126,16 @@ in the current font-size,
 starting at column <B>x</B> and line <B>y</B>,
 in the ANSI colour <B>colour</B>.<BR>
 It returns the width and height (in columns and lines) of the string.<BR>
-As in PostScript, the position <B>x</B> and <B>y</B>
-specifies the bottom-left corner of the letters.
+Since version 0.5 the position <B>x</B> and <B>y</B>
+specifies the <B>top</B>-left corner of the letters.
+The reason for this change is to make the <I>height</I> return-value useful.
 </P><P>
 The available colours are: &nbsp;
-black=0, red=1, green=2, yellow=3, blue=4, violet=5, cyan=6, and white=7<BR>
-See <B>man terminfo</B> in the <B>Colour Handling</B> section,
-where it discusses the <B>setaf</B> and <B>setbf</B> capabilites,
-and <B>show</B> also supports the colours begin given as strings,
+black=0, red=1, green=2, yellow=3, blue=4, violet=5, cyan=6, and white=7,
+&nbsp;
+see <B>man terminfo</B> in the <B>Colour Handling</B> section,
+where it discusses the <B>setaf</B> and <B>setbf</B> capabilites.
+<B>show</B> also supports the colours begin given as strings,
 for example 'red'
 </P>
 </dd>
@@ -151,7 +162,8 @@ TIF.<em>moveto</em> (x, y) </a></strong></DT>
 This moves the cursor to a given position, specified as column and line.
 <BR>
 <B>x</B> and <B>y</B> are 0, 0 in the top left corner,
-and increasing <B>y</B> moves downwards.
+and increasing <B>y</B> moves downwards.<BR>
+So the bottom-left corner is &nbsp; <CODE>TIF.moveto(0, TIF.lines-1)</CODE>
 </P></dd>
 
 <dt><strong><a name="rectfill" class="item">
@@ -185,6 +197,27 @@ TIF.<em>civis</em> ()</a></strong></dt>
 TIF.<em>cnorm</em> ()</a></strong></dt>
 <dd><P> This makes the cursor normal again
 </P></dd>
+<dt><strong><a name="sgr0" class="item">
+TIF.<em>sgr0</em> ()</a></strong></dt>
+<dd><P> This turns off all attributes, restoring the <I>xterm</I>
+to its normal state. See <CODE>man terminfo</CODE><BR>
+It's useful for cleaning up before exit.
+</P></dd>
+
+<dt><strong><a name="fg_color" class="item">
+TIF.<em>fg_color</em> ()</a></strong></dt>
+<dd><P> This sets the <I>xterm</I> 's foreground colour,
+which may be given as a number, or as a string. &nbsp;
+The available colours are: &nbsp;
+black=0, red=1, green=2, yellow=3, blue=4, violet=5, cyan=6, and white=7<BR>
+</P></dd>
+<dt><strong><a name="bg_color" class="item">
+TIF.<em>bg_color</em> (7)</a></strong></dt>
+<dd><P> This sets the <I>xterm</I> 's background colour,
+which may be given as a number, or as a string. &nbsp;
+The available colours are: &nbsp;
+black=0, red=1, green=2, yellow=3, blue=4, violet=5, cyan=6, and white=7<BR>
+</P></dd>
 
 </dl>
 
@@ -204,7 +237,7 @@ so you can install it with the command:<BR>
 &nbsp; sudo luarocks install terminfofont</CODE></P>
 <p>or:<BR>
 <CODE>
-&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.4-0.rockspec
+&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.5-0.rockspec
 </CODE>
 </P><P>
 You will also need the <I>terminfo</I> module:<BR>
@@ -217,6 +250,7 @@ pjb.com.au/comp/lua/test_terminfofont.lua</a>
 
 <hr />
 <h2><a name="changes">CHANGES</a></h2><pre>
+ 20191116 0.5 x,y specify the <B>top</B> left corner, and introduce sgr0()
  20191116 0.4 introduce setfontsize() and the 4-line utf8-based font
  20191109 0.3 introduce clear() and $
  20191108 0.2 rename go_to as moveto, introduce rectfill
