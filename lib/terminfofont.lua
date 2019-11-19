@@ -6,8 +6,8 @@
 ---------------------------------------------------------------------
 
 local M = {} -- public interface
-M.Version     = '0.3'
-M.VersionDate = '9nov2019'
+M.Version     = '0.5'
+M.VersionDate = '16nov2019'
 
 local TI = require 'terminfo'
 
@@ -40,7 +40,7 @@ local both  = '\xe2\x96\x88'   -- by experiment with qrencode -t UTF8
 local lower = '\xe2\x96\x84'
 local upper = '\xe2\x96\x80'
 
-local c2width, c2func
+local c2width, c2func, c2height
 local convex_right, concave_left, convex_left, concave_right
 
 function moveto (col, line)
@@ -99,10 +99,10 @@ local c2width_7 = {
 	['U']=12, ['V']=12, ['W']=12, ['X']=11, ['Y']=12, ['Z']=9,
 	['a']=10, ['b']=8,  ['c']=9,  ['d']=9,  ['e']=9,
 	['f']=8,  ['g']=10, ['h']=9,  ['i']=4,  ['j']=6,
-	['k']=8,  ['l']=4,  ['m']=11, ['n']=9,  ['o']=10,
+	['k']=8,  ['l']=5,  ['m']=11, ['n']=9,  ['o']=10,
 	['p']=9,  ['q']=9,  ['r']=7,  ['s']=8,  ['t']=7,
 	['u']=9,  ['v']=10, ['w']=11, ['x']=9,  ['y']=10,
-	['z']=8,  [' ']=9,  ["'"]=3, ['"']=5,
+	['z']=8,  [' ']=7,  ["'"]=3, ['"']=5,
 	['.']=4,  [',']=5,  [':']=4,  [';']=5, ['-']=7,
 	['!']=4,  ['?']=10, ['_']=11,
 	['0']=12, ['1']=8,  ['2']=9,  ['3']=9, ['4']=10,
@@ -122,10 +122,10 @@ local function is_good_fit (a,b)
 	 (b=='A' or b=='C' or b=='G' or b=='O' or b=='.' or b==',' or
 	  b=='Q' or b=='0' or b=='4' or b=='_' or b=='/') then
 		return true
-	elseif (a=='L' or a=='Q' or a=='1' or a=='\\' or
+	elseif (a=='L' or a=='Q' or a=='t' or a=='1' or a=='\\' or
 	        a=='_' or a=='.' or a==',') and
 	 (b=='C' or b=='O' or b=='Q'  or b=='T' or b=='U' or
-	  b=='V' or b=='Y' or b=='\\' or b=='0') then
+	  b=='V' or b=='Y' or b=='l' or b=='\\' or b=='0') then
 		return true
 	end
 	return false
@@ -550,12 +550,12 @@ local c2func_7 = {
 		spaces(col+5, line,   2)
 	end ,
 	['l'] = function (col,line)
-		spaces(col+1, line-5, 2)
-		spaces(col+1, line-4, 2)
-		spaces(col+1, line-3, 2)
-		spaces(col+1, line-2, 2)
-		spaces(col+1, line-1, 2)
-		spaces(col+1, line,   2)
+		spaces(col+1, line-5, 3)
+		spaces(col+2, line-4, 2)
+		spaces(col+2, line-3, 2)
+		spaces(col+2, line-2, 2)
+		spaces(col+2, line-1, 2)
+		spaces(col+2, line,   2)
 	end ,
 	['m'] = function (col,line)
 		spaces(col+2, line-4, 3)
@@ -1066,11 +1066,15 @@ local c2func_7 = {
 -- local c2func = c2func_7
 
 -------------------- spacing, kerning -----------------
-local c2height = {
+local c2height_4 = {
+	[',']=5, [';']=5, ['g']=5, ['j']=5, ['p']=5, ['q']=5, ['y']=5,
+	['[']=5, [']']=5, ['(']=5, [')']=5, ['{']=5, ['}']=5, ['#']=5,
+}
+local c2height_7 = {
 	[',']=8, [';']=8, ['f']=8, ['g']=8, ['j']=8, ['p']=8, ['q']=8, ['y']=8,
 	['[']=8, [']']=8, ['(']=8, [')']=8, ['{']=8, ['}']=8, ['#']=8,
 }
--- for better kerning in M.show(), see also function is_good_fit(a,b) ...
+-- for better kerning in show(), see also function is_good_fit(a,b) ...
 local convex_right_7 = {
 	['b']=true, ['o']=true, ['p']=true, ['-']=true, ['+']=true, ['^']=true,
 	['6']=true,
@@ -1869,7 +1873,7 @@ local c2func_4 = {
 	['\246']=utfchar_o_uml, ['\252']=utfchar_u_uml,
 }
 
--- for better kerning in M.show(), see also function is_good_fit(a,b) ...
+-- for better kerning in show(), see also function is_good_fit(a,b) ...
 local convex_right_4 = {
 	['p']=true, ['-']=true, ['+']=true, ['^']=true,
 }
@@ -1887,14 +1891,29 @@ local concave_right_4 = {
 	['{']=true, ['_']=true, ["'"]=true, ['"']=true,
 }
 
+------------------------------------------------------------
 
------------------------------- public ------------------------------
-
-M.fg_color = fg_color
-M.bg_color = bg_color
-
-function M.show_4 (col,line, str, colour)
+local function show_1 (col,line, str, colour)
 	col = round(col) ; line = round(line)
+	fg_color(colour)
+	moveto(col, line)   ; TTY:write(str)
+	TTY:write(sgr0)
+	TTY:flush()
+	return string.len(str), 1
+end
+
+local function show_2 (col,line, str, colour)
+	col = math.floor(col / 2) ; line = round(line)
+	fg_color(colour)
+	moveto(col, line)   ; TTY:write('\x1B#3'..str)
+	moveto(col, line+1) ; TTY:write('\x1B#4'..str)
+	TTY:write(sgr0)
+	TTY:flush()
+	return 2*string.len(str), 2
+end
+
+local function show_4 (col,line, str, colour)
+	col = round(col) ; line = round(line) + 3   -- 0.5 
 	str = utf2iso(str) -- the string has to be either iso OR utf, not a mix !
 	-- str = string.gsub(str, '\194', '')
 	-- str = string.gsub(str, '\195(.)', '') -- see p.210, add 128 to byte(.)
@@ -1915,14 +1934,15 @@ function M.show_4 (col,line, str, colour)
 		charwidth = func(col,line, colour) or 0
 		width = width + charwidth
 		col = col + charwidth
+		if c2height_4[c] then height = c2height_4[c] end
 		previous_c = c
 	end
 	TTY:flush()
 	return width, height
 end
 
-function M.show_7 (col,line, str, colour)
-	col = round(col) ; line = round(line)
+local function show_7 (col,line, str, colour)
+	col = round(col) ; line = round(line) + 6   -- 0.5 
 	str = utf2iso(str) -- the string has to be either iso OR utf, not a mix !
 	local width = 0
 	local height = 7
@@ -1944,7 +1964,7 @@ function M.show_7 (col,line, str, colour)
 		local charwidth = c2width_7[c] or 0
 		width = width + charwidth
 		col = col + charwidth
-		if c2height[c] then height = 8 end
+		if c2height_7[c] then height = c2height_7[c] end
 		previous_c = c
 	end
 	TTY:write(sgr0)
@@ -1952,7 +1972,14 @@ function M.show_7 (col,line, str, colour)
 	return width, height
 end
 
+------------------------------ public ------------------------------
+
+M.fg_color = fg_color
+M.bg_color = bg_color
+
 function M.stringwidth (str)
+	if fontsize == 1 then return string.len(str), 1 end
+	if fontsize == 2 then return 2*string.len(str), 2 end
 	local width  = 0
 	local height = 7
 	local previous_c = nil
@@ -1966,10 +1993,18 @@ function M.stringwidth (str)
 			end
 		end
 		width = width + c2width[c]
-		if c2height[c] then height = 8 end
+		if c2height[c] then height = c2height[c] end
 		previous_c = c
 	end
-	return width, height
+	if fontsize == 4 then return width, 4 else return width, height end
+end
+
+function M.centreshow(y, str, colour)
+	local w,h = M.stringwidth(str)
+	cols  = TI.get('cols')  -- update cols
+	local dx = round( (cols-w) / 2 )
+	M.show(dx, y, str, colour)
+	return dx+w, h
 end
 
 function M.rectfill (col,line, width,height, colour)
@@ -1981,30 +2016,38 @@ function M.rectfill (col,line, width,height, colour)
 	width = round(width) ; height = round(height)  -- should be integers
 	TTY:write(rev)
 	if colour then fg_color(colour) end
-	for i = 0, height-1 do spaces(col, line-i, width) end
+	for i = 0, height-1 do spaces(col, line+i, width) end   -- 0.5
 	TTY:write(sgr0)
 	TTY:flush()
 	return true
 end
 
 function M.setfontsize (nlines)
-	if nlines == 4 then
-		c2width = c2width_4
-		c2func  = c2func_4
+	if nlines == 1 then
+		M.show  = show_1
+		fontsize = 1
+	elseif nlines == 2 then
+		M.show  = show_2
+		fontsize = 2
+	elseif nlines == 4 then
+		c2width  = c2width_4
+		c2height = c2height_4
+		c2func   = c2func_4
 		convex_right  = convex_right_4
 		concave_left  = concave_left_4
 		convex_left   = convex_left_4
 		concave_right = concave_right_4
-		M.show  = M.show_4
+		M.show  = show_4
 		fontsize = 4
 	elseif nlines == 7 then
-		c2width = c2width_7
-		c2func  = c2func_7
+		c2width  = c2width_7
+		c2height = c2height_7
+		c2func   = c2func_7
 		convex_right  = convex_right_7
 		concave_left  = concave_left_7
 		convex_left   = convex_left_7
 		concave_right = concave_right_7
-		M.show  = M.show_7
+		M.show  = show_7
 		fontsize = 7
 	else
 		warn('fontsize must be either 7 or 4, not', nlines)
@@ -2023,6 +2066,10 @@ function M.civis ()
 end
 function M.cnorm ()
 	TTY:write(cnorm)
+	TTY:flush()
+end
+function M.sgr0 ()
+	TTY:write(sgr0)
 	TTY:flush()
 end
 

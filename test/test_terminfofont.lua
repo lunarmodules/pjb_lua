@@ -75,7 +75,7 @@ dx,dy = TIF.show(3, line, 'iso:\228\246\252', 0)
 line = line + dy
 dx,dy = TIF.show(1, line, 'utf:äöü', 1)
 line = line + dy
-dx,dy = TIF.show(1, line, 'Lärm', 2)
+dx,dy = TIF.show(1, line, 'Lärm ltle', 2)
 line = line + dy
 dx,dy = TIF.show(1, line, 'Gör Züge', 3)
 
@@ -95,10 +95,10 @@ os.execute('clear')
 TIF.civis()
 -- TIF.rectfill(0,TIF.lines-1, TIF.cols, TIF.lines, 'cyan')
 -- TIF.bg_color('cyan')
-width,height = TIF.stringwidth('Size=4...')
-dx,dy = TIF.show((TIF.cols-width)/2, 0, 'Size=4...', 'cyan')
+-- width,height = TIF.stringwidth('Size=4...')
+-- dx,dy = TIF.show((TIF.cols-width)/2, 0, 'Size=4...', 'cyan')
 TIF.setfontsize(4)
-x=0 ; y = dy
+x=0 ; y=0
 dx,dy = TIF.show(x, y, 'ABCDEFGHIJKLMNO', 'red')
 x=0 ; y = y+dy
 x = x + TIF.show(x, y, 'P', 'violet')
@@ -187,15 +187,22 @@ x = x + TIF.show(x, y, 'x', 'green')
 x = x + TIF.show(x, y, 'y', 'blue')
 x = x + TIF.show(x, y, 'z', 'violet')
 x=0 ; y = y + 4
-x = x + TIF.show(x+2, y, 'Well hello there !', 'cyan')
-x=0 ; y = y + 4
-x = x + TIF.show(x+2, y, '(o)[-]{+}co', 'orange')
-
-
+dx,dy = TIF.show(x+2, y, '(o)[-]{+}co', 'orange') ; y = y+dy
+-- TIF.setfontsize(2)
+-- dx,dy = TIF.show(0,y, 'Back to the vt100 !  ', 'red') ; x = x+dx
+-- dx,dy = TIF.show(x,y, string.format('dx = %d  dy = %d', dx,dy), 'black')
+TIF.setfontsize(1)
+-- print(' y =',y,'dx,dy =',dx,dy)
+dx,dy = TIF.centreshow(y, 'The Title', 'red')  ; y = y+dy
+TIF.setfontsize(2)
+dx,dy = TIF.centreshow(y, 'The Title', 'blue') ; y = y+dy-1
+TIF.setfontsize(4)
+dx,dy = TIF.centreshow(y, 'The Title', 'violet') ; y = y+dy
+TIF.setfontsize(7)
+dx,dy = TIF.centreshow(y, 'The Title', 'red') ; y = y+dy
 
 tmp = io.stdin:read('l')
-TIF.fg_color('black') ; TIF.bg_color('white')
-TIF.cnorm() ; TIF.moveto(0, TIF.lines)
+TIF.sgr0() ; TIF.cnorm() ; TIF.moveto(0, TIF.lines-1)
 
 os.exit()
 
