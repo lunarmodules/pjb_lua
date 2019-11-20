@@ -17,7 +17,7 @@ RUNGEVER = 1.09
 SOXVER  = 0.1
 TIVER   = 1.8
 TCVER   = 0.1
-TIFVER  = 0.7
+TIFVER  = 0.8
 WTVER   = 1.19
 
 # NO! should make these Math-* modules independent of their CPAN equivalents!

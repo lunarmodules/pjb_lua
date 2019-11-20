@@ -48,18 +48,23 @@ CONTENT="terminfofont, Lua, module, gaussian, randomget">
  TIF.<A HREF="#clear">clear()</A>
  TIF.<A HREF="#civis">civis()</A>
  TIF.<A HREF="#setfontsize">setfontsize(4)</A>
- local line = 0
+ local y = 0   -- start at the top
  local dx, dy
- dx,dy = TIF.<A HREF="#show">show</A>(1, line, 'AbcdEfghIjklMnoP', 1)
+ dx,dy = TIF.<A HREF="#show">show</A>(1, y, 'AbcdEfghIjklMnoP', 1)
  TIF.<A HREF="#setfontsize">setfontsize(7)</A>
- line = line + dy
- TIF.<A HREF="#rectfill">rectfill</A>(TIF.cols*0.2, line+3, TIF.cols*0.6, 11, 'cyan')
- dx,dy = TIF.<A HREF="#show">show</A>(1, line, 'ABCDEFG', 1)
- line = line + dy
- dx,dy = TIF.<A HREF="#show">show</A>(0, line, 'HijkLmnoP', 4)
- line = line + dy
+ y = y+dy - 1
+ TIF.<A HREF="#rectfill">rectfill</A>(TIF.cols*0.2, y+1, TIF.cols*0.6, 6, 'cyan')
+ dx,dy = TIF.<A HREF="#show">show</A>(0, y, 'HijkLmnoP', 4)
+ y = y+dy
+ TIF.<A HREF="#setfontsize">setfontsize(2)</A>
+ TIF.bold()
+ dx,dy = TIF.<A HREF="#centreshow">centreshow</A>(y, 'The Title', 'blue')
+ y = y+dy - 1
  TIF.<A HREF="#setfontsize">setfontsize(4)</A>
- local x = TIF.<A HREF="#centreshow">centreshow</A>(y, 'The Title', 'red')) -- place centrally
+ dx,dy = TIF.<A HREF="#centreshow">centreshow</A>(y, 'The Title', 'violet')
+ y = y+dy
+ TIF.<A HREF="#setfontsize">setfontsize(7)</A>
+ dx,dy = TIF.<A HREF="#centreshow">centreshow</A>(y, 'The Title', 'red')
 
  TIF.<A HREF="#moveto">moveto(0, TIF.lines-1)</A>
  TIF.<A HREF="#sgr0">sgr0()</A>
@@ -107,14 +112,15 @@ The other font is seven lines high
 <a href="#stringwidth"><B>stringwidth()</B></a>,
 <a href="#setfontsize"><B>setfontsize()</B></a>,
 <a href="#moveto"><B>moveto()</B></a>,
-<a href="#rectfill"><B>rectfill()</B></a>,<BR>
-<a href="#centreshow"><B>centreshow()</B></a>,
+<a href="#rectfill"><B>rectfill()</B></a>,
+<a href="#centreshow"><B>centreshow()</B></a>,<BR>
 <a href="#clear"><B>clear()</B></a>,
 <a href="#civis"><B>civis()</B></a>,
-<a href="#cnorm"><B>cnorm()</B></a>,
-<a href="#sgr0"><B>sgr0()</B></a>,
+<a href="#cnorm"><B>cnorm()</B></a>, &nbsp;
 <a href="#fg_color"><B>fg_color()</B></a>,
-<a href="#bg_color"><B>bg_color()</B></a>
+<a href="#bg_color"><B>bg_color()</B></a>,
+<a href="#bold"><B>bold()</B></a>,
+<a href="#sgr0"><B>sgr0()</B></a>,
 </P>
 <dl>
 <dt><strong><a name="show" class="item">
@@ -135,7 +141,7 @@ black=0, red=1, green=2, yellow=3, blue=4, violet=5, cyan=6, and white=7,
 &nbsp;
 see <B>man terminfo</B> in the <B>Colour Handling</B> section,
 where it discusses the <B>setaf</B> and <B>setbf</B> capabilites.
-<B>show</B> also supports the colours begin given as strings,
+<B>show</B> also supports the colours being given as strings,
 for example 'red'
 </P>
 </dd>
@@ -152,8 +158,19 @@ except that nothing is displayed.
 <DT><strong><a name="setfontsize" class="item">
 TIF.<em>setfontsize</em> (n)</a></strong></DT>
 <DD><P>
-The font size <B>n</B> must be either <B>4</B> or <B>7</B><BR>
-The default is <B>4</B>
+The font size <B>n</B> must be either <B>1</B> or <B>2</B> or <B>4</B>
+or <B>7</B>. &nbsp; The default is <B>4</B><BR>
+<B>4</B> depends on your tty using a utf-8 font,
+and so is not completely portable:
+for example, <CODE>10x20</CODE> and <CODE>12x24</CODE>
+are not utf-8 fonts.<BR>
+<B>2</B> is even less portable; it uses two old escape-sequences
+<CODE>&lt;esc&gt;#3</CODE> and <CODE>&lt;esc&gt;#4</CODE>
+which display the upper and lower halves of a double-height font.
+&nbsp;
+These are not present on the linux console or in <I>screen</I>.
+But they are present in <I>xterm</I> and its variants
+<I>uxterm</I> and <I>lxterm</I>.
 </P></dd>
 
 <DT><strong><a name="moveto" class="item">
@@ -199,16 +216,9 @@ just like &nbsp; <CODE>os.execute('clear')</CODE>
 TIF.<em>civis</em> ()</a></strong></dt>
 <dd><P> This makes the cursor invisible
 </P> </dd>
-
 <dt><strong><a name="cnorm" class="item">
 TIF.<em>cnorm</em> ()</a></strong></dt>
 <dd><P> This makes the cursor normal again
-</P></dd>
-<dt><strong><a name="sgr0" class="item">
-TIF.<em>sgr0</em> ()</a></strong></dt>
-<dd><P> This turns off all attributes, restoring the <I>xterm</I>
-to its normal state. See <CODE>man terminfo</CODE><BR>
-It's useful for cleaning up before exit.
 </P></dd>
 
 <dt><strong><a name="fg_color" class="item">
@@ -224,6 +234,18 @@ TIF.<em>bg_color</em> (7)</a></strong></dt>
 which may be given as a number, or as a string. &nbsp;
 The available colours are: &nbsp;
 black=0, red=1, green=2, yellow=3, blue=4, violet=5, cyan=6, and white=7<BR>
+</P></dd>
+<dt><strong><a name="bold" class="item">
+TIF.<em>bold</em> ()</a></strong></dt>
+<dd><P> This turns on bold mode. &nbsp;
+See <CODE>man terminfo</CODE><BR>
+</P></dd>
+<dt><strong><a name="sgr0" class="item">
+TIF.<em>sgr0</em> ()</a></strong></dt>
+<dd><P> This turns off all attributes, restoring the <I>xterm</I>
+to its normal state. See <CODE>man terminfo</CODE><BR>
+It's useful for cleaning up before exit, and is also called automatically
+at the end of each <A HREF="#show">show()</A>
 </P></dd>
 
 </dl>
@@ -257,6 +279,7 @@ pjb.com.au/comp/lua/test_terminfofont.lua</a>
 
 <hr />
 <h2><a name="changes">CHANGES</a></h2><pre>
+ 20191119 0.7 add fontsizes 1 and 2, and bold()
  20191118 0.6 introduce centreshow(), and refine the kerning
  20191116 0.5 x,y specify the <B>top</B> left corner, and introduce sgr0()
  20191116 0.4 introduce setfontsize() and the 4-line utf8-based font

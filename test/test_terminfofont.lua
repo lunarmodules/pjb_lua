@@ -193,9 +193,9 @@ dx,dy = TIF.show(x+2, y, '(o)[-]{+}co', 'orange') ; y = y+dy
 -- dx,dy = TIF.show(x,y, string.format('dx = %d  dy = %d', dx,dy), 'black')
 TIF.setfontsize(1)
 -- print(' y =',y,'dx,dy =',dx,dy)
-dx,dy = TIF.centreshow(y, 'The Title', 'red')  ; y = y+dy
+TIF.bold() ; dx,dy = TIF.centreshow(y, 'The Title', 'red')  ; y = y+dy
 TIF.setfontsize(2)
-dx,dy = TIF.centreshow(y, 'The Title', 'blue') ; y = y+dy-1
+TIF.bold() ; dx,dy = TIF.centreshow(y, 'The Title', 'blue') ; y = y+dy-1
 TIF.setfontsize(4)
 dx,dy = TIF.centreshow(y, 'The Title', 'violet') ; y = y+dy
 TIF.setfontsize(7)

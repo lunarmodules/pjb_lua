@@ -1937,6 +1937,7 @@ local function show_4 (col,line, str, colour)
 		if c2height_4[c] then height = c2height_4[c] end
 		previous_c = c
 	end
+	TTY:write(sgr0)
 	TTY:flush()
 	return width, height
 end
@@ -2068,6 +2069,10 @@ function M.cnorm ()
 	TTY:write(cnorm)
 	TTY:flush()
 end
+function M.bold ()
+	TTY:write(TI.get('bold'))
+	TTY:flush()
+end
 function M.sgr0 ()
 	TTY:write(sgr0)
 	TTY:flush()
@@ -2103,6 +2108,58 @@ note:
 shows that UTF8 can give me the half-height characters !
   print('\xe2\x96\x88\x20\xe2\x96\x84\xe2\x96\x80')
 prints black, white, lower-half black, upper-half black
+
+Detecting whether the background is light or dark:
+1) clear
+2) scrot -u /tmp/tmpfile.$$.png
+3) https://www.imagemagick.org/discourse-server/viewtopic.php?t=11304
+
+If you are using IM 6.4.0-11 or later:
+  convert <image> -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:
+
+If you are using IM 6.3.9-1 or later
+  convert <image> -colorspace Gray -format "%[mean]" info:
+
+Or if prior to that:
+  data=`convert <image> -colorspace gray -verbose info:`
+mean=`echo "$data" | sed -n '/^.*[Mm]ean:.*[(]\([0-9.]*\).*$/{ s//\1/; p; q; }'`
+convert xc: -format "%[fx:quantumrange*$mean]" info:
+
+All values will be returned in the range of 0 to quantumrange
+(Q8=255, Q16=65535)
+
+Alternately, if you want your mean value to be returned in the range of 0-1
+then use:
+  convert <image> -colorspace Gray -format "%[fx:image.mean]" info:
+or
+  mean=`convert <image> -colorspace Gray -format "%[mean]" info:`
+  convert xc: -format "%[fx:$mean/quantumrange]" info:
+or
+  data=`convert <image> -colorspace gray -verbose info:`
+  echo "$data" | sed -n '/^.*[Mm]ean:.*[(]\([0-9.]*\).*$/{ s//\1/; p; q; }'
+
+One other approach is to resize the image to 1x1 and get its value
+  convert <image> -colorspace gray -resize 1x1 -format "%[pixel:p{0,0}]" info:
+This reports a triple in percent.  or:
+  convert logo: -colorspace gray -resize 1x1 -fx "debug(u)" null:
+which reports each channel in range 0-1
+
+convert /tmp/tmpfile.$$.png -colorspace gray -resize 1x1 \
+  -format "%[pixel:p{0,0}]" info:
+PJB: Though my "-bg gray20" xterm measures "gray(51)" by that last method .:-(
+
+Conclusion:
+   convert /tmp/t.png -colorspace Gray -format "%[mean]" info:
+and divide by 65535 !!  and it works :-)
+
+OR:
+  pstree -p | grep $PPID
+then look for the "xterm(3491)" string, then
+  ps -f -q 3491
+and hope it contains -fg and -bg; if so, look up the colours in
+  /usr/share/X11/rgb.txt and /usr/X11R6/lib/X11/rgb.txt
+and see which is darker.  Unfortunately, if there is
+no explicit -fg and -bg, then finding the defaults gets ugly :-(
 
 =head1 FUNCTIONS
 
