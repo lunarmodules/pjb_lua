@@ -2103,6 +2103,10 @@ terminfofont.lua - does whatever
 
 This module does whatever
 
+TTY:write(TI.get('sc'))   -- save current cursor position
+TTY:write(TI.get('rc'))   -- restore cursor position to the saved
+TTY:write(TI.tput(TI.get('rc'), 10,TI.lines-1)) -- change scrolling-region
+
 note:
   echo -n 'https://pjb.com.au' | qrencode -m 1 -t UTF8 -o /tmp/t.txt
 shows that UTF8 can give me the half-height characters !
