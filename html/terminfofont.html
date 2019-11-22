@@ -41,15 +41,16 @@ CONTENT="terminfofont, Lua, module, gaussian, randomget">
 <h2><a name="name">NAME</a></h2>
 <p>terminfofont.lua&nbsp; - &nbsp;big fonts for use in a console or an xterm </p>
 <HR>
-<h2><a name="synopsis">SYNOPSIS</a></h2>
+<h2><a name="synopsis">SYNOPSIS</a>
+<A HREF ="img/terminfofont_synopsis.png"><IMG ALIGN="right" WIDTH="31%" SRC="img/terminfofont_synopsis.png"></A>
+</h2>
 <pre>
- local TIF = require 'terminfofont' <IMG ALIGN="right" WIDTH="30%" SRC="img/terminfofont_synopsis.png">
-
+ local TIF = require 'terminfofont'
  TIF.<A HREF="#clear">clear()</A>
  TIF.<A HREF="#civis">civis()</A>
- TIF.<A HREF="#setfontsize">setfontsize(4)</A>
  local y = 0   -- start at the top
  local dx, dy
+ TIF.<A HREF="#setfontsize">setfontsize(4)</A>
  dx,dy = TIF.<A HREF="#show">show</A>(1, y, 'AbcdEfghIjklMnoP', 1)
  TIF.<A HREF="#setfontsize">setfontsize(7)</A>
  y = y+dy - 1
@@ -188,13 +189,16 @@ TIF.<em>rectfill</em> (x,y, width,height, colour)</a></strong></dt>
 <p>
 This creates and fills a rectangle with corner at <B>x</B>, <B>y</B>
 and the given <B>width</B> and <B>height</B>,
-in the ANSI colour <B>colour</B>.<BR>
-Be aware that most terminal-fonts are about twice as high as they are wide,
-eg 10x20 or 12x24, so that to get something like a square you have to specify
-something like &nbsp; <CODE>TIF.rectfill(10,35, 50,25, 'blue')</CODE><BR>
-As in PostScript, the position <B>x</B> and <B>y</B>
-specifies the bottom-left corner of the rectangle
-(assuming width and height are positive).
+in the ANSI colour <B>colour</B>. &nbsp;
+<B>width</B> and <B>height</B> should be positive,<BR>
+As in <A HREF="#show">show</A>, the position <B>x</B> and <B>y</B>
+specifies the top-left corner of the rectangle.
+<BR>
+Be aware that most terminal-fonts are about twice as high as they are wide
+(eg 10x20 or 12x24), so that to get something like a square you have to specify
+something like &nbsp;
+<CODE>TIF.rectfill(10,10,&nbsp;50,25,&nbsp;'blue')</CODE>
+
 </P>
 </dd>
 
@@ -262,10 +266,10 @@ some integer constants: &nbsp; <B>TIF.lines</B> and <B>TIF.cols</B>
 luarocks.org/modules/peterbillam</A>
 so you can install it with the command:<BR>
 <CODE>
-&nbsp; sudo luarocks install terminfofont</CODE></P>
-<p>or:<BR>
+&nbsp; sudo luarocks install terminfofont</CODE><BR>
+or:<BR>
 <CODE>
-&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.6-0.rockspec
+&nbsp; sudo luarocks install http://www.pjb.com.au/comp/lua/terminfofont-0.7-0.rockspec
 </CODE>
 </P><P>
 You will also need the <I>terminfo</I> module:<BR>

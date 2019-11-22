@@ -2105,7 +2105,7 @@ This module does whatever
 
 TTY:write(TI.get('sc'))   -- save current cursor position
 TTY:write(TI.get('rc'))   -- restore cursor position to the saved
-TTY:write(TI.tput(TI.get('rc'), 10,TI.lines-1)) -- change scrolling-region
+TTY:write(TI.tput(TI.get('csr '), 10,TI.lines-1)) -- change scrolling-region
 
 note:
   echo -n 'https://pjb.com.au' | qrencode -m 1 -t UTF8 -o /tmp/t.txt
@@ -2142,19 +2142,11 @@ or
   data=`convert <image> -colorspace gray -verbose info:`
   echo "$data" | sed -n '/^.*[Mm]ean:.*[(]\([0-9.]*\).*$/{ s//\1/; p; q; }'
 
-One other approach is to resize the image to 1x1 and get its value
-  convert <image> -colorspace gray -resize 1x1 -format "%[pixel:p{0,0}]" info:
-This reports a triple in percent.  or:
-  convert logo: -colorspace gray -resize 1x1 -fx "debug(u)" null:
-which reports each channel in range 0-1
-
-convert /tmp/tmpfile.$$.png -colorspace gray -resize 1x1 \
-  -format "%[pixel:p{0,0}]" info:
-PJB: Though my "-bg gray20" xterm measures "gray(51)" by that last method .:-(
-
 Conclusion:
-   convert /tmp/t.png -colorspace Gray -format "%[mean]" info:
+  convert /tmp/t.png -colorspace Gray -format "%[mean]" info:
 and divide by 65535 !!  and it works :-)
+BUT BETTER because it's already 0 .. 1.0
+  convert /tmp/t.png -colorspace Gray -format "%[fx:image.mean]" info:
 
 OR:
   pstree -p | grep $PPID
