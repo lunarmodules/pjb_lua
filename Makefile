@@ -1,4 +1,3 @@
-# Note: No more RK! RUNGE means Runge-Kutta; KEY means Term::ReadKey 
 ALSAVER = 1.24
 CLUIVER = 1.78
 DBMVER  = 20150425.52
@@ -8,6 +7,7 @@ ECASVER = 0.4
 EVVER   = 1.14
 FENVER  = 1.7
 FSVER   = 2.2
+# Note: No more RK! RUNGE means Runge-Kutta; KEY means Term::ReadKey 
 KEYVER  = 1.6
 MIDIVER = 6.9
 MTVER   = 1.18
@@ -520,15 +520,15 @@ ${DOCDIR}/Sequence.lua : lib/Sequence.lua
 ${KEYDIR}/readkey.lua: lib/readkey.lua
 	md5sum lib/readkey.lua
 	cp lib/readkey.lua $@
-${KEYDIR}/test_key.lua: test/test_key.lua
-	cp test/test_key.lua ${KEYDIR}/test_key.lua
-${KEYTARBALL} : lib/readkey.lua test/test_key.lua ${KEYDIR}/readkey.html
+${KEYDIR}/test_readkey.lua: test/test_readkey.lua
+	cp test/test_readkey.lua ${KEYDIR}/test_readkey.lua
+${KEYTARBALL} : lib/readkey.lua test/test_readkey.lua ${KEYDIR}/readkey.html
 	mkdir readkey-${KEYVER}
 	mkdir readkey-${KEYVER}/test
 	mkdir readkey-${KEYVER}/doc
 	cp lib/readkey.lua readkey-${KEYVER}
 	cp ${KEYDIR}/readkey.html readkey-${KEYVER}/doc
-	cp test/test_key.lua readkey-${KEYVER}/test
+	cp test/test_readkey.lua readkey-${KEYVER}/test
 	tar cvzf $@ readkey-${KEYVER}
 	rm -rf readkey-${KEYVER}
 ${KEYROCKSPEC} : ${KEYTARBALL} dist/readkey.rockspec

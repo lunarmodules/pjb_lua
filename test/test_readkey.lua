@@ -159,11 +159,19 @@ if not ok(nccs > 15, 'GetControlChars returns '..tostring(nccs)..' ccs') then
 end
 
 local width, height, px, py = M.GetTerminalSize()
+-- linux   stty -a outputs "rows 47; columns 79;"
+-- freebsd stty -a outputs "47 rows; 79 columns;"
 local stty_w = tonumber(string.match(initial_state, 'columns (%d+)'))
 local stty_h = tonumber(string.match(initial_state, 'rows (%d+)'))
+if not stty_w then
+	stty_w = tonumber(string.match(initial_state, '(%d+) columns'))
+end
+if not stty_h then
+	stty_h = tonumber(string.match(initial_state, '(%d+) rows'))
+end
 if not ok(width == stty_w,
   'GetTerminalSize returned width = '..tostring(stty_w)) then
-	print(' width='..width..' stty_w='..stty_w)
+	print(' width='..width..' stty_w='..tostring(stty_w))
 end
 if not ok(height == stty_h,
   'GetTerminalSize returned height = '..tostring(stty_h)) then
