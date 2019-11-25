@@ -4,6 +4,8 @@
 --  This module is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
+-- TODO: half-height rectfill, umlauts, show(string, colour)
+-- 
 
 local M = {} -- public interface
 M.Version     = '0.5'
@@ -77,6 +79,9 @@ local function utf2iso (raw_str)
 	if string.match(raw_str, '[\194,\195]') then
 		-- http://lua-users.org/lists/lua-l/2015-02/msg00173.html
 		-- fails on euro-sign 
+-- BUG XXX utf8 does not exist on 5.2 or less !
+-- I should do it by hand ...
+-- if first char is xC3 then delete it and add 64 to the second char
 		local s_iso = string.gsub(raw_str, utf8.charpattern,
 			function (c)
 				return string.char(utf8.codepoint(c))
