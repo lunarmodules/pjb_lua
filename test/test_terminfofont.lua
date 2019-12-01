@@ -47,12 +47,10 @@ line = line + dy
 dx,dy = TIF.show(1, line, '?!:.;,-0123', 4)
 line = line + dy
 dx,dy = TIF.show(1,line, '456789+$',  5)
---[[
 
--- TIF.moveto(0, TIF.lines-1) ; os.exit()
 tmp = io.stdin:read('l')
 os.execute('clear')
-line = 6
+line = 0
 dx,dy = TIF.show(1, line, '/\\_|=@%&', 6)
 line = line + dy
 dx,dy = TIF.show(1, line, 'abcdefghi',  5)
@@ -64,7 +62,6 @@ line = line + dy -1
 dx,dy = TIF.show(1, line, 'pjb.com.au', 2)
 line = line + dy
 dx,dy = TIF.show(0, line, '[x][o]()^{}', 'blue')
-]]
 
 tmp = io.stdin:read('l')
 os.execute('clear')

@@ -8,7 +8,7 @@ EVVER   = 1.14
 FENVER  = 1.7
 FSVER   = 2.2
 # Note: No more RK! RUNGE means Runge-Kutta; KEY means Term::ReadKey 
-KEYVER  = 1.6
+KEYVER  = 1.7
 MIDIVER = 6.9
 MTVER   = 1.18
 RANDVER = 1.5
