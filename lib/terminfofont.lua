@@ -178,7 +178,7 @@ local function is_good_fit_7 (a,b)
 end
 local function is_good_fit_4 (a,b)
 	if not b then return false end
-	if (a=='F' or a=='T' or a=='"' or a=="'" or a=='/') and
+	if (a=='F' or a=='T' or a=='"' or a=="'" or a=='/' or a=='@') and
 	 (b=='A' or b=='.' or b==',' or b=='4' or b=='_' or b=='/') then
 		return true
 	elseif (a=='L' or a=='k' or a=='t' or a=='1' or a=='\\' or
@@ -1179,567 +1179,472 @@ local c2width_4 = {
 }
 
 local c2func_4 = {
-	['A'] = function (col,line)
-	 -- moveto(col, line-2) ; TTY:write(lower..upper..upper..lower)
-	 -- moveto(col, line-1) ; TTY:write(both..lower..lower..both)
-	 -- moveto(col, line)   ; TTY:write(both..'  '..both)
+	['A'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(both..lower..lower..both)
 		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
 	end ,
-	['B'] = function (col,line)
+	['B'] = function ()
 		cud(1) ; TTY:write(both..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(both..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(both..lower..lower..upper)
 	end ,
-	['C'] = function (col,line)
+	['C'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..upper)
 		cub(4) ; cud(1) ; TTY:write(both)
 		cub(1) ; cud(1)   ; TTY:write(upper..lower..lower..lower)
 	end ,
-	['D'] = function (col,line)
+	['D'] = function ()
 		cud(1) ; TTY:write(both..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
 		cub(4) ; cud(1) ; TTY:write(both..lower..lower..upper)
 	end ,
-	['E'] = function (col,line)
+	['E'] = function ()
 		cud(1) ; TTY:write(both..upper..upper..upper)
 		cub(4) ; cud(1) ; TTY:write(both..upper..upper)
 		cub(3) ; cud(1) ; TTY:write(both..lower..lower..lower)
 	end ,
-	['F'] = function (col,line)
+	['F'] = function ()
 		cud(1) ; TTY:write(both..upper..upper..upper)
 		cub(4) ; cud(1) ; TTY:write(both..upper..upper)
 		cub(3) ; cud(1) ; TTY:write(both)
 	end ,
-	['G'] = function (col,line)
+	['G'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..upper)
 		cub(4) ; cud(1) ; TTY:write(both..' '..lower..lower)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['H'] = function (col,line)
+	['H'] = function ()
 		cud(1) ; TTY:write(both..'  '..both)
 		cub(4) ; cud(1) ; TTY:write(both..upper..upper..both)
 		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
 	end ,
-	['I'] = function (col,line)
+	['I'] = function ()
 		cud(1) ; TTY:write(upper..both..upper)
 		cub(3) ; cud(1) ; TTY:write(' '..both)
 		cub(2) ; cud(1) ; TTY:write(lower..both..lower)
 	end ,
-	['J'] = function (col,line)
+	['J'] = function ()
 		cud(1) ; TTY:write(' '..upper..both..upper)
 		cub(4) ; cud(1) ; TTY:write('  '..both)
 		cub(3) ; cud(1) ; TTY:write(lower..lower..upper)
 	end ,
-	['K'] = function (col,line)
+	['K'] = function ()
 		cud(1) ; TTY:write(both..' '..lower..upper)
 		cub(4) ; cud(1) ; TTY:write(both..upper..lower)
 		cub(3) ; cud(1) ; TTY:write(both..'  '..upper..lower)
 	end ,
-	['L'] = function (col,line)
+	['L'] = function ()
 		cud(1) ; TTY:write(both)
 		cub(1) ; cud(1) ; TTY:write(both)
 		cub(1) ; cud(1) ; TTY:write(both..lower..lower..lower)
 	end ,
-	['M'] = function (col,line)
+	['M'] = function ()
 		cud(1) ; TTY:write(both..lower..' '..lower..both)
 		cub(5) ; cud(1) ; TTY:write(both..' '..upper..' '..both)
 		cub(5) ; cud(1) ; TTY:write(both..'   '..both)
 	end ,
-	['N'] = function (col,line)
+	['N'] = function ()
 		cud(1) ; TTY:write(both..lower..'  '..both)
 		cub(5) ; cud(1) ; TTY:write(both..' '..upper..lower..both)
 		cub(5) ; cud(1) ; TTY:write(both..'   '..both)
 	end ,
-	['O'] = function (col,line)
+	['O'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['P'] = function (col,line)
+	['P'] = function ()
 		cud(1) TTY:write(both..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(both..lower..lower..upper)
 		cub(4) ; cud(1)  ; TTY:write(both)
 	end ,
-	['Q'] = function (col,line)
+	['Q'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..upper..lower)
 		cub(5) ; cud(1) ; TTY:write(both..'  '..lower..both)
 		cub(5) ; cud(1) ; TTY:write(upper..lower..both..upper..lower)
 	end ,
-	['R'] = function (col,line)
+	['R'] = function ()
 		cud(1) ; TTY:write(both..upper..upper..upper..lower)
 		cub(5) ; cud(1) ; TTY:write(both..upper..both..upper)
 		cub(4) ; cud(1) ; TTY:write(both..'  '..upper..both)
 	end ,
-	['S'] = function (col,line)
+	['S'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..upper)
 		cub(4) ; cud(1) ; TTY:write(' '..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(lower..lower..lower..upper)
 	end ,
-	['T'] = function (col,line)
+	['T'] = function ()
 		cud(1) ; TTY:write(upper..upper..both..upper..upper)
 		cub(3) ; cud(1) ; TTY:write(both)
 		cub(1) ; cud(1) ; TTY:write(both)
 	end ,
-	['U'] = function (col,line)
+	['U'] = function ()
 		cud(1) ; TTY:write(both..'  '..both)
 		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['V'] = function (col,line)
+	['V'] = function ()
 		cud(1) ; TTY:write(both..'   '..both)
 		cub(4) ; cud(1) ; TTY:write(both..' '..both)
 		cub(2) ; cud(1) ; TTY:write(both)
 	end ,
-	['W'] = function (col,line)
+	['W'] = function ()
 		cud(1) ; TTY:write(both..'   '..both)
 		cub(5) ; cud(1) ; TTY:write(both..' '..both..' '..both)
 		cub(5) ; cud(1) ; TTY:write(both..lower..upper..lower..both)
 	end ,
-	['X'] = function (col,line)
+	['X'] = function ()
 		cud(1) ; TTY:write(both..'   '..both)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..upper)
 		cub(4) ; cud(1) ; TTY:write(lower..upper..' '..upper..lower)
 	end ,
-	['Y'] = function (col,line)
+	['Y'] = function ()
 		cud(1) ; TTY:write(both..'   '..both)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..upper)
 		cub(2) ; cud(1)   ; TTY:write(both)
 	end ,
-	['Z'] = function (col,line)
+	['Z'] = function ()
 		cud(1) ; TTY:write(upper..upper..upper..both..upper)
 		cub(4) ; cud(1) ; TTY:write(lower..upper)
 		cub(3) ; cud(1) ; TTY:write(both..lower..lower..lower..lower)
 	end ,
-	['?'] = function (col,line)
+	['?'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..upper..lower)
 		cub(3) ; cud(1) ; TTY:write(lower..upper)
 		cub(2) ; cud(1) ; TTY:write(lower)
 	end ,
-	['!'] = function (col,line)
+	['!'] = function ()
 		cud(1) ; TTY:write(both)
 		cub(1) ; cud(1) ; TTY:write(both)
 		cub(1) ; cud(1) ; TTY:write(lower)
 	end ,
-	['.'] = function (col,line)
+	['.'] = function ()
 		cud(3) ; TTY:write(lower)
 	end ,
-	[','] = function (col,line)
+	[','] = function ()
 		cuf(1) ; cud(3) ; TTY:write(lower)
 		cub(2) ; cud(1) ; TTY:write(upper)
 	end ,
-	[':'] = function (col,line)
+	[':'] = function ()
 		cud(2) ; TTY:write(lower)
 		cub(1) ; cud(1) ; TTY:write(lower)
 	end ,
-	[';'] = function (col,line)
+	[';'] = function ()
 		cuf(1) ; cud(2) ; TTY:write(lower)
 		cub(1) ; cud(1) ; TTY:write(lower)
 		cub(2) ; cud(1) ; TTY:write(upper)
 	end ,
-	['0'] = function (col,line)
+	['0'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..upper..lower)
 		cub(5) ; cud(1) ; TTY:write(both..' '..lower..upper..both)
 		cub(5) ; cud(1) ; TTY:write(upper..both..lower..lower..upper)
 	end ,
-	['1'] = function (col,line)
+	['1'] = function ()
 		cud(1) ; TTY:write(lower..both)
 		cub(1) ; cud(1) ; TTY:write(both)
 		cub(2) ; cud(1) ; TTY:write(lower..both..lower)
 	end ,
-	['2'] = function (col,line)
+	['2'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..lower)
 		cub(2) ; cud(1) ; TTY:write(lower..upper)
 		cub(4) ; cud(1) ; TTY:write(lower..both..lower..lower)
 	end ,
-	['3'] = function (col,line)
+	['3'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..lower)
 		cub(2) ; cud(1) ; TTY:write(upper..lower)
 		cub(4) ; cud(1)   ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['4'] = function (col,line)
+	['4'] = function ()
 		cuf(1) ; cud(1) ; TTY:write(lower..both)
 		cub(3) ; cud(1) ; TTY:write(both..lower..both..lower)
 		cub(2) ; cud(1) ; TTY:write(both)
 	end ,
-	['5'] = function (col,line)
+	['5'] = function ()
 		cud(1) ; TTY:write(both..upper..upper..upper)
 		cub(4) ; cud(1) ; TTY:write(upper..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['6'] = function (col,line)
+	['6'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper)
 		cub(3) ; cud(1) ; TTY:write(both..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['7'] = function (col,line)
+	['7'] = function ()
 		cud(1) ; TTY:write(upper..upper..upper..both)
 		cub(2) ; cud(1) ; TTY:write(lower..upper)
 		cub(3) ; cud(1) ; TTY:write(both)
 	end ,
-	['8'] = function (col,line)
+	['8'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(lower..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['9'] = function (col,line)
+	['9'] = function ()
 		cud(1) ; TTY:write(lower..upper..upper..lower)
 		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..both)
 		cub(3) ; cud(1) ; TTY:write(lower..lower..upper)
 	end ,
-	['+'] = function (col,line)
+	['+'] = function ()
 		cud(2) ; TTY:write(lower..both..lower)
 		cub(2) ; cud(1) ; TTY:write(upper)
 	end ,
-	['-'] = function (col,line)
+	['-'] = function ()
 		cud(2) ; TTY:write(lower..lower..lower)
 	end ,
-	['='] = function (col,line)
+	['='] = function ()
 		cud(2) ; TTY:write(upper..upper..upper)
 		cub(3) ; cud(1) ; TTY:write(upper..upper..upper)
 	end ,
-	['/'] = function (col,line)
+	['/'] = function ()
 		cuf(3) ; cud(1) ; TTY:write(lower..both)
 		cub(4) ; cud(1) ; TTY:write(lower..both..upper)
 		cub(4) ; cud(1) ; TTY:write(both..upper)
 	end ,
-	['\\'] = function (col,line)
+	['\\'] = function ()
 		cud(1) ; TTY:write(both..lower)
 		cub(1) ; cud(1) ; TTY:write(upper..both..lower)
 		cub(1) ; cud(1) ; TTY:write(upper..both)
--- XXX
 	end ,
-	['*'] = function (col,line)
-		moveto(col+1, line-2)   ; TTY:write(lower..' '..lower)
-		moveto(col, line-1)   ; TTY:write(upper..lower..upper..lower..upper)
-		TTY:flush()
-		return c2width_4['*']
+	['*'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..' '..lower)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..upper..lower..upper)
 	end ,
-	['$'] = function (col,line)
-		moveto(col+1, line-2)   ; TTY:write(lower..both..lower)
-		moveto(col,   line-1)   ; TTY:write(upper..lower..both..lower)
-		moveto(col,   line)     ; TTY:write(lower..lower..both..lower..upper)
-		moveto(col+2, line+1)   ; TTY:write(upper)
-		TTY:flush()
-		return c2width_4['$']
+	['$'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..both..lower)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..both..lower)
+		cub(4) ; cud(1) ; TTY:write(lower..lower..both..lower..upper)
+		cub(3) ; cud(1) ; TTY:write(upper)
 	end ,
-	['#'] = function (col,line)
-		moveto(col+1, line-2)   ; TTY:write(both..' '..both)
-		moveto(col,   line-1)   ; TTY:write(upper..both..upper..both..upper)
-		moveto(col,   line)     ; TTY:write(upper..both..upper..both..upper)
-		moveto(col+1, line+1)   ; TTY:write(upper..' '..upper)
-		TTY:flush()
-		return c2width_4['#']
+	['#'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(both..' '..both)
+		cub(4) ; cud(1) ; TTY:write(upper..both..upper..both..upper)
+		cub(5) ; cud(1) ; TTY:write(upper..both..upper..both..upper)
+		cub(4) ; cud(1) ; TTY:write(upper..' '..upper)
 	end ,
-	['_'] = function (col,line)
-		moveto(col, line+1)   ; TTY:write(upper..upper..upper..upper)
-		TTY:flush()
-		return c2width_4['_']
+	['_'] = function ()
+		cuf(1) ; cud(4) ; TTY:write(upper..upper..upper..upper)
 	end ,
-	['('] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..upper)
-		moveto(col,   line-1)  ; TTY:write(both..both)
-		moveto(col,   line)    ; TTY:write(upper..both)
-		moveto(col+2, line+1)  ; TTY:write(upper)
-		TTY:flush()
-		return c2width_4['(']
+	['('] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..upper)
+		cub(3) ; cud(1) ; TTY:write(both..both)
+		cub(2) ; cud(1) ; TTY:write(upper..both)
+		cud(1) ; TTY:write(upper)
 	end ,
-	[')'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(upper..lower)
-		moveto(col+1, line-1)  ; TTY:write(both..both)
-		moveto(col+1, line)    ; TTY:write(both..upper)
-		moveto(col,   line+1)  ; TTY:write(upper)
-		TTY:flush()
-		return c2width_4[')']
+	[')'] = function ()
+		cud(1) ; TTY:write(upper..lower)
+		cub(1) ; cud(1) ; TTY:write(both..both)
+		cub(2) ; cud(1) ; TTY:write(both..upper)
+		cub(3) ; cud(1) ; TTY:write(upper)
 	end ,
-	['['] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(both..upper)
-		moveto(col,   line-1)  ; TTY:write(both)
-		moveto(col,   line)    ; TTY:write(both)
-		moveto(col,   line+1)  ; TTY:write(upper..upper)
-		TTY:flush()
-		return c2width_4['[']
+	['['] = function ()
+		cud(1) ; TTY:write(both..upper)
+		cub(2) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(upper..upper)
 	end ,
-	[']'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(upper..both)
-		moveto(col+1, line-1)  ; TTY:write(both)
-		moveto(col+1, line)    ; TTY:write(both)
-		moveto(col,   line+1)  ; TTY:write(upper..upper)
-		TTY:flush()
-		return c2width_4[']']
+	[']'] = function ()
+		cud(1) ; TTY:write(upper..both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(2) ; cud(1) ; TTY:write(upper..upper)
 	end ,
-	['{'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(both..upper)
-		moveto(col,   line-1)  ; TTY:write(lower..both)
-		moveto(col+1, line)    ; TTY:write(both)
-		moveto(col+1, line+1)  ; TTY:write(upper..upper)
-		TTY:flush()
-		return c2width_4['{']
+	['{'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(both..upper)
+		cub(3) ; cud(1) ; TTY:write(lower..both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(upper..upper)
 	end ,
-	['}'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(upper..both)
-		moveto(col+1, line-1)  ; TTY:write(both..lower)
-		moveto(col+1, line)    ; TTY:write(both)
-		moveto(col,   line+1)  ; TTY:write(upper..upper)
-		TTY:flush()
-		return c2width_4['}']
+	['}'] = function ()
+		cud(1) ; TTY:write(upper..both)
+		cub(1) ; cud(1) ; TTY:write(both..lower)
+		cub(2) ; cud(1) ; TTY:write(both)
+		cub(2) ; cud(1) ; TTY:write(upper..upper)
 	end ,
-	["'"] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(both)
-		TTY:flush()
-		return c2width_4["'"]
+	["'"] = function ()
+		cud(1) ; TTY:write(both)
 	end ,
-	['"'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(both..' '..both)
-		TTY:flush()
-		return c2width_4['"']
+	['"'] = function ()
+		cud(1) ; TTY:write(both..' '..both)
 	end ,
-	['~'] = function (col,line)
-		moveto(col,   line-1)  ; TTY:write(lower..upper..lower..' '..lower)
-		moveto(col+3, line)    ; TTY:write(upper)
-		TTY:flush()
-		return c2width_4['~']
+	['~'] = function ()
+		cud(2) ; TTY:write(lower..upper..lower..' '..lower)
+		cub(2) ; cud(1) ; TTY:write(upper)
 	end ,
-	['|'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(both)
-		moveto(col,   line-1)  ; TTY:write(both)
-		moveto(col,   line)    ; TTY:write(both)
-		moveto(col,   line+1)  ; TTY:write(upper)
-		TTY:flush()
-		return c2width_4['|']
+	['|'] = function ()
+		cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(upper)
 	end ,
-	['^'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..upper..lower)
-		moveto(col,   line-1)  ; TTY:write(upper..'   '..upper)
-		TTY:flush()
-		return c2width_4['^']
+	['^'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..upper..lower)
+		cub(4) ; cud(1) ; TTY:write(upper..'   '..upper)
 	end ,
-	['>'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower)
-		moveto(col+1, line-1)  ; TTY:write(upper..lower)
-		moveto(col,   line)   ; TTY:write(lower..upper)
-		TTY:flush()
-		return c2width_4['>']
+	['>'] = function ()
+		cud(1) ; TTY:write(lower)
+		cud(1) ; TTY:write(upper..lower)
+		cub(3) ; cud(1) ; TTY:write(lower..upper)
 	end ,
-	['<'] = function (col,line)
-		moveto(col+2, line-2)  ; TTY:write(lower)
-		moveto(col,   line-1)  ; TTY:write(lower..upper)
-		moveto(col+1, line)    ; TTY:write(upper..lower)
-		TTY:flush()
-		return c2width_4['<']
+	['<'] = function ()
+		cuf(2) ; cud(1) ; TTY:write(lower)
+		cub(3) ; cud(1) ; TTY:write(lower..upper)
+		cub(1) ; cud(1) ; TTY:write(upper..lower)
 	end ,
-	['@'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..upper..upper..upper..lower)
-		moveto(col,   line-1)  ; TTY:write(both..' '..both..lower..upper)
-		moveto(col,   line)    ; TTY:write(upper..lower..lower..lower)
-		TTY:flush()
-		return c2width_4['@']
+	['@'] = function ()
+		cud(1) ; TTY:write(lower..upper..upper..upper..lower)
+		cub(5) ; cud(1) ; TTY:write(both..' '..both..lower..upper)
+		cub(5) ; cud(1) ; TTY:write(upper..lower..lower..lower)
 	end ,
-	['%'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(upper..'  '..both)
-		moveto(col+1, line-1)  ; TTY:write(lower..both..upper)
-		moveto(col,   line)    ; TTY:write(both..'  '..lower)
-		TTY:flush()
-		return c2width_4['%']
+	['%'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(upper..'  '..both)
+		cub(4) ; cud(1) ; TTY:write(lower..both..upper)
+		cub(4) ; cud(1) ; TTY:write(both..'  '..lower)
 	end ,
-	['&'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..upper..lower)
-		moveto(col,   line-1)  ; TTY:write(lower..upper..upper..lower)
-		moveto(col,   line)    ; TTY:write(upper..lower..upper..upper..lower)
-		TTY:flush()
-		return c2width_4['&']
+	['&'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..upper..lower)
+		cub(4) ; cud(1) ; TTY:write(lower..upper..upper..lower)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..upper..upper..lower)
 	end ,
-	['a'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower..' '..lower)
-		moveto(col,   line-1)  ; TTY:write(both..'  '..upper..both)
-		moveto(col,   line)    ; TTY:write(upper..lower..lower..upper..both)
-		TTY:flush()
-		return c2width_4['a']
+	['a'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower..' '..lower)
+		cub(5) ; cud(1) ; TTY:write(both..'  '..upper..both)
+		cub(5) ; cud(1) ; TTY:write(upper..lower..lower..upper..both)
 	end ,
-	['b'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(both..lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both..' '..upper..both)
-		moveto(col,   line)    ; TTY:write(both..lower..both..upper)
-		TTY:flush()
-		return c2width_4['b']
+	['b'] = function ()
+		cud(1) ; TTY:write(both..lower..lower)
+		cub(3) ; cud(1) ; TTY:write(both..' '..upper..both)
+		cub(4) ; cud(1) ; TTY:write(both..lower..both..upper)
 	end ,
-	['c'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both)
-		moveto(col,   line)    ; TTY:write(upper..lower..lower)
-		TTY:flush()
-		return c2width_4['c']
+	['c'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower)
+		cub(3) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(upper..lower..lower)
 	end ,
-	['d'] = function (col,line)
-		moveto(col+3, line-2)  ; TTY:write(both)
-		moveto(col,   line-1)  ; TTY:write(lower..upper..upper..both)
-		moveto(col,   line)    ; TTY:write(upper..lower..lower..both)
-		TTY:flush()
-		return c2width_4['d']
+	['d'] = function ()
+		cuf(3) ; cud(1) ; TTY:write(both)
+		cub(4) ; cud(1) ; TTY:write(lower..upper..upper..both)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..both)
 	end ,
-	['e'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both..lower..lower..both)
-		moveto(col,   line)    ; TTY:write(upper..lower..lower)
-		TTY:flush()
-		return c2width_4['e']
+	['e'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower)
+		cub(3) ; cud(1) ; TTY:write(both..lower..lower..both)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..lower)
 	end ,
-	['f'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..upper)
-		moveto(col,   line-1)  ; TTY:write(lower..both..lower)
-		moveto(col+1, line)    ; TTY:write(both)
-		moveto(col,   line+1)  ; TTY:write(upper)
-		TTY:flush()
-		return c2width_4['f']
+	['f'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..upper)
+		cub(3) ; cud(1) ; TTY:write(lower..both..lower)
+		cub(2) ; cud(1) ; TTY:write(both)
+		cub(2) ; cud(1) ; TTY:write(upper)
 	end ,
-	['g'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both..'  '..both)
-		moveto(col+1, line)    ; TTY:write(upper..upper..both)
-		moveto(col,   line+1)  ; TTY:write(upper..upper..upper)
-		TTY:flush()
-		return c2width_4['g']
+	['g'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower..lower)
+		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
+		cub(3) ; cud(1) ; TTY:write(upper..upper..both)
+		cub(4) ; cud(1) ; TTY:write(upper..upper..upper)
 	end ,
-	['h'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(both)
-		moveto(col,   line-1)  ; TTY:write(both..upper..upper..lower)
-		moveto(col,   line)    ; TTY:write(both..'  '..both)
-		TTY:flush()
-		return c2width_4['h']
+	['h'] = function ()
+		cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both..upper..upper..lower)
+		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
 	end ,
-	['i'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(upper)
-		moveto(col,   line-1)  ; TTY:write(both)
-		moveto(col,   line)    ; TTY:write(both)
-		TTY:flush()
-		return c2width_4['i']
+	['i'] = function ()
+		cud(1) ; TTY:write(upper)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both)
 	end ,
-	['j'] = function (col,line)
-		moveto(col+2, line-2)  ; TTY:write(upper)
-		moveto(col+2, line-1)  ; TTY:write(both)
-		moveto(col+2, line)    ; TTY:write(both)
-		moveto(col,   line+1)  ; TTY:write(upper..upper)
-		TTY:flush()
-		return c2width_4['j']
+	['j'] = function ()
+		cuf(2) ; cud(1) ; TTY:write(upper)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(3) ; cud(1) ; TTY:write(upper..upper)
 	end ,
-	['k'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(both)
-		moveto(col,   line-1)  ; TTY:write(both..lower..upper)
-		moveto(col,   line)    ; TTY:write(both..' '..upper..lower)
-		TTY:flush()
-		return c2width_4['k']
+	['k'] = function ()
+		cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both..lower..upper)
+		cub(3) ; cud(1) ; TTY:write(both..' '..upper..lower)
 	end ,
-	['l'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(upper..both)
-		moveto(col+1, line-1)  ; TTY:write(both)
-		moveto(col+1, line)    ; TTY:write(both)
-		TTY:flush()
-		return c2width_4['l']
+	['l'] = function ()
+		cud(1) ; TTY:write(upper..both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both)
 	end ,
-	['m'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both..' '..both..' '..both)
-		moveto(col,   line)    ; TTY:write(both..'   '..both)
-		TTY:flush()
-		return c2width_4['m']
+	['m'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower..lower)
+		cub(4) ; cud(1) ; TTY:write(both..' '..both..' '..both)
+		cub(5) ; cud(1) ; TTY:write(both..'   '..both)
 	end ,
-	['n'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both..'  '..both)
-		moveto(col,   line)    ; TTY:write(both..'  '..both)
-		TTY:flush()
-		return c2width_4['n']
+	['n'] = function ()
+		cud(1) ; TTY:write(lower..lower..lower)
+		cub(3) ; cud(1) ; TTY:write(both..'  '..both)
+		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
 	end ,
-	['o'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both..'  '..both)
-		moveto(col,   line)    ; TTY:write(upper..lower..lower..upper)
-		TTY:flush()
-		return c2width_4['o']
+	['o'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower)
+		cub(3) ; cud(1) ; TTY:write(both..'  '..both)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['p'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both..'  '..both)
-		moveto(col,   line)    ; TTY:write(both..upper..upper)
-		moveto(col,   line+1)  ; TTY:write(upper)
-		TTY:flush()
-		return c2width_4['p']
+	['p'] = function ()
+		cud(1) ; TTY:write(lower..lower..lower)
+		cub(3) ; cud(1) ; TTY:write(both..'  '..both)
+		cub(4) ; cud(1) ; TTY:write(both..upper..upper)
+		cub(3) ; cud(1) ; TTY:write(upper)
 	end ,
-	['q'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both..'  '..both)
-		moveto(col+1, line)    ; TTY:write(upper..upper..both)
-		moveto(col+3, line+1)  ; TTY:write(upper)
-		TTY:flush()
-		return c2width_4['q']
+	['q'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower..lower)
+		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
+		cub(3) ; cud(1) ; TTY:write(upper..upper..both)
+		cub(1) ; cud(1) ; TTY:write(upper)
 	end ,
-	['r'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower)
-		moveto(col,   line-1)  ; TTY:write(both)
-		moveto(col,   line)    ; TTY:write(both)
-		TTY:flush()
-		return c2width_4['r']
+	['r'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower)
+		cub(3) ; cud(1) ; TTY:write(both)
+		cub(1) ; cud(1) ; TTY:write(both)
 	end ,
-	['s'] = function (col,line)
-		moveto(col+1, line-2)  ; TTY:write(lower..lower..lower)
-		moveto(col,   line-1)  ; TTY:write(upper..lower..lower)
-		moveto(col,   line)    ; TTY:write(lower..lower..lower..upper)
-		TTY:flush()
-		return c2width_4['s']
+	['s'] = function ()
+		cuf(1) ; cud(1) ; TTY:write(lower..lower..lower)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..lower)
+		cub(3) ; cud(1) ; TTY:write(lower..lower..lower..upper)
 	end ,
-	['t'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower)
-		moveto(col,   line-1)  ; TTY:write(both..upper)
-		moveto(col,   line)    ; TTY:write(upper..lower..lower)
-		TTY:flush()
-		return c2width_4['t']
+	['t'] = function ()
+		cud(1) ; TTY:write(lower)
+		cub(1) ; cud(1) ; TTY:write(both..upper)
+		cub(2) ; cud(1) ; TTY:write(upper..lower..lower)
 	end ,
-	['u'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..'  '..lower)
-		moveto(col,   line-1)  ; TTY:write(both..'  '..both)
-		moveto(col,   line)    ; TTY:write(upper..lower..lower..upper)
-		TTY:flush()
-		return c2width_4['u']
+	['u'] = function ()
+		cud(1) ; TTY:write(lower..'  '..lower)
+		cub(4) ; cud(1) ; TTY:write(both..'  '..both)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..upper)
 	end ,
-	['v'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..'   '..lower)
-		moveto(col,   line-1)  ; TTY:write(upper..lower..' '..lower..upper)
-		moveto(col+1, line)    ; TTY:write(upper..lower..upper)
-		TTY:flush()
-		return c2width_4['v']
+	['v'] = function ()
+		cud(1) ; TTY:write(lower..'   '..lower)
+		cub(5) ; cud(1) ; TTY:write(upper..lower..' '..lower..upper)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..upper)
 	end ,
-	[' '] = function (col,line)
+	[' '] = function ()
 		return c2width_4[' ']
 	end ,
-	['w'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..' '..lower..' '..lower)
-		moveto(col,   line-1)  ; TTY:write(both..' '..both..' '..both)
-		moveto(col,   line)    ; TTY:write(upper..lower..upper..lower..upper)
-		TTY:flush()
-		return c2width_4['w']
+	['w'] = function ()
+		cud(1) ; TTY:write(lower..' '..lower..' '..lower)
+		cub(5) ; cud(1) ; TTY:write(both..' '..both..' '..both)
+		cub(5) ; cud(1) ; TTY:write(upper..lower..upper..lower..upper)
 	end ,
-	['x'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..'   '..lower)
-		moveto(col+1, line-1)  ; TTY:write(upper..lower..upper)
-		moveto(col,   line)    ; TTY:write(lower..upper..' '..upper..lower)
-		TTY:flush()
-		return c2width_4['x']
+	['x'] = function ()
+		cud(1) ; TTY:write(lower..'   '..lower)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..upper)
+		cub(4) ; cud(1) ; TTY:write(lower..upper..' '..upper..lower)
 	end ,
-	['y'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..'  '..lower)
-		moveto(col,   line-1)  ; TTY:write(upper..lower..lower..both)
-		moveto(col+3, line)    ; TTY:write(both)
-		moveto(col,   line+1)  ; TTY:write(upper..upper..upper)
-		TTY:flush()
-		return c2width_4['y']
+	['y'] = function ()
+		cud(1) ; TTY:write(lower..'  '..lower)
+		cub(4) ; cud(1) ; TTY:write(upper..lower..lower..both)
+		cub(1) ; cud(1) ; TTY:write(both)
+		cub(4) ; cud(1) ; TTY:write(upper..upper..upper)
 	end ,
-	['z'] = function (col,line)
-		moveto(col,   line-2)  ; TTY:write(lower..lower..lower..lower)
-		moveto(col+2, line-1)  ; TTY:write(lower..upper)
-		moveto(col,   line)    ; TTY:write(lower..both..lower..lower)
-		TTY:flush()
-		return c2width_4['z']
+	['z'] = function ()
+		cud(1) ; TTY:write(lower..lower..lower..lower)
+		cub(2) ; cud(1) ; TTY:write(lower..upper)
+		cub(4) ; cud(1) ; TTY:write(lower..both..lower..lower)
+-- XXX
 	end ,
 
 
@@ -1789,8 +1694,8 @@ local function show_2 (col,line, str, colour)
 end
 
 local function show_4 (col,line, str, colour)
-	col = round(col)
-	line = round(line) + 3   -- 0.5 XXX will revert this !
+	col = round(col) ; line = round(line)
+	moveto(col, line)
 	str = utf2iso(str) -- the string has to be either iso OR utf, not a mix !
 	-- str = string.gsub(str, '\194', '')
 	-- str = string.gsub(str, '\195(.)', '') -- see p.210, add 128 to byte(.)
@@ -1803,17 +1708,14 @@ local function show_4 (col,line, str, colour)
 			if  (concave_right[previous_c] and convex_left[c])
 			  or (convex_right[previous_c] and concave_left[c])
 			  or is_good_fit_4(previous_c, c)  then
-				col = col - 1
+				cub(1)
 			end
 		end
--- XXX
-moveto(col, line) ; sc()
-		local func = c2func_4[c]
-		if not func then return 0,0 end
-		fg_color(colour) ; func(col, line)
+		local func = c2func_4[c] ; if not func then return 0,0 end
+		fg_color(colour) ; sc() ; func()
 		local charwidth = c2width_4[c] or 0
+		rc() ; cuf(charwidth)
 		width = width + charwidth
-		col = col + charwidth
 		if c2height_4[c] then height = c2height_4[c] end
 		previous_c = c
 	end

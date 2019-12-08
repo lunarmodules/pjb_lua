@@ -131,7 +131,7 @@ x = x + TIF.show(x, y, '-', 'red')
 x = x + TIF.show(x, y, '8', 'black')
 x = x + TIF.show(x, y, '=', 'red')
 x = x + TIF.show(x, y, '9', 'green')
-x=0 ; y = y + 8
+x=0 ; y = y + 4
 x = x + TIF.show(x, y, '*', 'blue')
 x = x + TIF.show(x, y, '$', 'red')
 x = x + TIF.show(x, y, '#', 'green')
@@ -151,7 +151,7 @@ x = x + TIF.show(x, y, '}', 'green')
 x = x + TIF.show(x, y, '~', 'blue')
 x = x + TIF.show(x, y, '^', 'red')
 x = x + TIF.show(x, y, '>', 'green')
-x=0 ; y = y + 8
+x=0 ; y = y + 4
 x = x + TIF.show(x, y, '<', 'blue')
 x = x + TIF.show(x, y, '@', 'red')
 x = x + TIF.show(x, y, '%', 'green')
@@ -166,8 +166,8 @@ x = x + TIF.show(x, y, 'g', 'red')
 x = x + TIF.show(x, y, 'h', 'green')
 x = x + TIF.show(x, y, 'i', 'blue')
 x = x + TIF.show(x, y, 'j', 'red')
-x = x + TIF.show(x, y, 'k', 'red')
 x = x + TIF.show(x, y, 'l', 'green')
+x = x + TIF.show(x, y, 'k', 'red')
 x=0 ; y = y + 4
 x = x + TIF.show(x, y, 'm', 'blue')
 x = x + TIF.show(x, y, 'n', 'violet')
@@ -181,7 +181,7 @@ x = x + TIF.show(x, y, 'u', 'blue')
 x = x + TIF.show(x, y, 'v', 'violet')
 x = x + TIF.show(x, y, 'w', 'red')
 x = x + TIF.show(x, y, 'x', 'green')
-x = x + TIF.show(x, y, 'y', 'blue')
+x = x + TIF.show(x, y, 'y ', 'blue')
 x = x + TIF.show(x, y, 'z', 'violet')
 x=0 ; y = y + 4
 dx,dy = TIF.show(x+2, y, '(o)[-]{+}(co)kokc', 'blue') ; y = y+dy
@@ -189,14 +189,13 @@ dx,dy = TIF.show(x+2, y, '(o)[-]{+}(co)kokc', 'blue') ; y = y+dy
 -- dx,dy = TIF.show(0,y, 'Back to the vt100 !  ', 'red') ; x = x+dx
 -- dx,dy = TIF.show(x,y, string.format('dx = %d  dy = %d', dx,dy), 'black')
 TIF.setfontsize(1)
--- print(' y =',y,'dx,dy =',dx,dy)
 TIF.bold() ; dx,dy = TIF.centreshow(y, 'The Title', 'red')  ; y = y+dy
 TIF.setfontsize(2)
-TIF.bold() ; dx,dy = TIF.centreshow(y, 'The Title', 'blue') ; y = y+dy-1
+TIF.bold() ; dx,dy = TIF.centreshow(y, 'The Title', 'blue') ; y = y+dy
 TIF.setfontsize(4)
 dx,dy = TIF.centreshow(y, 'The Title', 'violet') ; y = y+dy
--- TIF.setfontsize(7)
--- dx,dy = TIF.centreshow(y, 'The Title', 'red') ; y = y+dy
+TIF.setfontsize(7)
+dx,dy = TIF.centreshow(y, 'The Title', 'red') ; y = y+dy
 
 tmp = io.stdin:read('l')
 TIF.sgr0() ; TIF.cnorm() ; TIF.moveto(0, TIF.lines-1)
