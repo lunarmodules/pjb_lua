@@ -15,12 +15,12 @@ local function warn(str)
     io.stderr:write(str,'\n')
 end
 local function die(str)
-    io.stderr:write(str,'\n')
-    os.exit(1)
+	io.stderr:write(str,'\n')
+	os.exit(1)
 end
 local function round(x)
-    if not x then return nil end
-    return math.floor(x+0.5)
+	if not x then return nil end
+	return math.floor(x+0.5)
 end
 
 -- https://en.wikipedia.org/wiki/List_of_prime_numbers
@@ -151,48 +151,62 @@ BernouilliNums = {
 }
 
 local function tab2numden (rat)
-    if type(rat) == 'number' then return round(rat), 1  end
-    if type(rat) ~= 'table' then
-        return nil,'argument must be a table, not a '..type(rat)
-    end
-    local numer, denom
-    if #rat == 3 then numer = rat[2] + rat[1]*rat[3] ; denom = rat[3]
-    elseif #rat == 2 then numer = rat[1] ; denom = rat[2]
-    else return nil, 'table argument size was '..tostring(#rat)
-    end
-    if denom == 0 then return nil, 'denominator must not be zero' end
+	if type(rat) == 'number' then return round(rat), 1  end
+	if type(rat) ~= 'table' then
+		return nil,'argument must be a table, not a '..type(rat)
+	end
+	local numer, denom
+	if #rat == 3 then numer = rat[2] + rat[1]*rat[3] ; denom = rat[3]
+	elseif #rat == 2 then numer = rat[1] ; denom = rat[2]
+	else return nil, 'table argument size was '..tostring(#rat)
+	end
+	if denom == 0 then return nil, 'denominator must not be zero' end
 	return numer, denom
 end
 
 local function tab2intnumden (rat)
-    if type(rat) == 'number' then return rat, 0, 1  end
-    if type(rat) ~= 'table' then
-        return nil,'argument must be a table, not a '..type(rat)
-    end
-    local integ = 0
-    local numer, denom
-    if #rat == 3 then integ = rat[1] ; numer = rat[2] ; denom = rat[3]
-    elseif #rat == 2 then numer = rat[1] ; denom = rat[2]
-    else return nil, 'table argument size was '..tostring(#rat)
-    end
-    if denom == 0 then return nil, 'denominator must not be zero' end
+	if type(rat) == 'number' then return rat, 0, 1  end
+	if type(rat) ~= 'table' then
+		return nil,'argument must be a table, not a '..type(rat)
+	end
+	local integ = 0
+	local numer, denom
+	if #rat == 3 then integ = rat[1] ; numer = rat[2] ; denom = rat[3]
+	elseif #rat == 2 then numer = rat[1] ; denom = rat[2]
+	else return nil, 'table argument size was '..tostring(#rat)
+	end
+	if denom == 0 then return nil, 'denominator must not be zero' end
 	return integ, numer, denom
+end
+
+local tointeger = math.tointeger or round
+local function gcd (small, big) -- see ~/lua/modular_arithmetic/urls.html
+	small = tointeger(small)
+	big   = tointeger(big)
+	if small == big then return small end
+	if small > big then small, big = big, small end
+	local remainder
+	while true do
+		remainder = big % small
+		if remainder == 0 then return small end
+		big = small ; small = remainder
+	end
 end
 
 ------------------------ EXPORT stuff ---------------------------
 
 function M.is_prime (n)
-    for i,p in ipairs(Primes) do
-        if n%p == 0 then return false end
-        if p*p > n then return true end
-    end
-    return nil, "sorry, can't test numbers as big as "..tostring(n)
+	for i,p in ipairs(Primes) do
+		if n%p == 0 then return false end
+		if p*p > n then return true end
+	end
+	return nil, "sorry, can't test numbers as big as "..tostring(n)
 end
 
 function M.factorial (n)
-    local f = 1
-    for i = 2,n do f = f * i end
-    return f
+	local f = 1
+	for i = 2,n do f = f * i end
+	return f
 end
 
 -- math.tointeger (x)
@@ -225,7 +239,7 @@ function M.binomial (n, r)   -- 20191014 tweaking for speed and robustness
 		return 1.0 * product
 	end
 	if math.type(n) == 'integer' then   -- n is an integer
-    	if 2*r > n then r = n - r end
+		if 2*r > n then r = n - r end
 		local numerators = {}
 		for i = 0, r-1 do numerators[i+1] = n - i end
 		local couldnt_be_found = 1
@@ -351,10 +365,15 @@ function M.cancel(rat)
 		-- if integ ~= 0, we might reduce numer and increment integ ...
 	end
 	if numer > 0 and denom < 0 then numer = 0-numer ; denom = 0-denom end
-
 	if integ == 0 then return { numer, denom }
 	else return { integ, numer, denom }  -- should integerise this
 	end
+end
+-- 20200220 to benchmark against cancel: using the euclidian algorithm
+function M.cancel2(rat)
+	local numer, denom = tab2numden(rat)
+	local g = gcd(numer,denom)
+	return { round(numer/g), round(denom/g) }
 end
 
 function M.add(...)

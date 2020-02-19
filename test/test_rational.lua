@@ -95,6 +95,11 @@ if not ok(rc[1]==3 and rc[2]==2, 'cancel({189,126}) returns {3,2}') then
 	print(rc[1], rc[2], rc[3])
 end
 
+rc = RA.cancel2({ 189, 126 })
+if not ok(rc[1]==3 and rc[2]==2, 'cancel2({189,126}) returns {3,2}') then
+	print(rc[1], rc[2], rc[3])
+end
+
 rc = RA.cancel({ 98, 294 })
 if not ok(rc[1]==1 and rc[2]==3, 'cancel({98,294}) returns {1,3}') then
 	print(rc[1], rc[2], rc[3])
@@ -104,6 +109,11 @@ rc = RA.cancel({ -98, 294 })
 if not ok(rc[1]==-1 and rc[2]==3, 'cancel({-98,294}) returns {-1,3}') then
 	print(rc[1], rc[2], rc[3])
 end
+rc = RA.cancel2({ -98, 294 })
+if not ok(rc[1]==-1 and rc[2]==3, 'cancel2({-98,294}) returns {-1,3}') then
+	print(rc[1], rc[2], rc[3])
+end
+os.exit()
 
 rc = RA.cancel({ 98, -294 })
 if not ok(rc[1]==-1 and rc[2]==3, 'cancel({98,-294}) returns {-1,3}') then
