@@ -316,6 +316,7 @@ function M.polygonal_num(k, n)  -- the n't k-agonal number
 end
 
 function M.cancel(rat)
+	-- 20200220 but alas, the cancellation is incomplete
 	local integ, numer, denom = tab2intnumden(rat)
 	if not integ then return nil, 'cancel: '..numer end
 	-- print(index,numer,denom)
@@ -334,27 +335,32 @@ function M.cancel(rat)
 			greater = round(greater / lesser)
 			lesser = 1
 		else
+			-- local biggest_p = math.sqrt(math.abs(lesser))
+			local biggest_p = math.abs(lesser)
+			eps = 0.0000001
 			for i,p in ipairs(Primes) do
-				if p > math.sqrt(lesser) then break end
+				if p > biggest_p then break end
 				while true do
 					local found = false
-					if lesser%p == 0 then
-						local quotient = round(lesser/p)
+-- print('p =',p,'lesser',lesser)
+					if lesser%p == 0  then
+						-- local quotient = round(lesser/p)
 						-- need separate tests, because
 						-- quotient might divide greater even if p does not.
-						if greater%p == 0 then
+						if greater%p == 0  then
 							found = true
-							lesser  = round(lesser / p)
+							lesser  = round(lesser  / p)
 							greater = round(greater / p)
 						end
-						if greater%quotient == 0 then
-							-- found = true  -- causes infinite loop; why ?
-							lesser  = round(lesser / quotient)
-							greater = round(greater / quotient)
-						end
+						-- if greater%quotient == 0 then
+						-- 	-- found = true  -- causes infinite loop; why ?
+						-- 	lesser  = round(lesser  / quotient)
+						-- 	greater = round(greater / quotient)
+						-- end
 					end
-					if not found then break end
+					if not found then break end  -- try the next prime
 				end
+				-- if not found then break end
 			end
 		end
 		if numer < denom then
@@ -369,11 +375,18 @@ function M.cancel(rat)
 	else return { integ, numer, denom }  -- should integerise this
 	end
 end
--- 20200220 to benchmark against cancel: using the euclidian algorithm
-function M.cancel2(rat)
+function M.cancel2(rat)  -- uses the euclidian algorithm
+	-- 20200220 surprisingly,
 	local numer, denom = tab2numden(rat)
+	local is_positive = true
+	if numer < 0 then numer = 0-numer ; is_positive = false end
+	if denom < 0 then denom = 0-denom ; is_positive = not is_positive end
 	local g = gcd(numer,denom)
-	return { round(numer/g), round(denom/g) }
+	if is_positive then
+		return { round(numer/g), round(denom/g) }
+	else
+		return { 0-round(numer/g), round(denom/g) }
+	end
 end
 
 function M.add(...)

@@ -113,7 +113,6 @@ rc = RA.cancel2({ -98, 294 })
 if not ok(rc[1]==-1 and rc[2]==3, 'cancel2({-98,294}) returns {-1,3}') then
 	print(rc[1], rc[2], rc[3])
 end
-os.exit()
 
 rc = RA.cancel({ 98, -294 })
 if not ok(rc[1]==-1 and rc[2]==3, 'cancel({98,-294}) returns {-1,3}') then
@@ -439,3 +438,27 @@ if not ok(rc[1]==should_be[1] and rc[2]==should_be[2]
 	print('  was', table.concat(rc,','), ' should be', s)
 end
 
+for i = 3000,5000 do
+	for j = 2000,2500 do
+		g  = RA.cancel({i,j})
+		g2 = RA.cancel2({i,j})
+		if g[1] ~= g2[1] or g[2] ~= g2[2] then
+			print('i =',i,' j =',j,' g =',g[1],g[2],' g2 =',g2[1],g2[2])
+			-- os.exit()
+		end
+	end
+end
+-- benchmark cancel against cancel2
+start = os.clock()
+for i = 3000,5000 do
+	for j = 2000,2500 do g = RA.cancel(i,j) end
+end
+finish = os.clock()
+print('cancel  ', finish-start)
+
+start = os.clock()
+for i = 3000,5000 do
+	for j = 2000,2500 do g = RA.cancel2(i,j) end
+end
+finish = os.clock()
+print('cancel2 ', finish-start)
