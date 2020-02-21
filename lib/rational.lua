@@ -342,25 +342,14 @@ function M.cancel(rat)
 				if p > biggest_p then break end
 				while true do
 					local found = false
--- print('p =',p,'lesser',lesser)
-					if lesser%p == 0  then
-						-- local quotient = round(lesser/p)
-						-- need separate tests, because
-						-- quotient might divide greater even if p does not.
-						if greater%p == 0  then
+					if lesser%p == 0 and greater%p == 0  then
 							found = true
 							lesser  = round(lesser  / p)
 							greater = round(greater / p)
 						end
-						-- if greater%quotient == 0 then
-						-- 	-- found = true  -- causes infinite loop; why ?
-						-- 	lesser  = round(lesser  / quotient)
-						-- 	greater = round(greater / quotient)
-						-- end
 					end
 					if not found then break end  -- try the next prime
 				end
-				-- if not found then break end
 			end
 		end
 		if numer < denom then
