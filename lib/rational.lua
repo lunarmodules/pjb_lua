@@ -316,7 +316,6 @@ function M.polygonal_num(k, n)  -- the n't k-agonal number
 end
 
 function M.cancel(rat)
-	-- 20200220 but alas, the cancellation is incomplete
 	local integ, numer, denom = tab2intnumden(rat)
 	if not integ then return nil, 'cancel: '..numer end
 	-- print(index,numer,denom)
@@ -335,9 +334,7 @@ function M.cancel(rat)
 			greater = round(greater / lesser)
 			lesser = 1
 		else
-			-- local biggest_p = math.sqrt(math.abs(lesser))
 			local biggest_p = math.abs(lesser)
-			eps = 0.0000001
 			for i,p in ipairs(Primes) do
 				if p > biggest_p then break end
 				while true do
@@ -346,9 +343,11 @@ function M.cancel(rat)
 							found = true
 							lesser  = round(lesser  / p)
 							greater = round(greater / p)
-						end
 					end
 					if not found then break end  -- try the next prime
+				end
+				if i == #Primes then -- invoke cancel2 to finish the job
+					return M.cancel2({ numer, denom })   -- 20200222
 				end
 			end
 		end
@@ -359,13 +358,13 @@ function M.cancel(rat)
 		end
 		-- if integ ~= 0, we might reduce numer and increment integ ...
 	end
-	if numer > 0 and denom < 0 then numer = 0-numer ; denom = 0-denom end
+	if denom < 0 then numer = 0-numer ; denom = 0-denom end  -- 20200222
 	if integ == 0 then return { numer, denom }
 	else return { integ, numer, denom }  -- should integerise this
 	end
 end
 function M.cancel2(rat)  -- uses the euclidian algorithm
-	-- 20200220 surprisingly,
+	-- 20200220 surprisingly, it's slower; but it does larger numbers.
 	local numer, denom = tab2numden(rat)
 	local is_positive = true
 	if numer < 0 then numer = 0-numer ; is_positive = false end

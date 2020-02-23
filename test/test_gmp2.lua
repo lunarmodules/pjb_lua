@@ -63,6 +63,16 @@ if not ok(G2.cmpz(x,1009) == 0, 'nextprimez(1000) = 1009') then
 	print(G2.strz(x))
 end
 
+x = G2.nextprimez(15000)
+if not ok(G2.cmpz(x,15013) == 0, 'nextprimez(15000) = 15013') then
+	print(G2.strz(x))
+end
+
+x = G2.nextprimez(25000)
+if not ok(G2.cmpz(x,25013) == 0, 'nextprimez(25000) = 25013') then
+	print(G2.strz(x))
+end
+
 if not ok(G2.sgnz(-3579) == -1, 'sgnz(-3579) == -1') then
 	print(G2.sgnz(-3579))
 end
