@@ -40,22 +40,34 @@ function gcd (small, big)   -- consult urls.html
 	end
 end
 
-function inverse (a, n)   -- consult urls.html
+function inverse (a, n) -- see urls.html "extended Euclidean algorithm"
 	n = tointeger(n) -- if n is not already prime then n and a must be coprime
+	-- print('before tointeger, a =', a)
 	a = tointeger(a) -- % n
+	if a == 1 then return 1 end  -- is its own inverse
+	if a == 0 then die('inverse called with a = 0') end
+	if a == 0 then return nil, 'inverse called with a = 0' end
+--print('1: n='..n..'  a='..a)
 	if gcd(a,n)>1 then return nil,tostring(a)..' and '..n..' not coprime' end
-	local quotient = {}
+	local quotient = {[-1]=1, [0]=1}
 	local remainder
+	-- local x = {0, 1}
 	local x = {0, 1}
 	local i = 1 ; while true do
+--print('2: n='..n..'  a='..a)
+--print('quotient['..tostring(i-2)..'] = '..tostring(quotient[i-2]))
 		quotient[i]  = floor(n/a)
-		if not x[i] then -- could inline i==1 and 1==2 to save a bit of time
+		if not x[i] then -- inline i==1 and 1==2 because of quotient[i-2]
 			x[i] = x[i-2] - x[i-1] * quotient[i-2]
 		end
 		remainder = n % a
 		-- print('step '..i..' '..n..'÷'..a..'  quotient='..quotient[i]..
 		-- ' remainder='..remainder..'   x='..x[i])
-		if i>0 and remainder == 0 then
+		-- if i>1 and remainder == 0 then -- BUG
+-- warn('i=',i,', ',n,'÷',a,', q[',i,']=',quotient[i],
+-- ', remainder=',remainder,', x[',i,']=',x[i])
+		if remainder == 0 then -- BUG
+-- warn('  returning ',x[i-1] - x[i] * quotient[i-1])
 			return x[i-1] - x[i] * quotient[i-1]
 		end
 		n = a
@@ -64,33 +76,44 @@ function inverse (a, n)   -- consult urls.html
 	end
 end
 
+-- inverse(15,26) ; os.exit()
+
 function mul (a, b, n)
 	return (a*b) % n   -- could test for maxint etc
 end
 
 function mod_div (i, j, p)
+-- print('i='..i..'  j='..j..'  p='..p)
 	return mul(i, inverse(j,p), p)
 end
 
 function add_gen_modp (a, b, p)
 	-- a closure-generator add_gen_modp, because p,a,b rarely change
-	-- elliptic equation is y^2 = x^3 + a*x + b  mod p
+	-- elliptic equation is y^2 = x^3 + a*x + b
+	-- a,b, xp,yp, xq,yq, s, xr,yr all Z/pZ
+	-- the integer needed for crypto is the Elliptic Curve Discrete Logarithm
+	-- we calculate a Z/pZ gradient, using modular arithmetic
+	-- he adopts Z/pZ only from 07:00 onward
+	-- at 10:48 he clearly gives points on the curve as xA,yA and xB,yB
+	-- and at 11:25 he say a point on the curve is an ordered pair.
+	-- see 12:20 for the example! 13:25 "remember, we're computing in mod 17"!
+	-- so use mod_div()    20200226 passes first test :-)
 	local infty = 'infty'   -- the point at infinity
-	return function (xp, yp, xq, yq)
--- must use rational.lua! a,b,p integer; xp,yp, xq,yq, s, xr,yr all rational
+	return function (xp, yp, xq, yq)   -- (
 		if yp == infty then return xq,yq end
 		if yq == infty then return xp,yp end
 		if xp == xq then
 			if yp == yq then   -- same point; use the tangent
-				local s  = ((3*xp*xp)%p + a) / (2*yp)  -- 04:28
-				local xr = s*s - 2*xp                  -- 04:40
+				local s  = mod_div((3*xp*xp + a)%p, 2*yp, p)  -- 04:28
+				local xr = s*s - 2*xp                     -- 04:40
 				local yr = s*(xp-xr) - yp              -- 04:51
 				return xr % p, yr % p
 			else
 				return 0,infty
 			end
 		end
-		local s  = (yq-yp) / (xq-xp) -- xq,yq are integers so s is rational
+-- print('yp='..yp,'  yq=',yq)
+		local s  = mod_div((yq-yp)%p, (xq-xp)%p, p)
 		local xr = s*s - (xp+xq)   -- 03:40
 		local yr = s*(xp-xr) - yp  -- 03:43
 		return xr % p, yr % p
@@ -121,6 +144,9 @@ end
 function add_gen_real (a, b)
 	-- a closure-generator add_gen_real, because a,b rarely change
 	-- elliptic equation is y^2 = x^3 + a*x + b
+	if 4*a*a*a + 27*b*b == 0 then return nil,
+		'4*a^3 + 27*b^2 must not be zero; a='..tostring(a)..' b='..tostring(b)
+	end
 	local infty = 'infty'   -- the point at infinity. Here, a string
 	return function (xp, yp, xq, yq)
 		if yp == infty then return xq,yq end
@@ -144,6 +170,9 @@ end
 function scalarmul_gen_real (a, b)
 	-- a closure-generator add_gen_real, because a,b rarely change
 	-- elliptic equation is y^2 = x^3 + a*x + b
+	if 4*a*a*a + 27*b*b == 0 then return nil,
+		'4*a^3 + 27*b^2 must not be zero; a='..tostring(a)..' b='..tostring(b)
+	end
 	return function (xp, yp, k)   -- 06:00
 		local total_x = xp
 		local total_y = yp
@@ -199,7 +228,7 @@ end
 M.Version = "1.0  for Lua5"
 M.VersionDate  = '17feb2020'
 M.Synopsis = [[
-program_name [options] [filenames]
+  local EL = require 'elliptic_curve'
 ]]
 
 -- the default is Z/pZ
@@ -207,14 +236,21 @@ M.add_gen       = add_gen_modp
 M.scalarmul_gen = scalarmul_gen_modp
 
 function M.set_numberfield (s)
+	-- this is the numberfield of a and b, possibly also of xp,yp, xq,yq
 	if     s == 'Q'    or string.find(s, '^rat') then
 		if not RA then RA = require 'rational' end
+		-- if xp,yp, xq,yq are rational then so is the gradient, and xr,yr
+		-- but even if x is rational, y involves srqt and thus must be real!
 		M.add_gen       = add_gen_rat
 		M.scalarmul_gen = scalarmul_gen_rat
 		return true
 	elseif s == 'R'    or string.find(s, '^real') then
 		M.add_gen       = add_gen_real
 		M.scalarmul_gen = scalarmul_gen_real
+		return true
+	elseif s == 'C'    or string.find(s, '^complex') then
+		M.add_gen       = add_gen_complex
+		M.scalarmul_gen = scalarmul_gen_complex
 		return true
 	elseif s == 'Z/pZ' or string.find(s, '^mod') then
 		M.add_gen       = add_gen_modp
