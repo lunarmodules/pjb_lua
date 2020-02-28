@@ -27,6 +27,8 @@ local floor     = math.floor
 local tointeger = math.tointeger
 local RA        = nil -- rational.lua will be required if needed
 
+---------------------------- Z/pZ ----------------------------------
+
 function gcd (small, big)   -- consult urls.html
 	small = tointeger(small)
 	big   = tointeger(big)
@@ -42,32 +44,24 @@ end
 
 function inverse (a, n) -- see urls.html "extended Euclidean algorithm"
 	n = tointeger(n) -- if n is not already prime then n and a must be coprime
-	-- print('before tointeger, a =', a)
 	a = tointeger(a) -- % n
 	if a == 1 then return 1 end  -- is its own inverse
 	if a == 0 then die('inverse called with a = 0') end
-	if a == 0 then return nil, 'inverse called with a = 0' end
---print('1: n='..n..'  a='..a)
+	-- if a == 0 then return nil, 'inverse called with a = 0' end
 	if gcd(a,n)>1 then return nil,tostring(a)..' and '..n..' not coprime' end
 	local quotient = {[-1]=1, [0]=1}
 	local remainder
-	-- local x = {0, 1}
 	local x = {0, 1}
 	local i = 1 ; while true do
---print('2: n='..n..'  a='..a)
---print('quotient['..tostring(i-2)..'] = '..tostring(quotient[i-2]))
 		quotient[i]  = floor(n/a)
 		if not x[i] then -- inline i==1 and 1==2 because of quotient[i-2]
 			x[i] = x[i-2] - x[i-1] * quotient[i-2]
 		end
 		remainder = n % a
-		-- print('step '..i..' '..n..'÷'..a..'  quotient='..quotient[i]..
-		-- ' remainder='..remainder..'   x='..x[i])
-		-- if i>1 and remainder == 0 then -- BUG
--- warn('i=',i,', ',n,'÷',a,', q[',i,']=',quotient[i],
--- ', remainder=',remainder,', x[',i,']=',x[i])
-		if remainder == 0 then -- BUG
--- warn('  returning ',x[i-1] - x[i] * quotient[i-1])
+		-- warn('i=',i,', ',n,'÷',a,', q[',i,']=',quotient[i],
+		-- ', remainder=',remainder,', x[',i,']=',x[i])
+		if remainder == 0 then
+			-- warn('  returning ',x[i-1] - x[i] * quotient[i-1])
 			return x[i-1] - x[i] * quotient[i-1]
 		end
 		n = a
@@ -76,14 +70,11 @@ function inverse (a, n) -- see urls.html "extended Euclidean algorithm"
 	end
 end
 
--- inverse(15,26) ; os.exit()
-
 function mul (a, b, n)
 	return (a*b) % n   -- could test for maxint etc
 end
 
 function mod_div (i, j, p)
--- print('i='..i..'  j='..j..'  p='..p)
 	return mul(i, inverse(j,p), p)
 end
 
@@ -112,7 +103,6 @@ function add_gen_modp (a, b, p)
 				return 0,infty
 			end
 		end
--- print('yp='..yp,'  yq=',yq)
 		local s  = mod_div((yq-yp)%p, (xq-xp)%p, p)
 		local xr = s*s - (xp+xq)   -- 03:40
 		local yr = s*(xp-xr) - yp  -- 03:43
@@ -141,6 +131,19 @@ end
 -- the Cofactor should be as small as possible, 1 is ideal
 -- Domain parameters are { p,a,b,G,n,h }    08:32
 
+------------------------------ R -----------------------------------
+
+function y_gen_real (a, b)
+	if 4*a*a*a + 27*b*b == 0 then return nil,
+		'4*a^3 + 27*b^2 must not be zero; a='..tostring(a)..' b='..tostring(b)
+	end
+	local sqrt = math.sqrt
+	return function (x)
+		local y_squared = x*x*x + a*x + b
+		if y_squared >= 0.0 then return sqrt(y_squared) else return nil end
+	end
+end
+
 function add_gen_real (a, b)
 	-- a closure-generator add_gen_real, because a,b rarely change
 	-- elliptic equation is y^2 = x^3 + a*x + b
@@ -154,8 +157,8 @@ function add_gen_real (a, b)
 		if xp == xq then
 			if yp == yq then   -- same point; use the tangent
 				local s  = ((3*xp*xp) + a) / (2*yp)  -- 04:28
-				local xr = s*s - 2*xp                  -- 04:40
-				local yr = s*(xp-xr) - yp              -- 04:51
+				local xr = s*s - 2*xp                -- 04:40
+				local yr = s*(xp-xr) - yp            -- 04:51
 				return xr, yr
 			else
 				return infty
@@ -183,6 +186,8 @@ function scalarmul_gen_real (a, b)
 		return total_x, total_y
 	end
 end
+
+------------------------------ Q -----------------------------------
 
 function add_gen_rat (a, b)
 	-- a closure-generator add_gen_rat, because a,b rarely change
@@ -245,6 +250,7 @@ function M.set_numberfield (s)
 		M.scalarmul_gen = scalarmul_gen_rat
 		return true
 	elseif s == 'R'    or string.find(s, '^real') then
+		M.y_gen         = y_gen_real
 		M.add_gen       = add_gen_real
 		M.scalarmul_gen = scalarmul_gen_real
 		return true

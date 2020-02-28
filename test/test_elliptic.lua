@@ -105,6 +105,30 @@ xr,yr = add_mod(3,1, 10,6)   -- G+G see 15:14, 15:20 !!
 if not ok(xr==0 and yr==6, 'add_mod(3,1, 10,6) returns 0,6') then
 	print('xr='..xr..' yr='..yr)
 end
+xr,yr = add_mod(9,16, 5,1)   -- G+G see 15:14, 15:20 !!
+if not ok(xr==16 and yr==13, 'add_mod(9,16, 5,1) returns 16,13') then
+	print('xr='..xr..' yr='..yr)
+end
+xr,yr = add_mod(10,6, 9,16)   -- G+G see 15:14, 15:20 !!
+if not ok(xr==13 and yr==7, 'add_mod(10,6, 9,16) returns 13,7') then
+	print('xr='..xr..' yr='..yr)
+end
+xr,yr = add_mod(6,3, 0,6)   -- G+G see 15:14, 15:20 !!
+if not ok(xr==7 and yr==6, 'add_mod(6,3, 0,6) returns 7,6') then
+	print('xr='..xr..' yr='..yr)
+end
+xr,yr = add_mod(16,13, 13,7)   -- G+G see 15:14, 15:20 !!
+if not ok(xr==9 and yr==1, 'add_mod(16,13, 13,7) returns 9,1') then
+	print('xr='..xr..' yr='..yr)
+end
+xr,yr = add_mod(9,1, 3,1)   -- G+G see 15:14, 15:20 !!
+if not ok(xr==5 and yr==16, 'add_mod(9,1, 3,1) returns 5,16') then
+	print('xr='..xr..' yr='..yr)
+end
+xr,yr = add_mod(5,16, 5,1)   -- G+G see 15:14, 15:20 !!
+if not ok(xr==0 and yr=='infty', 'add_mod(5,16, 5,1) returns 0,"infty"') then
+	print('xr='..xr..' yr='..yr)
+end
 
 -- pcall(function() rc = EL.cancel(true) end)
 -- ok(not rc, 'cancel raises error if called with a boolean')
