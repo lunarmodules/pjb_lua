@@ -150,6 +150,15 @@ if not ok(rc == 3.5, 'rat2float({21,6}) returns 3.5') then
 	print(rc)
 end
 
+rc = assert(RA.eq({3,4}, {9,12}))
+if not ok(rc==true, 'eq({3,4},{9,12}) returns true') then
+	print(rc)
+end
+
+rc = RA.eq({3,4}, {9,13})
+if not ok(rc==false, 'eq({3,4},{9,13}) returns false') then
+	print(rc)
+end
 rc = assert(RA.add({3,4}, {1,3}))
 if not ok(rc[1]==13 and rc[2]==12, 'add({3,4},{1,3}) returns {13,12}') then
 	print(table.unpack(rc))

@@ -418,6 +418,15 @@ function M.neg(rat)  -- -rat
 	return { 0-numer, denom }
 end
 
+function M.eq(rat1, rat2)  -- -rat
+	rat1 = M.cancel(rat1)
+	rat2 = M.cancel(rat2)
+	local numer1, denom1 = tab2numden(rat1)
+	local numer2, denom2 = tab2numden(rat2)
+	if numer1==numer2 and denom1==denom2 then return true end
+	return false
+end
+
 function M.integerise(rat)   -- converts 3/2 to 1 1/2 - but -3/2 ?
 	local integ, numer, denom = tab2intnumden(rat)
 	if not integ then return nil, 'integerise: '..numer end
