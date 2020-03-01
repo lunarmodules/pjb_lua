@@ -80,19 +80,40 @@ end
 
 local infty = 'infty'   -- the point at infinity
 
-function y_gen_modp (a, b, p)
-	-- elliptic equation is y^2 = x^3 + a*x + b
-	local pp1by4 = (p + 1) / 4   -- but p==17 ?
-	return function (xp)   -- (
+function sqrt_modp (p)
+-- first question: is x2 a quadratic residue of p ?
+-- https://en.wikipedia.org/wiki/Modular_square_root
+-- https://en.wikipedia.org/wiki/Chinese_remainder_theorem
+-- https://math.stackexchange.com/questions/633160/modular-arithmetic-find-the-square-root
+--   suppose you want to find (x)^(1/2) mod p(prime) then simply
+--   calculate (x)^((p+1)/4) mod p.   Eg: in your case x=3 and p=11,
+--   3^((11+1)/4)=27= 5 mod 11. similarly -5 will be a root.
+-- https://math.stackexchange.com/questions/1895058/how-to-find-modulus-square-root?rq=1
+-- If x2 is a quadratic residue (mod p) and p%4 == 3 then x2^((p+1)/4) is a
+-- solution to x^2 ≡ a (mod p).  If p%4 == 1 there is no analogous formula.
+-- In that case, one may use the Tonelli-Shanks algorithm.
+--https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm
+--https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm#The_algorithm
+	if p == 2 then
+		return function (x2) return x2%2 end
+	-- elseif p%4 == 3 then   -- x = x2 ^ ((p+1)/4)
+	else  -- p%4 = 1   use the Tonelli-Shanks algorithm ?
+		return function (x2)
+			x2 = x2%p
+			for i = 1, p/2 do  -- brute-force ...
+				if (i*i)%p == x2 then return i end 
+			end
+			return nil
+		end
+	end
+end
+M.sqrt_modp     = sqrt_modp -- for debugging purposes
+
+function y_gen_modp (a, b, p)   -- elliptic equation is y^2 = x^3 + a*x + b
+	return function (xp)
 		xp = xp%p
 		local y_squared = (x*(x%p)%p + (a*x)%p + b)%p
-		-- https://en.wikipedia.org/wiki/Modular_square_root
-		-- https://en.wikipedia.org/wiki/Chinese_remainder_theorem
-		-- https://math.stackexchange.com/questions/633160/modular-arithmetic-find-the-square-root
-		--   suppose you want to find (x)^(1/2) mod p(prime) then simply
-		--   calculate (x)^((p+1)/4) mod p.   Eg: in your case x=3 and p=11,
-		--   3^((11+1)/4)=27= 5 mod 11. similarly -5 will be a root.
-		-- https://math.stackexchange.com/questions/1895058/how-to-find-modulus-square-root?rq=1
+		return sqrt_modp(y_squared, p)
 	end
 end
 

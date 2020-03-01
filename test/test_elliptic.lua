@@ -130,6 +130,74 @@ if not ok(xr==0 and yr=='infty', 'add_mod(5,16, 5,1) returns 0,"infty"') then
 	print('xr='..xr..' yr='..yr)
 end
 
+f = sqrt_modp(17)
+rc = f(1)
+if not ok(rc==1, 'sqrt_modp(1, 17) returns 1') then
+	print('rc='..rc)
+end
+rc = f(2)
+if not ok(rc==6, 'sqrt_modp(2, 17) returns 6') then
+	print('rc='..rc)
+end
+rc = f(3)
+if not ok(rc==nil, 'sqrt_modp(3, 17) returns nil') then
+	print('rc='..rc)
+end
+rc = f(4)
+if not ok(rc==2, 'sqrt_modp(4, 17) returns 2') then
+	print('rc='..rc)
+end
+rc = f(5)
+if not ok(rc==nil, 'sqrt_modp(5, 17) returns nil') then
+	print('rc='..rc)
+end
+rc = f(6)
+if not ok(rc==nil, 'sqrt_modp(6, 17) returns nil') then
+	print('rc='..rc)
+end
+rc = f(7)
+if not ok(rc==nil, 'sqrt_modp(7, 17) returns nil') then
+	print('rc='..rc)
+end
+rc = f(8)
+if not ok(rc==5, 'sqrt_modp(8, 17) returns 5') then
+	print('rc='..rc)
+end
+rc = f(9)
+if not ok(rc==3, 'sqrt_modp(9, 17) returns 3') then
+	print('rc='..rc)
+end
+rc = f(10)
+if not ok(rc==nil, 'sqrt_modp(10, 17) returns nil') then
+	print('rc='..rc)
+end
+rc = f(11)
+if not ok(rc==nil, 'sqrt_modp(11, 17) returns nil') then
+	print('rc='..rc)
+end
+rc = f(12)
+if not ok(rc==nil, 'sqrt_modp(12, 17) returns nil') then
+	print('rc='..rc)
+end
+rc = f(13)
+if not ok(rc==8, 'sqrt_modp(13, 17) returns 8') then
+	print('rc='..rc)
+end
+rc = f(14)
+if not ok(rc==nil, 'sqrt_modp(14, 17) returns nil') then
+	print('rc='..rc)
+end
+rc = f(15)
+if not ok(rc==7, 'sqrt_modp(15, 17) returns 7') then
+	print('rc='..rc)
+end
+rc = f(16)
+if not ok(rc==4, 'sqrt_modp(16, 17) returns 4') then
+	print('rc='..rc)
+end
+
+-- pcall(function() rc = EL.cancel(true) end)
+
 -- pcall(function() rc = EL.cancel(true) end)
 -- ok(not rc, 'cancel raises error if called with a boolean')
 
