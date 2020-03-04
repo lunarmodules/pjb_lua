@@ -245,10 +245,10 @@ xq,yq = fqadd({1,4}, {23,8},   {1,4}, {23,8})
 rc = EL.set_numberfield('R')
 fradd = EL.add_gen(1.0, 8.0)   -- p.156 A=1 B=8
 xr,yr = fradd(0.25, 2.875,   0.25, 2.875)
-if not ok(eq(xq[1]/xq[2],xr) and eq(xy[1]/yq[2],yr),
+if not ok(eq(xq[1]/xq[2], xr) and eq(yq[1]/yq[2], yr),
   'real agrees with rat') then
-	printf('  xq= %d/%d = %g   yq= %d/%d = %g',
-	  xq[1], xq[2],xq[1]/xq[2], yq[1],yq[2],yq[1]/yq[2])
+	printf('  xq = %d/%d = %g   yq = %d/%d = %g',
+	  xq[1],xq[2],xq[1]/xq[2], yq[1],yq[2],yq[1]/yq[2])
 	printf('  xr = %g   yr = %g', xr,yr)
 end
 

@@ -259,9 +259,8 @@ function add_gen_rat (a, b)
 		if RA.eq(xp,xq) then
 			if RA.eq(yp,yq) then   -- same point; use the tangent
 			-- ((3*xp*xp)%p + a) / (2*yp)  -- 04:28
-				local s = RA.div(
-				  RA.mul({3,1}, RA.mul(xp,xp)),  RA.mul({2,1}, yp)
-				)
+				local s = RA.div( RA.add(RA.mul({3,1},RA.mul(xp,xp)), a),
+			                      RA.mul({2,1}, yp) )
 				-- s*s - 2*xp                  -- 04:40
 				local xr = RA.sub(RA.mul(s,s), RA.mul({2,1},xp))
 				-- s*(xp-xr) - yp              -- 04:51
