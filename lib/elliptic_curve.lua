@@ -211,6 +211,7 @@ function add_gen_real (a, b)
 		local s  = (yq-yp) / (xq-xp)
 		local xr = s*s - (xp+xq)
 		local yr = s*(xp-xr) - yp
+		return xr, yr
 	end
 end
 
