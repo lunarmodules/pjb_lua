@@ -7,6 +7,7 @@
 ---------------------------------------------------------------------
 
 EL = require 'elliptic_curve'
+RA = require 'rational'
 
 local Version = '1.0  for Lua5'
 local VersionDate  = '25feb2019'
@@ -26,6 +27,8 @@ function ok(b,s)
 		return false
 	end
 end
+
+function printf (...) print(string.format(...)) end
 
 function eq (a,b,eps)
 	if not eps then eps = .000001 end
@@ -196,8 +199,57 @@ if not ok(rc==4, 'sqrt_modp(16, 17) returns 4') then
 	print('rc='..rc)
 end
 
--- pcall(function() rc = EL.cancel(true) end)
+rc = EL.set_numberfield('R')
+if not ok(rc == true, "set_numberfield('R') returns true") then
+	print(rc)
+end
+fradd = EL.add_gen(1.5, 0.5)
+fry   = EL.y_gen(1.5, 0.5)
+xp = 0.25 ; yp = fry(xp)
+if not ok(eq(yp, 0.9437293), "y_gen(0.25) returns 0.9437293") then
+	print(yp)
+end
 
--- pcall(function() rc = EL.cancel(true) end)
--- ok(not rc, 'cancel raises error if called with a boolean')
+rc = EL.set_numberfield('Q')
+if not ok(rc == true, "set_numberfield('Q') returns true") then
+	print(rc)
+end
+fqadd = EL.add_gen(1.5, 0.5)
+xp = {1,4}
+y_squared = RA.add(RA.add(RA.mul(xp, RA.mul(xp,xp)), RA.mul({3,2},xp)), {1,2})
+-- print(y_squared[1],y_squared[2], y_squared[1]/y_squared[2])
+-- print((y_squared[1]/y_squared[2])^0.5) ; os.exit()
+
+-- https://www.lmfdb.org/EllipticCurve/Q/?start=50&hst=List&conductor=1-99
+-- my first four Weierstrass coefficients are zero
+a=0 ; b=1
+fqy   = EL.y_gen(a, b)
+if not ok(type(fqy)== 'function', "fqy = y_gen(0,1) returns a function") then
+	print(type(fqy))
+end
+yp = fqy({0,1})
+if not ok(eq((yp[1]/yp[2]), 1.0), "fqy({0,1}) returns {1,1}") then
+	print(yp[1]..' / '..yp[2])
+end
+yp = fqy({2,1})
+if not ok(yp[1]==3 and yp[2]==1, "fqy({2,1}) returns {3,1}") then
+	print(yp[1]..' / '..yp[2])
+end
+
+-- may have produced some tables of Elliptic curves over Q
+-- https://search.warwick.ac.uk/website?source=https%3A%2F%2Fwarwick.ac.uk%2Fresearch%2F&q=John+Cremona
+-- with a= 0 b=1  y^2 = x^3 + 1   {0,1} and {2,3} 
+-- Elliptic Tales, Ash and Gross have the same example :-) p.125 (also p.156)
+fqadd = EL.add_gen({1,1}, {8,1})   -- p.156 A=1 B=8
+xq,yq = fqadd({1,4}, {23,8},   {1,4}, {23,8})
+rc = EL.set_numberfield('R')
+fradd = EL.add_gen(1.0, 8.0)   -- p.156 A=1 B=8
+xr,yr = fradd(0.25, 2.875,   0.25, 2.875)
+if not ok(eq(xq[1]/xq[2],xr) and eq(xy[1]/yq[2],yr),
+  'real agrees with rat') then
+	printf('  xq= %d/%d = %g   yq= %d/%d = %g',
+	  xq[1], xq[2],xq[1]/xq[2], yq[1],yq[2],yq[1]/yq[2])
+	printf('  xr = %g   yr = %g', xr,yr)
+end
+
 

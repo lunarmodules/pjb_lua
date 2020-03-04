@@ -70,12 +70,12 @@ function inverse (a, n) -- see urls.html "extended Euclidean algorithm"
 	end
 end
 
-function mul (a, b, n)
-	return (a*b) % n   -- could test for maxint etc
+function mod_mul (a, b, p)
+	return (a*b) % p   -- could test for maxint etc
 end
 
 function mod_div (i, j, p)
-	return mul(i, inverse(j,p), p)
+	return mod_mul(i, inverse(j,p), p)
 end
 
 local infty = 'infty'   -- the point at infinity
@@ -94,6 +94,12 @@ function sqrt_modp (p)
 -- In that case, one may use the Tonelli-Shanks algorithm.
 --https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm
 --https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm#The_algorithm
+-- https://warwick.ac.uk/fac/sci/wdsi/people?selectedLetter=c#cremona-john
+--  John Cremona works in computational number theory, in the area of
+--  elliptic curves and modular forms. He is interested in tabulating these
+--  sysetematically, and his database of elliptic curves, first published
+--  within a book (Algorithms for Modular Elliptic Curves, CUP (1992)),
+--  is a standard reference in the field.
 	if p == 2 then
 		return function (x2) return x2%2 end
 	-- elseif p%4 == 3 then   -- x = x2 ^ ((p+1)/4)
@@ -227,6 +233,18 @@ end
 
 ------------------------------ Q -----------------------------------
 
+function y_gen_rat (a, b)
+--	if 4*a*a*a + 27*b*b == 0 then return nil,
+--		'4*a^3 + 27*b^2 must not be zero; a='..tostring(a)..' b='..tostring(b)
+--	end
+	local sqrt = math.sqrt   -- ARGHHHhhh
+	return function (x)
+		local y_squared = RA.add(RA.add(RA.mul(x,RA.mul(x,x)) , RA.mul(a,x)) , b)
+		return { math.tointeger(math.sqrt(y_squared[1])),
+		         math.tointeger(math.sqrt(y_squared[2])) }
+	end
+end
+
 function add_gen_rat (a, b)
 	-- a closure-generator add_gen_rat, because a,b rarely change
 	-- elliptic equation is y^2 = x^3 + a*x + b
@@ -245,7 +263,7 @@ function add_gen_rat (a, b)
 				  RA.mul({3,1}, RA.mul(xp,xp)),  RA.mul({2,1}, yp)
 				)
 				-- s*s - 2*xp                  -- 04:40
-				local xr = RA.sub(RA.mul(s,s) - RA.mul({2,1},xp))
+				local xr = RA.sub(RA.mul(s,s), RA.mul({2,1},xp))
 				-- s*(xp-xr) - yp              -- 04:51
 				local yr = RA.sub(RA.mul(s, (RA.sub(xp,xr))), yp)
 				return xr, yr
@@ -340,40 +358,73 @@ in Z/pZ (modular arithmetic), R (real numbers) and Q (rational numbers)
 
 =head1 FUNCTIONS
 
-gcd (small, big)   -- consult urls.html
-inverse (a, n) -- see urls.html "extended Euclidean algorithm"
-mul (a, b, n)
-mod_div (i, j, p)
-add_gen_modp (a, b, p)
-	function (xp, yp, xq, yq)   -- (
-scalarmul_gen_modp (a, b, p)
+=over 3
+
+=item I<set_numberfield(str)>
+
+if I<str> is "C<R>" or "C<real>"
+if I<str> is "C<Q>" or "C<rational>"
+if I<str> is "C<Z/pZ>" or "C<modular>"
+
+=back
+
+=head2 Functions on Modular Integers B<Z/pZ>
+
+=over 3
+
+=item I<gcd (small, big)>
+
+This is a low-level function which you should not need to invoke.
+
+=item I<inverse (a, p)>
+
+This is a low-level function which you should not need to invoke.
+
+see urls.html "extended Euclidean algorithm"
+
+=item I<mul (i, j, p)>
+
+This is a low-level function which you should not need to invoke.
+
+=item I<mod_div (i, j, p)>
+
+This is a low-level function which you should not need to invoke.
+
+=item I<add_gen_modp (a, b, p)>
+
+This returns a closure with the given parameters.
+
+	function (xp, yp, xq, yq)
+
+=item I<scalarmul_gen_modp (a, b, p)>
+
+This returns a closure with the given parameters.
+
 	function (xp, yp, k)   -- 06:00
+
+=back
+
+=head2 Functions on Real Numbers B<R>
+
+=over 3
+
 y_gen_real (a, b)
 	function (x)
 add_gen_real (a, b)
 	return function (xp, yp, xq, yq)
 scalarmul_gen_real (a, b)
 	return function (xp, yp, k)   -- 06:00
+
+=back
+
+=head2 Functions on Rational Numbers B<Q>
+
 add_gen_rat (a, b)
 	return function (xp, yp, xq, yq)
 scalarmul_gen_rat (a, b, p)
 	return function (xp, yp, k)   -- 06:00
-M.set_numberfield (s)
 
 =over 3
-
-=item I<gcd (small, big)>
-
-The arguments I<a> and I<b> are arrays of numbers
-The I<hypothesis> can be one of 'a>b', 'a<b', 'b>a', 'b<a',
-'a~=b' or 'a<b'.
-I<ttest> returns the probability of your hypothesis being wrong.
-
-=item I<inverse (a, n)>
-
-=item I<add_gen_modp (a, b, p)>
-
-=item I<scalarmul_gen_modp (a, b, p)>
 
 =item I<y_gen_real (a, b)>
 
@@ -383,13 +434,12 @@ I<ttest> returns the probability of your hypothesis being wrong.
 
 =item I<add_gen_rat (a, b)>
 
+With my elliptic equation, the first four Weierstrass coefficients are zero.
+https://www.lmfdb.org/EllipticCurve/Q/?start=50&hst=List&conductor=1-99
+a,b = -11,-14  -1,14  -1,0   4,0  -135,-594   -15,22   0,-27   0,1
+   -4,-3   1,-10   -299,1990   -59,-138   -19,30   1,2
+
 =item I<scalarmul_gen_rat (a, b, p)>
-
-=item I<set_numberfield(str)>
-
-if I<str> is "C<R>" or "C<real>"
-if I<str> is "C<Q>" or "C<rational>"
-if I<str> is "C<Z/pZ>" or "C<modular>"
 
 =back
 
@@ -404,6 +454,13 @@ Peter J Billam, http://pjb.com.au/comp/contact.html
 
 =head1 SEE ALSO
 
+ "Elliptic Tales", Ash and Gross
+ https://www.youtube.com/watch?v=F3zzNa42-tQ
+ https://en.wikipedia.org/wiki/Chinese_remainder_theorem
+ https://warwick.ac.uk/fac/sci/wdsi/people?selectedLetter=c#cremona-john
+ https://www.lmfdb.org/
+ https://www.lmfdb.org/EllipticCurve/Q/
+ https://www.lmfdb.org/EllipticCurve/Q/?start=50&hst=List&conductor=1-99
  http://pjb.com.au/
 
 =cut
