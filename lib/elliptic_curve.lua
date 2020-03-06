@@ -252,9 +252,7 @@ function add_gen_rat (a, b)
 	local infty = 'infty'   -- the point at infinity
 	return function (xp, yp, xq, yq)
 		-- use rational.lua! a,b integer; xp,yp, xq,yq, s, xr,yr all rational
-		-- NO! a and b can be rational !
-		--     (only in Ash and Gross must a,b be integers !)
-		-- the rest of this all needs replacing !
+		-- a and b can be rational! only in Ash and Gross must a,b be integers
 		if yp[1] == infty then return xq,yq end
 		if yq[1] == infty then return xp,yp end
 		if RA.eq(xp,xq) then
@@ -272,7 +270,7 @@ function add_gen_rat (a, b)
 			end
 		end
 		-- (yq-yp) / (xq-xp)
-		local s  = RA.div(RA.sub(yq,yp), RA.sub(xq,xp))
+		local s  = RA.div(RA.sub(yq,yp), RA.sub(xq,xp))  -- gradient
 		-- s*s - (xp+xq)   -- 03:40
 		local xr = RA.sub(RA.mul(s,s), RA.add(xp,xq))
 		-- s*(xp-xr) - yp  -- 03:43
@@ -285,11 +283,11 @@ function scalarmul_gen_rat (a, b)
 	-- a closure-generator add_gen_rat, because a,b rarely change
 	-- elliptic equation is y^2 = x^3 + a*x + b  mod p
 	return function (xp, yp, k)   -- 06:00
-		local total_x = xp
-		local total_y = yp
+		local total_x = {xp[1], xp[2]}   -- this deepcopy is needed
+		local total_y = {yp[1], yp[2]}   -- this deepcopy is needed
 		local addfunc = add_gen_rat (a, b)
 		for i = 2,k do
-			total_x, total_y = addfunc(total_x, total_y, xp, yp)
+			total_x, total_y = addfunc(xp, yp, total_x, total_y)
 		end
 		return total_x, total_y
 	end
