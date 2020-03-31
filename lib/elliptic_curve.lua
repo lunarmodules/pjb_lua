@@ -275,6 +275,7 @@ function add_gen_rat (a, b)
 		local xr = RA.sub(RA.mul(s,s), RA.add(xp,xq))
 		-- s*(xp-xr) - yp  -- 03:43
 		local yr = RA.sub(RA.mul(s,RA.sub(xp,xr)), yp)
+		-- return RA.cancel(xr), RA.cancel(yr)
 		return xr, yr
 	end
 end

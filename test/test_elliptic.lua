@@ -248,7 +248,7 @@ rc = EL.set_numberfield('R')
 fradd = EL.add_gen(1.0, 8.0)   -- p.156 A=1 B=8
 frmul = EL.scalarmul_gen(1.0, 8.0)   -- p.156 A=1 B=8
 xr1,yr1 = fradd(0.25, 2.875,   0.25, 2.875)
-if not ok(eq(xq1[1]/xq1[2], xr1) and eq(yq1[1]/yq1[2], yr1),
+if true or not ok(eq(xq1[1]/xq1[2], xr1) and eq(yq1[1]/yq1[2], yr1),
   'add_real agrees with add_rat') then
 	printf('  xq1 = %d/%d = %g   yq1 = %d/%d = %g',
 	  xq1[1],xq1[2],xq1[1]/xq1[2], yq1[1],yq1[2],yq1[1]/yq1[2])
@@ -257,7 +257,7 @@ end
 
 xq2,yq2 = fqadd({1,4}, {23,8},   xq1, yq1)
 xr2,yr2 = fradd(0.25,   2.875,   xr1, yr1)
-if not ok(eq(xq2[1]/xq2[2], xr2) and eq(yq2[1]/yq2[2], yr2),
+if not true or ok(eq(xq2[1]/xq2[2], xr2) and eq(yq2[1]/yq2[2], yr2),
   'add_real agrees with add_rat again') then
 	printf('  xq2 = %d/%d = %g   yq2 = %d/%d = %g',
 	  xq2[1],xq2[2],xq2[1]/xq2[2], yq2[1],yq2[2],yq2[1]/yq2[2])

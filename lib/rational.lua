@@ -364,7 +364,7 @@ function M.cancel(rat)
 	end
 end
 function M.cancel2(rat)  -- uses the euclidian algorithm
-	-- 20200220 surprisingly, it's slower; but it does larger numbers.
+	-- 20200220 surprisingly, it's slower; but it sees larger factors.
 	local numer, denom = tab2numden(rat)
 	local is_positive = true
 	if numer < 0 then numer = 0-numer ; is_positive = false end
