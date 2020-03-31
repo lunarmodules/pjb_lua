@@ -322,7 +322,7 @@ that will be returned before a I<nil> value;
 the default is three times the B<size>.
 If B<n> is zero, the iterator will not terminate.
 
-The named argument B<int> specifies f the values
+The named argument B<int> specifies if the values
 should be rounded to integers; the default is B<false>
 
 =item I<gen09> ({pna,stra,phsa,  pnb,strb,phsb,  etc.., size=24, n=72, min=-1.0, max=1.0, int=false})
