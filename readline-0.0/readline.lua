@@ -230,6 +230,7 @@ M.handler_remove = prv.callback_handler_remove
 M.sigcleanup = prv.callback_sigcleanup
 
 -------------------- Custom Completion ------------------------
+M.set_readline_name               = prv.set_readline_name
 M.set_complete_function           = prv.set_complete_function
 M.set_default_complete_function   = prv.set_default_complete_function
 M.set_completion_append_character = prv.set_completion_append_character
