@@ -266,6 +266,12 @@ static char **handler_calls_completion_callback(const char *text, int start, int
     return rl_completion_matches(text, dummy_generator);
 }
 
+static int c_set_readline_name(lua_State *L) {
+    luaL_checktype(L, 1, LUA_TSTRING);
+    rl_readline_name = lua_tolstring(L, 1, NULL);
+    return 0;
+}
+
 static int c_set_complete_function(lua_State *L) {
     luaL_checktype(L, 1, LUA_TFUNCTION);
     luaL_unref(L, LUA_REGISTRYINDEX, complete_callback);
@@ -317,6 +323,7 @@ static const luaL_Reg prv[] = {  /* private functions */
 #endif
 #endif
     {"callback_handler_remove", c_callback_handler_remove},
+    {"set_readline_name", c_set_readline_name},
     {"set_complete_function", c_set_complete_function},
     {"set_default_complete_function", c_set_default_completer},
     {"set_completion_append_character", c_set_completion_append_character},
