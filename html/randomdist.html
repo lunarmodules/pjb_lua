@@ -52,7 +52,8 @@ CONTENT="randomdist, Lua, module, gaussian, randomget">
  gue_irand2 = R.<A HREF="#new_gue_irand">new_gue_irand(20)</A>
  for i = 1,20 do print( gue_irand1(), gue_irand2() ) end
 
- for i = 1,20 do print(R.<A HREF="#rayleigh_rand">rayleigh_rand(3)</A>) end
+ for i = 1,20 do print(R.<A HREF="#rayleigh_rand">rayleigh_rand(3.456)</A>) end
+ for i = 1,20 do print(R.<A HREF="#rayleigh_irand">rayleigh_irand(10)</A>) end
 
  a = {'cold', 'cool', 'warm', 'hot'}
  for i = 1,20 do print( R.<A HREF="#randomget">randomget(a)</A> ) end
@@ -90,6 +91,7 @@ randomdist.lua is based on the PostScript module
 <a href="#new_grand"><B>new_grand()</B></a>, &nbsp;
 <a href="#new_gue_irand"><B>new_gue_irand()</B></a>, &nbsp;
 <a href="#rayleigh_rand"><B>rayleigh_rand()</B></a>, &nbsp;
+<a href="#rayleigh_irand"><B>rayleigh_irand()</B></a>, &nbsp;
 <a href="#randomget"><B>randomget()</B></a>, &nbsp;
 <a href="#randomgetn"><B>randomgetn()</B></a>,
 <a href="#new_zipf"><B>new_zipf()</B></a> and &nbsp;
@@ -179,6 +181,22 @@ directly returns a number.
 </p>
 </dd>
 
+<dt><strong><a name="rayleigh_irand" class="item"><em>rayleigh_irand</em> (sigma)</a></strong></dt>
+<dd>
+<p>
+This function returns a random integer according to the
+<A HREF="https://en.wikipedia.org/wiki/Rayleigh_distribution">
+Rayleigh Distribution</A>, which is a probability distribution
+for positive-valued random integers.
+For example MIDI parameters, or a number of people, etc.
+<BR>
+The average return-value is about 1.2533*sigma
+<BR></CODE>
+The algorithm contains no internal state, hence <I>rayleigh_irand</I>
+directly returns an integer.
+</p>
+</dd>
+
 <dt><strong><a name="randomget" class="item"><em>randomget</em> (an_array)</a></strong></dt>
 <dd>
 <p>
@@ -257,7 +275,7 @@ so you should be able to install it with the command:</p>
  # luarocks install randomdist</pre>
 <p>or:</p>
 <pre>
- # luarocks install http://www.pjb.com.au/comp/lua/randomdist-1.5-0.rockspec</pre>
+ # luarocks install http://www.pjb.com.au/comp/lua/randomdist-1.6-0.rockspec</pre>
 </p><p>
 The test script used during development is
 <a href="http://www.pjb.com.au/comp/lua/test_randomdist.lua">
@@ -267,6 +285,7 @@ www.pjb.com.au/comp/lua/test_randomdist.lua</a><BR>
 </p>
 <hr />
 <h2><a name="changes">CHANGES</a></h2><pre>
+ 20200417 1.6 add rayleigh_irand()
  20180724 1.5 add wordcount2zipf
  20180711 1.4 add zipf distribution
  20171226 1.3 randomgetn allows n == array-size, meaning shuffle the array

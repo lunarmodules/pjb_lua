@@ -27,18 +27,19 @@
 -- http://linkage.rockefeller.edu/wli/1fnoise    -- no longer there :-(
 
 local M = {} -- public interface
-M.Version = '1.5'   -- add wordcount2zipf
-M.VersionDate = '24jul2018'
+M.Version     = '1.6'   -- add rayleigh_irand()
+M.VersionDate = '17apr2020'
 
 ------------------------------ private ------------------------------
-function warn(...)
+local function warn(...)
     local a = {}
     for k,v in pairs{...} do table.insert(a, tostring(v)) end
     io.stderr:write(table.concat(a),' ') ; io.stderr:flush()
 end
-function die(...) warn(...);  os.exit(1) end
-function qw(s)  -- t = qw[[ foo  bar  baz ]]
-    local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
+local function die(...) warn(...);  os.exit(1) end
+local function round(x)   -- 1.6
+	if not x then return nil end
+	return math.floor(x+0.5)
 end
 
 ------------------------------ public ------------------------------
@@ -118,6 +119,10 @@ end
 
 function M.rayleigh_rand(sigma)
 	return sigma * math.sqrt( -2 * math.log(1-math.random()) )
+end
+
+function M.rayleigh_irand(sigma)   -- 1.6
+	return round(sigma * math.sqrt(-2 * math.log(1-math.random())) )
 end
 
 function M.new_zipf (a, s)  -- https://en.wikipedia.org/wiki/Zipf%27s_law
@@ -223,7 +228,8 @@ a few simple functions for generating random numbers.
  gue_irand2 = R.new_gue_irand(20)
  for i = 1,20 do print( gue_irand1(), gue_irand2() ) end
 
- for i = 1,20 do print(R.rayleigh_rand(3)) end
+ for i = 1,20 do print(R.rayleigh_rand(3.456)) end
+ for i = 1,20 do print(R.rayleigh_irand(10)) end
 
  a = {'cold', 'cool', 'warm', 'hot'}
  for i = 1,20 do print(R.randomget(a)) end
@@ -314,8 +320,18 @@ the absolute value of the complex number is Rayleigh-distributed.
 
  f(x; sigma) = x exp(-x^2 / 2*sigma^2) / sigma^2      for x>=0
 
+The average return-value is about 1.2533*sigma.
 The algorithm contains no internal state,
 hence I<rayleigh_rand> directly returns a number.
+
+=item I<rayleigh_irand( sigma )>
+
+This function returns a random integer according to the Rayleigh Distribution,
+which is a probability distribution of positive-valued random integers.
+For example MIDI parameters, or a number of people, etc.
+The average return-value is about 1.2533*sigma.
+The algorithm contains no internal state,
+hence I<rayleigh_irand> directly returns an integer.
 
 =item I<randomget( an_array )>
 
