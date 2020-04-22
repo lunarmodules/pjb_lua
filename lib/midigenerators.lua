@@ -51,10 +51,6 @@ local my_score = {
 	1000,  -- ticks per beat
 	{    -- first track
 		{'set_tempo', 5, 1000000},
-		{'patch_change', 10, 0, 0},
-		{'control_change', 10, 0, 64, 0},
-		{'patch_change', 10, 1, 0},
-		{'control_change', 10, 1, 64, 127},
 	},  -- end of first track
 }
 
@@ -278,10 +274,6 @@ function M.new_score()
 		1000,  -- ticks per beat
 		{    -- first track
 			{'set_tempo', 5, 1000000},
-			{'patch_change', 10, 0, 0},
-			{'control_change', 10, 0, 64, 0},
-			{'patch_change', 10, 1, 0},
-			{'control_change', 10, 1, 64, 127},
 		},  -- end of first track
 	}
 end
@@ -295,6 +287,44 @@ return M
 =head1 NAME
 
 midigenerators.lua - helps in automatic generation of MIDI
+
+=head1 SYNOPSIS
+
+MG= require 'midigenerators'
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item sigmoid_scale(start_time,duration,start_note,end_note,cha,vol,leg)
+
+=item new_rise (start, finish)
+
+=item new_rise_and_fall (start, middle)
+
+=item new_gen07(t)   -- (t_so_far, duration, pitch)
+
+=item new_igrand (mean,stddev)
+
+=item randomget(a)
+
+=item rayleigh_irand(sigma)
+
+=item trill(start_time,duration,note1,note2,dtarg,cha,volarg,leg)
+
+=item sequence(start_time,duration,note1,intervals,dtarg,cha,volarg,leg)
+
+=item chord(start_time,duration,notes,cha,vol)  -- volarg !
+
+=item pedal(start_time,duration,cha)
+
+=item add_event(event)
+
+=item write_score()
+
+=item new_score()
+
+=back
 
 =head1 AUTHOR
 
