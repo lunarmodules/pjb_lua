@@ -11,7 +11,8 @@ local Synopsis = [[
 pgn2eco.lua  1. d4 f5 2. g3
 ]]
 
-local FEN = require 'chess.fen'
+-- local FEN = require 'chess.fen'
+local FEN = require 'fen'
 local DBM = require 'gdbm'
 -- local POS = require 'posix'
 local STA = require "posix.sys.stat"
@@ -133,6 +134,7 @@ local fen2eco = assert(DBM.open(fen2eco_db, "r"))
 local newfen = start
 local eco
 for v in FEN.pgn_moves(pgn) do
+	-- print(newfen, eco)
 	newfen = assert(FEN.fenstr_move(newfen, v))
 	local neweco = fen2eco:fetch(FEN.fenstr2key(newfen))
 	if neweco then eco = neweco end

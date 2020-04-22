@@ -55,6 +55,25 @@ local function deepcopy(object)  -- http://lua-users.org/wiki/CopyTable
 	end
 	return _copy(object)
 end
+local function split(s, pattern, maxNb) -- http://lua-users.org/wiki/SplitJoin
+	if not s or string.len(s)<2 then return {s} end
+	if not pattern then return {s} end
+	if maxNb and maxNb <2 then return {s} end
+	local result = { }
+	local theStart = 1
+	local theSplitStart,theSplitEnd = string.find(s,pattern,theStart)
+	local nb = 1
+	while theSplitStart do
+		table.insert( result, string.sub(s,theStart,theSplitStart-1) )
+		theStart = theSplitEnd + 1
+		theSplitStart,theSplitEnd = string.find(s,pattern,theStart)
+		nb = nb + 1
+		if maxNb and nb >= maxNb then break end
+	end
+	table.insert( result, string.sub(s,theStart,-1) )
+	return result
+end
+
 
 ------------------------------ public ------------------------------
 function M.doc() return([[
@@ -88,15 +107,12 @@ end
 function M.fenstr2tab(fenstr)
 	local fields = string.gmatch(fenstr, '[^ \t]+')
 	local fentab = {}
-	-- fentab['posstr']    = fields()
 	local posstr        = fields()
 	fentab['active']    = fields()
 	fentab['castling']  = fields()
 	fentab['enpassant'] = fields()
 	fentab['fiftymove'] = fields()
 	fentab['movenum']   = fields()
-	-- fentab['postab']    = M.posstr2postab( fentab['posstr'] )
-	-- fentab['posstr']    = nil
 	fentab['postab']    = M.posstr2postab( posstr )
 	return fentab
 end
@@ -141,10 +157,13 @@ function M.fenstr2key(s)
 end
 
 function M.posstr2postab(pos)
-	local ranks = string.gmatch(pos, '[^/]*')
+	-- local ranks = string.gmatch(pos, '[^/]+') -- 20200422 + not * but //
+	-- must split on /
+	local ranks = split(pos, '/')   -- 20200422 + not *
 	local postab = { {}, {}, {}, {}, {}, {}, {}, {} }
 	for ir = 8, 1, -1 do
-		local rank = ranks()
+		-- local rank = ranks()
+		local rank = ranks[9-ir]
 		local t = {}
 		if #rank == 0 then  -- empty rank, not in fact legal FEN
 			t = {' ',' ',' ',' ',' ',' ',' ',' '}
@@ -584,7 +603,6 @@ function M.fenstr_move (fenstr, move)
 		local clue, to     -- Nc3
 		frompiece, clue, to
 		  = string.match(move, '^([RNBQK])([a-h1-8]?)x?([a-h][1-8])$')
--- print('frompiece =',frompiece)
 		tox,  toy   = sq2xy(to)
 		--fromx,fromy=assert(frompiece2xy(frompiece,tox,toy,fentab,clue,move))
 		fromx,fromy = frompiece2xy(frompiece,tox,toy,fentab,clue,move)
@@ -929,6 +947,8 @@ installed by
 
 =head1 CHANGES
 
+ 20200422 1.8 remove require 'DataDumper', just used for testing
+ 20200422 1.7 fix bug in posstr2postab()
  20191013 1.6 ./bin files use /usr/bin/env lua, and pgn2fen gets perldoc
  20181012 1.5 frompiece2xy() rejects candidates if pinned to the king
  20180908 1.4 fenstr_move() allows +?!
