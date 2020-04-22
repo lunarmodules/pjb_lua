@@ -54,6 +54,7 @@ to the <em>readline</em> and <em>history</em> libraries</p>
 <pre>
  local RL = require 'readline'
  RL<A HREF="#set_options">.set_options</A>{ keeplines=1000, histfile='~/.synopsis_history' }
+ RL<A HREF="#set_readline_name">.set_readline_name</A>('fennel')
 
 -- the <A HREF="#standard">Standard Interface</A>
  local str = RL<A HREF="#readline">.readline</A>('Please enter some filename: ')</A>
@@ -150,54 +151,60 @@ See <A HREF="#handler_install">handler_install()</A>
 Access to <I>readline</I>'s
 <A HREF="#custom">Custom Completion</A>
 is now provided.
-
+</P><P>
+This module does not work <CODE>lua -i</CODE>
+because that runs its own <I>readline</I>,
+and the two conflict with each other.
 </P>
 
 <a name="functions"><hr /></A>
 <h2><a name="standard">STANDARD INTERFACE</a></h2>
 <p>
 </p>
-<h3><a name="set_readline_name">RL.set_readline_name( 'myapp' )</a></h3>
-<p>
-Sets the internal libreadline variable <I>rl_readline_name</I> for use with
-conditional directives in <CODE>.inputrc</CODE> (see readline manual).
-<BR>Should be
-invoked once, before calling <CODE>readline()</CODE>,
-so that the name is set before <CODE>.inputrc</CODE> is sourced.
-<BR>
-For example: if, in the initialization before first readline prompt, you
-<BR><CODE>&nbsp;RL.set_readline_name('fennel')</CODE>
-<BR><BR>
-then the call to <CODE>readline()</CODE>
-would execute this conditional in <CODE>.inputrc</CODE><BR>
-<CODE>&nbsp;$if fennel<BR>
-&nbsp;&nbsp; set blink-matching-paren On<BR>
-&nbsp;&nbsp; set enable-bracketed-paste On<BR>
-&nbsp;$endif
-</CODE>
-</p>
+
 <h3><a name="set_options">RL.set_options{ histfile='~/.myapp_history', keeplines=100 }</a></h3>
 <p>Returns the old options, so they can be restored later.
 The <em>auto_add</em> option controls whether the line entered will be
 added to the History List,
-The default options are:</p>
-<pre>
- auto_add   = true,
- histfile   = '~/.rl_lua_history',
- keeplines  = 500,
- completion = true,
- ignoredups = true,
- minlength  = 2,</pre>
+The default options are:<BR><CODE>
+ &nbsp; auto_add   = true,<BR>
+ &nbsp; histfile   = '~/.rl_lua_history',<BR>
+ &nbsp; keeplines  = 500,<BR>
+ &nbsp; completion = true,<BR>
+ &nbsp; ignoredups = true,<BR>
+ &nbsp; minlength  = 2,</CODE><BR>
 <p>Lines shorter than the <em>minlength</em> option will not be put on the
 History List.  Tilde expansion is performed on the <em>histfile</em> option.
 The <em>histfile</em> option must be a string, so don't set it to <em>nil</em>,
 if you want to avoid reading or writing your History List to the filesystem,
 set <em>histfile</em> to the empty string.
-If you want no history behaviour (Up or Down arrows etc.) at all, then set</p>
-<pre>
- set_options{ histfile='', auto_add=false, }</pre>
+If you want no history behaviour (Up or Down arrows etc.) at all, then set
+<BR><CODE>
+ &nbsp; set_options{ histfile='', auto_add=false, }</CODE><BR>
+
+<h3><a name="set_readline_name">RL.set_readline_name( 'myapp' )</a></h3>
 <p>
+Sets the internal libreadline variable <I>rl_readline_name</I>
+for use with conditional directives in <CODE>.inputrc</CODE>
+(see the
+<A HREF="https://tiswww.cwru.edu/php/chet/readline/readline.html">manual</A>).
+<BR>It should be
+invoked once, before calling <CODE>readline()</CODE>,
+so that the name is set before <CODE>.inputrc</CODE> is sourced.
+<BR>
+For example: if, in the initialization before first readline prompt, you
+<BR><CODE>
+ &nbsp; RL.set_readline_name('<A HREF="https://fennel-lang.org/">fennel</A>')</CODE>
+<BR><BR>
+then the call to <CODE>readline()</CODE>
+would execute this conditional in <CODE>.inputrc</CODE><BR>
+<CODE> &nbsp; $if <A HREF="https://fennel-lang.org/">fennel</A><BR>
+ &nbsp; &nbsp; set blink-matching-paren On<BR>
+ &nbsp; &nbsp; set enable-bracketed-paste On<BR>
+ &nbsp; $endif
+</CODE>
 </p>
+
 <h3><a name="readline">RL.readline( prompt )</a></h3>
 <p>Displays the <em>prompt</em> and returns the text of the line the
 user enters.  A blank line returns the empty string.
@@ -409,7 +416,9 @@ You can see the source-code in:<BR>
 Alexander Adler, University of Frankfurt, contributed the
 <A HREF="#alternate">Alternate Interface</A> and
 <A HREF="#custom">Custom Completion</A><BR>
-Jesse Wertheim contributed the
+Jesse Wertheim, one of the developers of
+<A HREF="https://fennel-lang.org/">Fennel</A>,
+contributed the
 <A HREF="#set_readline_name">set_readline_name()</A> function.</p>
 <p>
 </p>
@@ -433,6 +442,7 @@ https://tiswww.case.edu/php/chet/readline/readline.html#SEC28</A>
  &nbsp; ~/.inputrc<BR>
  <a href="http://lua-users.org/wiki/CompleteWithReadline">http://lua-users.org/wiki/CompleteWithReadline</a><BR>
  <A HREF="http://luaposix.github.io/luaposix">http://luaposix.github.io/luaposix</A><BR>
+ <A HREF="https://fennel-lang.org/">fennel-lang.org/</A><BR>
  <a href="terminfo.html">terminfo.lua</a><BR>
  <a href="../../index.html">https://pjb.com.au</a><BR>
  <a href="../index.html#lua">https://pjb.com.au/comp/index.html#lua</a>

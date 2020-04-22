@@ -7,8 +7,8 @@
 ---------------------------------------------------------------------
 
 local M = {} -- public interface
-M.Version     = '2.5' -- add handler_install read_char and handler_remove
-M.VersionDate = '10jan2019'
+M.Version     = '2.7' -- add set_readline_name() and fix version number
+M.VersionDate = '15apr2020'
 
 --[[
 Alexander Adler suggests adding four Alternate-Interface functions:
