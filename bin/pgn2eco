@@ -83,7 +83,7 @@ if iarg <= #arg then
 	for i = iarg,#arg do a[#a+1] = arg[i] end
 	pgn = table.concat(a, ' ')
 else
-	pgn = io.read('a')
+	pgn = io.read('*a')
 end
 
 local eco2fen_db = out_dbdir..'/eco2fen.gdbm'
@@ -100,11 +100,11 @@ if more_recent(infile, eco2fen_db) or more_recent(infile, fen2eco_db) then
 
 	local ecomast_file = assert(io.open(infile, 'r'))
 	while true do
-		local line = ecomast_file:read('l')
+		local line = ecomast_file:read('*l')
 		if not line then break end
 		if string.match(line, '^([A-E][0-9][0-9]) ') then
 			local econum = string.match(line, '^([A-E][0-9][0-9]) ')
-			local var = ecomast_file:read('l')
+			local var = ecomast_file:read('*l')
 			if not var then break end
 			var = string.gsub(var, ' 1/2 ?', '')
 			var = string.gsub(var, '[0-9]%. ?', '')

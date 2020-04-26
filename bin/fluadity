@@ -7,8 +7,8 @@
 --  This script is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
-local Version = '2.2' -- play_midi fixes truncate-sound-on-first-noteoff quirk
-local VersionDate  = '24oct2018';
+local Version = '2.3' -- use the read('* arguments for 5.2 and before
+local VersionDate  = '23apr2020';
 local Synopsis = [[
  fluadity &                     # a simple alsa-client , o/p to soundcard
  fluadity -i ProKeys &          # likewise, and connects from the ProKeys
@@ -191,11 +191,13 @@ function inputfile2player (synth)  -- 2.2 used by midi2wav and play_midi
 	-- fix the note_offs as in the real-time case,
 	-- convert back to midi, and then invoke new_player and return it
 	local rawmididata
+	-- p.60 In Lua 5.2 and before all string options should be preceded by
+	--  an asterisk. Lua 5.3 still accepts the asterisk for compatibility
 	if InputFile == '-' then
-		rawmididata = io.stdin:read('a')
+		rawmididata = io.stdin:read('*a')    -- 20200423
 	else
 		local f = assert( io.open(InputFile, 'r') )
-		rawmididata = f:read('a')
+		rawmididata = assert(f:read('*a'))    -- 20200423
 		io.close(f)
 	end
 	local score = MIDI.midi2ms_score(rawmididata)
@@ -245,7 +247,7 @@ function midi2wav()
 		['fast.render']     = true,
 	} ) )
 	local sf2ids = assert(FS.sf_load(synth, Soundfonts))
-	local player = inputfile2player(synth)
+	local player = assert(inputfile2player(synth))
 	assert(FS.player_play(player))
 	assert(FS.player_join(player))
 	os.execute('sleep 1')

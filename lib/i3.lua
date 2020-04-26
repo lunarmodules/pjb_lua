@@ -26,7 +26,7 @@ local function die(...) warn(...);  os.exit(1) end
 
 local function i3_msg (str)
 	local p = assert(io.popen('i3-msg '..str , 'r'))
-	local rv = p:read('l') ; p:close()
+	local rv = p:read('*l') ; p:close()
 	return rv
 end
 
