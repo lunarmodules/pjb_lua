@@ -7,8 +7,8 @@
 --------------------------------------------------------------------------
 
 local M       = {} -- public interface
-M.Version     = '1.77'  -- 
-M.VersionDate = '30jun2018'
+M.Version     = '1.78' -- local variables for the common string functions
+M.VersionDate = '23may2020'
 
 local P = require 'posix'    -- http://luaposix.github.io/luaposix/docs/
 local T = require 'terminfo' -- http://pjb.com.au/comp/lua/terminfo.html
@@ -17,14 +17,19 @@ local L = require 'readline' -- http://pjb.com.au/comp/lua/readline.html
 _G.BITOPS = {}  -- global because load executes in the calling context
 local B = {}
 
-local version = string.gsub(_VERSION, "^%D+", "")
+local blen  = string.len   -- length in bytes
+local find  = string.find
+local gsub  = string.gsub
+local match = string.match
+
+local version = gsub(_VERSION, "^%D+", "")
 if tonumber(version) < 5.3 then  -- 1.74
-    B = require 'bit'  -- LuaBitOp http://bitop.luajit.org/api.html
+	B = require 'bit'  -- LuaBitOp http://bitop.luajit.org/api.html
 else
 	local f = load([[
-    _G.BITOPS.bor    = function (a,b) return a|b  end
-    _G.BITOPS.band   = function (a,b) return a&b  end
-    _G.BITOPS.rshift = function (a,n) return a>>n end
+	_G.BITOPS.bor    = function (a,b) return a|b  end
+	_G.BITOPS.band   = function (a,b) return a&b  end
+	_G.BITOPS.rshift = function (a,n) return a>>n end
 	]])
 	f()
 	B = _G.BITOPS
@@ -80,9 +85,8 @@ local function deepcopy(object)  -- http://lua-users.org/wiki/CopyTable
 	return _copy(object)
 end
 
-
 local HistFile = '~/.clui_dir/'..string.sub(
-  string.gsub(arg[0], '^.*/', ''), 1, 8)..'_history'
+  gsub(arg[0], '^.*/', ''), 1, 8)..'_history'
 L.set_options{histfile=HistFile}  -- 1.70
 
 local function homedir(user)
@@ -93,10 +97,10 @@ end
 local HOME = homedir()
 
 local function tilde_expand(filename)
-	if string.match(filename, '^~') then
-		local user = string.match(filename, '^~(%a+)/')
+	if match(filename, '^~') then
+		local user = match(filename, '^~(%a+)/')
 		local home = homedir(user)
-		filename = string.gsub(filename, '^~%a*', home)
+		filename = gsub(filename, '^~%a*', home)
 	end
 	return filename
 end
@@ -107,12 +111,12 @@ local function split(s, pattern, maxNb) -- http://lua-users.org/wiki/SplitJoin
 	if maxNb and maxNb <2 then return {s} end
 	local result = { }
 	local theStart = 1
-	local theSplitStart,theSplitEnd = string.find(s,pattern,theStart)
+	local theSplitStart,theSplitEnd = find(s,pattern,theStart)
 	local nb = 1
 	while theSplitStart do
 		table.insert( result, string.sub(s,theStart,theSplitStart-1) )
 		theStart = theSplitEnd + 1
-		theSplitStart,theSplitEnd = string.find(s,pattern,theStart)
+		theSplitStart,theSplitEnd = find(s,pattern,theStart)
 		nb = nb + 1
 		if maxNb and nb >= maxNb then break end
 	end
@@ -126,9 +130,11 @@ local function sleep(t)
 	P.nanosleep(sec,ns)
 end
 
-local function _debug(s)
+local function _debug(...)
 	local DEBUG = io.open('/tmp/debug', 'a')
-	DEBUG:write(s.."\n")
+	local a = {}
+	for k,v in pairs{...} do table.insert(a, tostring(v)) end
+	DEBUG:write(table.concat(a),'\n') ; DEBUG:flush()
 	DEBUG:close()
 end
 
@@ -158,7 +164,7 @@ local function is_textfile (fn)
 	local s = f:read(8192)
 	f:close()
 	local n_ascii = 0
-	local n = string.len(s)
+	local n = blen(s)
 	for i = 1,n do if string.byte(s,i)<127 then n_ascii = n_ascii+1 end end
 	return n_ascii > (0.85*n)
 end
@@ -237,14 +243,16 @@ local function utf8len(str)
 	end
 	return length
 end
-local len = string.len
+
+-- length in characters ; this will change this if it's a utf8 locale ...
+local clen   = string.len
 do
 	local lang = os.getenv('LANG')
 	local lc   = os.getenv('LC_TYPE')   
-	if lang and string.find(string.lower(lang), 'utf8') then
-		len = utf8len ; IsUtf8 = true
-	elseif lc and string.find(string.lower(lc), 'utf8') then
-		len = utf8len ; IsUtf8 = true
+	if lang and find(string.lower(lang), 'utf8') then
+		clen = utf8len ; IsUtf8 = true
+	elseif lc and find(string.lower(lc), 'utf8') then
+		clen = utf8len ; IsUtf8 = true
 	end
 end
 -- x = 'Aéŝ'; print(x..' is '..tostring(len(x))..' characters long')
@@ -252,11 +260,11 @@ end
 local function puts(s)
 	if type(s) == 'table' then s = table.concat(s, '') end
 	if not s then return end
-	Irow = Irow + select(2, string.gsub(s, '\n', '\n'))  -- PiL p.179
-	if string.find(s, '\r\n?$') then
+	Irow = Irow + select(2, gsub(s, '\n', '\n'))  -- PiL p.179
+	if find(s, '\r\n?$') then
 		Icol = 0
 	else
-		Icol = Icol + len(s)
+		Icol = Icol + clen(s)
 	end
 	TTY:write(s) ; TTY:flush()
 end
@@ -283,7 +291,6 @@ local function violet   ()  TTY:write("\027[35m") TTY:flush() end
 
 local function getc_wrapper (timeout)
 	local c = K.ReadKey(timeout, TTY)
---debug('timeout='..tostring(timeout)..' TTY='..tostring(TTY)..' c='..tostring(c))
 	-- if c is nil and SizeChanged, then we should check_size and try again
 	-- can check_size be called whenever this getc_wrapper has been called?
 	return c
@@ -292,7 +299,6 @@ end
 local function wr_cell(t) end
 
 local function handle_mouse (x, y, button_pressed, button_drag) -- 1.50 
---debug('x='..tostring(x)..' y='..tostring(y)..' button_pressed='..tostring(button_pressed))
 	TopRow = AbsCursY - CursorRow;
 	if LastEventWasPress then LastEventWasPress = false; return false end
 	if y < TopRow then return false end
@@ -300,9 +306,9 @@ local function handle_mouse (x, y, button_pressed, button_drag) -- 1.50
 	local mouse_col = x - 1
 	local ifound = nil
 	for i =1,#Irow_a do
-		if (Irow_a[i] == mouse_row) then
-			if (Icol_a[i] < mouse_col)
-			 and ((Icol_a[i] + len(List[i])) >= mouse_col) then
+		if Irow_a[i] == mouse_row then
+			if Icol_a[i] < mouse_col
+			 and ((Icol_a[i] + clen(List[i])) >= mouse_col) then
 				ifound = i; break
 			end
 			if Irow_a[i] > mouse_row then break end
@@ -328,38 +334,38 @@ end
 
 local function getch()  -- return multiple bytes if utf8
 	local c = getc_wrapper(0)
-	if (c == "\027") then
+	if c == "\027" then
 		c = getc_wrapper(0.10)
 
-		if (c == nil) then return "\027" end
-		if (c == 'A') then return KEY_UP end
-		if (c == 'B') then return KEY_DOWN end
-		if (c == 'C') then return KEY_RIGHT end
-		if (c == 'D') then return KEY_LEFT end
-		if (c == '2') then getc_wrapper(0); return KEY_INSERT end
-		if (c == '3') then getc_wrapper(0); return KEY_DELETE end -- 1.54
-		if (c == '5') then getc_wrapper(0); return KEY_PPAGE end
-		if (c == '6') then getc_wrapper(0); return KEY_NPAGE end
-		if (c == 'Z') then return KEY_BTAB end
-		if (c == 'O') then   -- 1.68 Haiku wierdness, inherited from an old Suse
-			c = getc_wrapper(0);
-			if (c == 'A') then return KEY_UP end    -- 1.68
-			if (c == 'B') then return KEY_DOWN end  -- 1.68
-			if (c == 'C') then return KEY_RIGHT end -- 1.68
-			if (c == 'D') then return KEY_LEFT end  -- 1.68
-			if (c == 'F') then return KEY_END end   -- 1.68
-			if (c == 'H') then return KEY_HOME end  -- 1.68
+		if c == nil then return "\027" end
+		if c == 'A' then return KEY_UP end
+		if c == 'B' then return KEY_DOWN end
+		if c == 'C' then return KEY_RIGHT end
+		if c == 'D' then return KEY_LEFT end
+		if c == '2' then getc_wrapper(0); return KEY_INSERT end
+		if c == '3' then getc_wrapper(0); return KEY_DELETE end -- 1.54
+		if c == '5' then getc_wrapper(0); return KEY_PPAGE end
+		if c == '6' then getc_wrapper(0); return KEY_NPAGE end
+		if c == 'Z' then return KEY_BTAB end
+		if c == 'O' then   -- 1.68 Haiku wierdness, inherited from an old Suse
+			c = getc_wrapper(0)
+			if c == 'A' then return KEY_UP end    -- 1.68
+			if c == 'B' then return KEY_DOWN end  -- 1.68
+			if c == 'C' then return KEY_RIGHT end -- 1.68
+			if c == 'D' then return KEY_LEFT end  -- 1.68
+			if c == 'F' then return KEY_END end   -- 1.68
+			if c == 'H' then return KEY_HOME end  -- 1.68
 			return(c);
 		end
-		if (c == '[') then
-			c = getc_wrapper(0);
-			if (c == 'A') then return KEY_UP end
-			if (c == 'B') then return KEY_DOWN end
-			if (c == 'C') then return KEY_RIGHT end
-			if (c == 'D') then return KEY_LEFT end
-			if (c == 'F') then return KEY_END end   -- 1.67
-			if (c == 'H') then return KEY_HOME end  -- 1.67
-			if (c == 'M') then   -- mouse report - we must be in BYTES !
+		if c == '[' then
+			c = getc_wrapper(0)
+			if c == 'A' then return KEY_UP end
+			if c == 'B' then return KEY_DOWN end
+			if c == 'C' then return KEY_RIGHT end
+			if c == 'D' then return KEY_LEFT end
+			if c == 'F' then return KEY_END end   -- 1.67
+			if c == 'H' then return KEY_HOME end  -- 1.67
+			if c == 'M' then   -- mouse report - we must be in BYTES !
 				-- http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 				local event_type = B.band(127,string.byte(getc_wrapper(0)))-32
 				local x = B.band(127,string.byte(getc_wrapper(0)))-32
@@ -381,13 +387,13 @@ local function getch()  -- return multiple bytes if utf8
 				end
 				return handle_mouse(x,y,button_pressed,button_drag) or getch()
 			end
-			if (string.match(c, '%d')) then
+			if match(c, '%d') then
 				local c1 = getc_wrapper(0);
-				if (c1 == '~') then
-					if (c == '2') then return KEY_INSERT
-					elseif (c == '3') then return KEY_DELETE
-					elseif (c == '5') then return KEY_PPAGE
-					elseif (c == '6') then return KEY_NPAGE
+				if c1 == '~' then
+					if c == '2' then return KEY_INSERT
+					elseif c == '3' then return KEY_DELETE
+					elseif c == '5' then return KEY_PPAGE
+					elseif c == '6' then return KEY_NPAGE
 					end
 				else   -- cursor-position report, response to \027[6n
 					AbsCursY = tonumber(c)
@@ -541,7 +547,7 @@ local function fmt (text, options)
 	local w_length = 0
 	local initial_space = ''
 	for k,i_line in ipairs(i_lines) do
-		if string.find(i_line, '^%s*$') then   -- blank line ?
+		if find(i_line, '^%s*$') then   -- blank line ?
 			if o_line ~= '' then
 				o_lines[#o_lines+1] = o_line; o_line=''; o_length=0
 			end
@@ -556,22 +562,22 @@ local function fmt (text, options)
 				i_line = string.sub(i_line, MaxCols, -1)
 				-- next;  :-(
 			else
-				if string.find(i_line, '^%s+') then
-					initial_space, i_line = string.match(i_line, '^(%s+)(.*)')
-					initial_space = string.gsub(initial_space, '\t', '   ')
+				if find(i_line, '^%s+') then
+					initial_space, i_line = match(i_line, '^(%s+)(.*)')
+					initial_space = gsub(initial_space, '\t', '   ')
 					if o_line ~= '' then o_lines[#o_lines+1] = o_line end
 					o_line = initial_space
-					o_length = string.len(initial_space)
+					o_length = blen(initial_space)
 				else
 					initial_space = ''
 				end
 				i_words = split(i_line, ' ')
 				for k,i_word in ipairs(i_words) do
-					w_length = len(i_word)
-					if (o_length + w_length) >= MaxCols then
+					w_length = clen(i_word)
+					if o_length + w_length >= MaxCols then
 						o_lines[#o_lines+1] = o_line
 						o_line = initial_space
-						o_length = string.len(initial_space)
+						o_length = blen(initial_space)
 					end
 					if w_length >= MaxCols then  -- chop it !
 						o_lines[#o_lines+1] = string.sub(i_word, 1, MaxCols-1)
@@ -597,12 +603,12 @@ end
 
 
 local function check_size() -- size handling
-	-- debug('check_size: SizeChanged='..tostring(SizeChanged))
+	-- debug('check_size: SizeChanged=',SizeChanged)
 	if not SizeChanged then return end
 	MaxCols, MaxRows = K.GetTerminalSize(TTY)
 	MaxCols = tonumber(MaxCols) - 1
 	MaxRows = tonumber(MaxRows)
-	-- _debug('MaxCols='..tostring(MaxCols)..' MaxRows='..tostring(MaxRows))
+	-- _debug('MaxCols=',MaxCols,' MaxRows=',MaxRows)
 	if OtherLines and #OtherLines > 0 then
 		OtherLines = fmt(table.concat(OtherLines, "\n"))
 	end
@@ -666,7 +672,7 @@ end
 local function dbm_file()
 	local db_dir
 	if os.getenv('CLUI_DIR') then
-		if string.find(string.lower(os.getenv('CLUI_DIR'), 'off')) then
+		if find(string.lower(os.getenv('CLUI_DIR'), 'off')) then
 			return nil
 		end
 		db_dir = tilde_expand(os.getenv('CLUI_DIR'))
@@ -679,7 +685,7 @@ end
 
 function M.get_default (question)
 	if os.getenv('CLUI_DIR') and
-	  string.find(string.lower(os.getenv('CLUI_DIR'), 'off')) then
+	  find(string.lower(os.getenv('CLUI_DIR'), 'off')) then
 		return nil
 	end
 	if not question then return nil end
@@ -698,7 +704,7 @@ end
 function M.set_default (question, ...)
 	local s = table.concat({...}, '\28')  -- Perl $;
 	if os.getenv('CLUI_DIR')
-	  and string.find(string.lower(os.getenv('CLUI_DIR'), 'off')) then
+	  and find(string.lower(os.getenv('CLUI_DIR'), 'off')) then
 		return nil
 	end
 	if not question then return nil end
@@ -707,10 +713,7 @@ function M.set_default (question, ...)
 	for n_tries=1,5 do
 		db = G.open(dbfile, "w")
 		if db then break end
-		-- if ($! == 'Resource temporarily unavailable') then
 		sleep( 0.35 * math.random() )
-		-- else return undef;
-		-- end
 	end
 	if not db:insert(question,s) then db:replace(question,s) end
 	db:close()
@@ -721,9 +724,9 @@ local function layout (list)
 	ThisCell = 1
 	local irow = 1; local icol = 0;  local l = {}
 	for i,v in ipairs(list) do
-		l[i] = len(v) + 2
+		l[i] = clen(v) + 2
 		if l[i] > (MaxCols-1) then l[i] = MaxCols-1 end  -- 1.42
-		if (icol + l[i]) >= MaxCols  then irow=irow+1; icol=0 end
+		if icol + l[i] >= MaxCols  then irow=irow+1; icol=0 end
 		if irow > MaxRows then return irow end  -- save time
 		Irow_a[i] = irow; Icol_a[i] = icol;
 		icol = icol + l[i]
@@ -733,10 +736,10 @@ local function layout (list)
 end
 
 wr_cell = function (i)
-	local no_tabs = string.gsub(List[i], '\t', ' ')
+	local no_tabs = gsub(List[i], '\t', ' ')
 	go_to(Icol_a[i], Irow_a[i]);
 	if Marked[i] then attrset(B.bor(A_BOLD, A_UNDERLINE)) end
-	if (i == ThisCell) then attrset(A_REVERSE) end
+	if i == ThisCell then attrset(A_REVERSE) end
 	puts(string.sub(" "..no_tabs.." ", 1, MaxCols))  -- 1.42, 1.54
 	if Marked[i] or i == ThisCell then attrset(A_NORMAL) end
 end
@@ -763,7 +766,7 @@ end
 
 local function ask_for_clue (nchoices, i, s)
 	if nchoices > 0 then
-		if s and string.len(s) > 0  then
+		if s and blen(s) > 0  then
 			local headstr = "the choices won't fit; there are still";
 			go_to(0,1); puts(headstr..' '..nchoices..' of them'); clrtoeol()
 			go_to(0,2); puts('lengthen the clue : '); right(i-1)
@@ -811,20 +814,20 @@ local function narrow_the_search (biglist)
 			  	for j = i,#s do puts(s[j]) end
 				clrtoeol(); left(#s-i); next_please = true
 			end
-		elseif (c == "\3") then  -- 1.56
+		elseif c == "\3" then  -- 1.56
 			erase_lines(1); endwin()
 			io.stderr:write("^C\r\n")
 			P.kill(P.getpid('pid'), P.SIGINT)
 			enter_mouse_mode(); return {}  -- 1.71
-		elseif (c == "\24" or c == "\4") then  -- ^X, ^D, clear ...
+		elseif c == "\24" or c == "\4" then  -- ^X, ^D, clear ...
 			if not s or #s < 1 then   -- 20070305 ?
 				ClueHasBeenGiven = false; erase_lines(1)
 				enter_mouse_mode(); return {}
 			end
 			left(i-1); i = 1; s = {}; clrtoeol()
-		elseif (c == "\1") then left(i-1); i = 1;  next_please = true
-		elseif (c == "\5") then right(#s-i); i = #s; next_please = true
-		elseif (c == "\f") then  -- ignore it
+		elseif c == "\1" then left(i-1); i = 1;  next_please = true
+		elseif c == "\5" then right(#s-i); i = #s; next_please = true
+		elseif c == "\f" then  -- ignore it
 		-- elseif (SpecialKey[c]) then beep()
 		elseif type(c) == 'number' then next_please = true
 		elseif string.byte(c) >= 32 then  -- 1.51
@@ -840,11 +843,11 @@ local function narrow_the_search (biglist)
 			ss = table.concat(s, "")
 			list = {}
 			for k,v in ipairs(biglist) do
-				if string.find(v, ss) then list[#list+1] = v end
+				if find(v, ss) then list[#list+1] = v end
 			end
 			nchoices = #list
 			Nrows = layout(list)
-			if (nchoices==1 or (nchoices>1 and Nrows<MaxRows)) then
+			if nchoices==1 or (nchoices>1 and Nrows<MaxRows) then
 				puts("\r"); clrtoeol(); up(1); clrtoeol();
 				enter_mouse_mode(); return list
 			end
@@ -863,18 +866,18 @@ function M.choose (question, a_list, options)
 	-- local list = {}
 	-- grep (($_ =~ s/[\r\n]+$//) and 0, @list);	-- chop final newlines
 	List = {}  -- 1.70
-	for k,v in ipairs(a_list) do List[k] = string.gsub(v, '%s$', '') end
+	for k,v in ipairs(a_list) do List[k] = gsub(v, '%s$', '') end
 	local biglist = deepcopy(List)
 	local icell
 	Marked = {}
-	string.gsub(question, '^[\n\r]+', '')  -- strip initial newline(s)
-	string.gsub(question, '[\n\r]+$', '')  -- strip final newline(s)
+	gsub(question, '^[\n\r]+', '')  -- strip initial newline(s)
+	gsub(question, '[\n\r]+$', '')  -- strip final newline(s)
 	local firstline = question
 	local remainder = ''
-	if string.find(question, '\n') then
-		firstline, remainder = string.match(question,'^([^\n\r]*)\r?\n\r?(.*)')
+	if find(question, '\n') then
+		firstline, remainder = match(question,'^([^\n\r]*)\r?\n\r?(.*)')
 	end
-	local firstlinelength = len(firstline)
+	local firstlinelength = clen(firstline)
 
 	Choice = M.get_default(firstline)
 	-- If wantarray ? Is remembering multiple choices safe ?
@@ -956,7 +959,7 @@ function M.choose (question, a_list, options)
 			ThisCell = ThisCell-1
 			wr_cell(ThisCell+1); wr_cell(ThisCell); 
 		elseif (((c == "j") or (c == KEY_DOWN)) and (Irow < Nrows)) then
-			local mid_col = Icol_a[ThisCell] + 0.5*len(List[ThisCell]) -- 1.71
+			local mid_col = Icol_a[ThisCell] + 0.5*clen(List[ThisCell]) -- 1.71
 			local left_of_target = 1000 -- 1.71
 			local inew = ThisCell + 1   -- 1.71
 			while inew < #List do  -- <=?
@@ -965,7 +968,7 @@ function M.choose (question, a_list, options)
 			end
 			local new_mid_col = 0  -- 1.70
 			while inew < #List do  -- <=?
-				new_mid_col = Icol_a[inew] + 0.5*len(List[inew]);
+				new_mid_col = Icol_a[inew] + 0.5*clen(List[inew]);
 				if new_mid_col >= mid_col then break end  -- we've reached it
 				if Icol_a[inew+1] <= Icol_a[inew] then break end -- EOL
 				left_of_target = mid_col - new_mid_col
@@ -974,8 +977,8 @@ function M.choose (question, a_list, options)
 			if (new_mid_col-mid_col) > left_of_target then inew = inew-1 end
 			local iold = ThisCell; ThisCell = inew  -- 1.71
 			wr_cell(iold); wr_cell(ThisCell)
-		elseif (((c == "k") or (c == KEY_UP)) and (Irow > 1)) then
-			local mid_col = Icol_a[ThisCell] + 0.5*len(List[ThisCell])  -- 1.71
+		elseif ((c == "k") or (c == KEY_UP)) and (Irow > 1) then
+			local mid_col = Icol_a[ThisCell] + 0.5*clen(List[ThisCell]) -- 1.71
 			local right_of_target = 1000   -- 1.71
 			local inew = ThisCell - 1      -- 1.71
 			while inew > 1 do  -- 1 ?  yes 1.70
@@ -985,7 +988,7 @@ function M.choose (question, a_list, options)
 			local new_mid_col = 0  -- 1.70
 			while inew > 1 do -- 1 ?  yes 1.70
 				if Icol_a[inew] < 1 then break end
-				new_mid_col = Icol_a[inew] + 0.5*len(List[inew])
+				new_mid_col = Icol_a[inew] + 0.5*clen(List[inew])
 				if new_mid_col <= mid_col then break end  -- 1.78 <=
 				right_of_target = new_mid_col - mid_col
 				inew = inew - 1
@@ -1008,7 +1011,7 @@ function M.choose (question, a_list, options)
 				end
 			end
 			wr_screen()
-		elseif (c == "\3") then  -- 1.56
+		elseif c == "\3" then  -- 1.56
 			erase_lines(1); endwin()
 			io.stderr:write("^C\r\n")
 --			P.kill(P.getpid('pid'), P.SIGINT)   -- XXX 20171128 superfluous?
@@ -1021,7 +1024,7 @@ function M.choose (question, a_list, options)
 -- Perhaps just     if wantarray then return {} else return nil end
 -- like for "q" ?    or just return nil and skip the kill ?
 			return nil
-		elseif (c == "\r") then
+		elseif c == "\r" then
 			erase_lines(1); go_to(firstlinelength+1, 0);
 			local chosen = {}
 			if wantarray then
@@ -1035,16 +1038,16 @@ function M.choose (question, a_list, options)
 				local last = table.remove(chosen)
 				local dotsprinted
 				for k,v in ipairs(chosen) do
-					if remaining - len(v) < 4 then
+					if remaining - clen(v) < 4 then
 						dotsprinted = true; puts("...")
 						remaining = remaining-3; break
 					else
 						puts(v..', ')
-						remaining = remaining - 2 - len(v)
+						remaining = remaining - 2 - clen(v)
 					end
 				end
 				if not dotsprinted then
-					if (remaining - len(last)) > 0 then puts(last)
+					if (remaining - clen(last)) > 0 then puts(last)
 					elseif remaining > 2 then puts('...')
 					end
 				end
@@ -1077,7 +1080,7 @@ function M.help_text(mode) -- 1.54
 		return "\nLeft, Right, Backspace, Delete; ctrl-A=beginning; "
 		 .. "ctrl-E=end; Tab-completion; Up,Down=history; then Return."
 	end
-	if string.find(mode, 'pass') then
+	if find(mode, 'pass') then
 		return "\nLeft, Right, Backspace, Delete; ctrl-A=beginning; "
 		 .. "ctrl-E=end; then Return."
 	end
@@ -1087,7 +1090,7 @@ function M.help_text(mode) -- 1.54
 	else
 		text = "\nmove around with Mouse or Arrowkeys (or hjkl);"
 	end
-	if string.match(mode, 'multi') then
+	if match(mode, 'multi') then
 		text = text.." multiselect with Rightclick or Spacebar;"
 	end
 	text = text.." then either q or ctrl-X for quit,"
@@ -1102,7 +1105,7 @@ end
 ----------------------- confirm stuff -------------------------
 
 function M.confirm (question)  -- asks user Yes|No, returns true|false
-	if not question or string.len(question)<1 then return end
+	if not question or blen(question)<1 then return end
 	local firstline = display_otherlines(question);
 	local tty = io.open(P.ctermid(),'a+')
 	tty:write(firstline.." (y/n) ")
@@ -1117,17 +1120,17 @@ function M.confirm (question)  -- asks user Yes|No, returns true|false
 			P.kill(P.getpid('pid'), P.SIGINT)
 			return nil
 		end
-		if string.find(response, '[yYnN]') then break end
+		if find(response, '[yYnN]') then break end
 	end
 	tty:write(string.rep(TI['cursor_left'], 6))
 	tty:write(TI['clr_eos'])
-	if string.find(response, '[yY]') then
+	if find(response, '[yY]') then
 		tty:write("Yes\r\n")
 	else
 		tty:write("No\r\n")
 	end
 	K.ReadMode('restore', tty); tty:flush(); tty:close()
-	if string.find(response, '[yY]') then return true else return false end
+	if find(response, '[yY]') then return true else return false end
 end
 
 ----------------------- edit stuff -------------------------
@@ -1140,7 +1143,7 @@ function M.edit (title, text)
 	elseif text then
 		-- must create tmp file with title embedded in name
 		local tmpdir = '/tmp/'
-		local safename = string.gsub(title, '[%W_]+', '_')
+		local safename = gsub(title, '[%W_]+', '_')
 		local file = tmpdir..safename..'_'..P.getpid('pid')
 		local F = assert(io.open(file, 'w'))
 		if not F then return '' end
@@ -1161,7 +1164,7 @@ function M.edit (title, text)
 		--end
 		--if (-T _ and !-w _) then view($file); return 1; end
 		-- it's a writeable text file, so work out the locations
-		if string.find(file, '/') then
+		if find(file, '/') then
 			dirname  = P.dirname(file)
 			basename = P.basename(file)
 			rcsdir   = dirname..'/RCS'
@@ -1174,7 +1177,7 @@ function M.edit (title, text)
 		-- we no longer create the RCS directory if it doesn't exist,
 		-- so `mkdir RCS' to enable rcs in a directory ...
 		rcs_ok = false
-		if P.dir(rcsdir) then rcs_ok = true end
+		if P.stat(rcsdir) and P.dir(rcsdir) then rcs_ok = true end
 		--if (-d _ and ! -w _) then
 		--	rcs_ok = false
 		--	warn("can't write in $rcsdir\n")
@@ -1192,16 +1195,16 @@ function M.edit (title, text)
 		if rcs_ok and P.stat(file) then  -- check it in
 			if not P.stat(rcsfile) then
 				local msg = ask(file..' is new. Please describe it:')
-				local quotedmsg = string.gsub(msg, "'", "'\"'\"'")
-				if msg and string.len(msg)>0 then
+				local quotedmsg = gsub(msg, "'", "'\"'\"'")
+				if msg and blen(msg)>0 then
 					os.execute(
 					  "ci -q -l -t-'"..quotedmsg.."' -i "..file..' '..rcsfile)
 					logit(rcslog, basename, msg)
 				end
 			else
 				local msg = ask("What changes have you made to $file ?")
-				local quotedmsg = string.gsub(msg, "'", "'\"'\"'")
-				if msg and string.len(msg)>0 then
+				local quotedmsg = gsub(msg, "'", "'\"'\"'")
+				if msg and blen(msg)>0 then
 					os.execute(
 					  "ci -q -l -m'"..quotedmsg.."' "..file.." "..rcsfile)
 					logit(rcslog, basename, msg)
@@ -1232,7 +1235,7 @@ function M.sorry(msg) -- warns user of an error condition
 	io.stderr:write("Sorry, "..msg.."\r\n")
 end
 function M.inform (msg)
-	msg = string.gsub(msg, '\n*$', '\n')
+	msg = gsub(msg, '\n*$', '\n')
 	local tty = io.open(P.ctermid(), 'a')
 	if tty then
 		tty:write(msg); tty:close()
@@ -1246,8 +1249,8 @@ end
 local function tiview (title, text)
 	if not text or text == '' then return end
 	-- local ($[) = 0;
-	title = string.gsub(title, '\t', ' ')
-	local titlelength = len(title)
+	title = gsub(title, '\t', ' ')
+	local titlelength = clen(title)
 	check_size()
 	local rows = fmt(text, {nofill=true})
 	initscr{}
@@ -1263,12 +1266,12 @@ local function tiview (title, text)
 	
 	while true do
 		local c = getch()
-		if (c == 'q' or c == "\24" or c == "\23" or c == "\26"
-		  or c == "\3" or c == "\28") then -- ^X ^W ^Z ^C ^\
+		if c == 'q' or c == "\24" or c == "\23" or c == "\26"
+		  or c == "\3" or c == "\28" then -- ^X ^W ^Z ^C ^\
 			erase_lines(0); endwin(); return true
-		elseif (c == "\r") then  -- <enter> retains text on screen
+		elseif c == "\r" then  -- <enter> retains text on screen
 			clrtoeol(); go_to(0, #rows+1); endwin(); return true
-		elseif (c == "\f") then
+		elseif c == "\f" then
 			puts("\r"); endwin(); tiview(title,text); return true
 		end
 	end
@@ -1276,7 +1279,7 @@ local function tiview (title, text)
 end
 
 function M.view (title, text)  -- or (filename) =
-	if not text and string.find(string.lower(title),'%.doc$')
+	if not text and find(string.lower(title),'%.doc$')
 	  and P.access(title, 'r') then
 		local wvText = which('wvText')
 		if wvText then
@@ -1314,7 +1317,7 @@ function M.view (title, text)  -- or (filename) =
 		if #lines <= (0.6*MaxRows) then
 			tiview(title, text)
 		else
-			local safetitle = string.gsub(title, '[^a-zA-Z0-9]+', '_')
+			local safetitle = gsub(title, '[^a-zA-Z0-9]+', '_')
 			local tmp = "/tmp/"..safetitle..P.getpid('pid')
 			local TMP = assert(io.open(tmp, 'w'))
 			TMP:write(text);	TMP:close()
@@ -1649,13 +1652,14 @@ so you should be able to install it with the command:
 
 or:
 
- # luarocks install http://www.pjb.com.au/comp/lua/commandlineui-1.75-0.rockspec
+ # luarocks install http://www.pjb.com.au/comp/lua/commandlineui-1.78-0.rockspec
 
 The Perl module is available from CPAN at
 http://search.cpan.org/perldoc?Term::Clui
 
 =head1 CHANGES
 
+ 20200523 1.78 local variables for the common string functions
  20180630 1.77 KEY_UP gets the right column
  20171008 1.76 defend against a race condition in line 403
  20170525 1.75 fix bug with nil str in line 222
