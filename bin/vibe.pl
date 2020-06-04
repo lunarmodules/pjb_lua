@@ -78,6 +78,7 @@ my $LinesPerPage   = 20;   # for KEY_NPAGE and KEY_PPAGE
 my $FindString     = '';
 my $FindForwards   = 1;    # / or ? == +1 or -1
 my $SeekForwards   = 1;    # f or F == +1 or -1
+my $LastSeekChar   = undef;
 my %ForceWholeLine = map { $_, 1 } qw($ } {);   # c and d want the whole line
 my @HistoryGoBack    = (); # list of patches, see Text::Diff and Text::Patch
 my @HistoryGoForward = (); # list of patches, see Text::Diff and Text::Patch
@@ -172,14 +173,18 @@ sub word_under_cursor { # is this the Perl way to seek the whole word ?
 	$after  =~ m/^(\w*)/; $after  = $1;
 	return $before.$this.$after;
 }
-sub seek_in_line {   # used by f F ; ,
+sub seek_in_line { my ($delta, $c) = @_;  # used by f F ; ,
 	my $line = $Lines[$LineNum];
-	my $seekchar = substr $line, $CharNum, 1;
-	my $char_num = $CharNum + $SeekForwards;
+	my $seekchar;
+	if (defined($c)) { $seekchar=$c ; $LastSeekChar=$c ;
+	} else           { $seekchar=$LastSeekChar;
+	}
+	if (! defined($seekchar)) { message('no previous seek') ; return; }
+	my $char_num = $CharNum + $delta;
 	while ($char_num >= $[ and $char_num <= length($line)) {
 		my $c = substr $line, $char_num, 1;
 		if ($c eq $seekchar) { $CharNum = $char_num; last; }
-		$char_num = $char_num + $SeekForwards;
+		$char_num = $char_num + $delta;
 		# if ($char_num < $[) { last; }
 	}
 	message(sprintf("character %d", $CharNum+1-$[));
@@ -239,16 +244,16 @@ sub command_mode {
 				message("no word under cursor");
 			}
 		} elsif ($c eq 'f') {
-			$SeekForwards = 1;  seek_in_line();
+			$SeekForwards = 1;  seek_in_line( 1, getch());
 			display_line();
 		} elsif ($c eq 'F') {
-			$SeekForwards = -1; seek_in_line();
+			$SeekForwards = -1; seek_in_line(-1, getch());
 			display_line();
 		} elsif ($c eq ';') {
-			seek_in_line();
+			seek_in_line($SeekForwards);
 			display_line();
 		} elsif ($c eq ',') {
-			$SeekForwards = -1 * $SeekForwards; seek_in_line();
+			seek_in_line(-1*$SeekForwards);
 			display_line();
 		} elsif ($c eq 'g' || $c == $KEY_HOME) {
 			$LineNum = $[;  $CharNum = $[;

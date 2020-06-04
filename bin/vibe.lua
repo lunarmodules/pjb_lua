@@ -85,8 +85,16 @@ else
 end
 
 -------------------------- global variables ---------------------
+function _debug(...)
+	local DEBUG = io.open('/tmp/debug', 'a')
+	local a = {}
+	for k,v in pairs{...} do table.insert(a, tostring(v)) end
+	DEBUG:write(table.concat(a),'\n') ; DEBUG:flush()
+	DEBUG:close()
+end
 
 HOME = P.getpwuid(P.geteuid())['pw_dir'] or os.getenv('HOME')
+
 function consult_vimrc ()
 	-- to get $> in lua use P.geteuid() - UNDOCUMENTED !
 	local h = P.getpwuid(P.geteuid())['pw_dir'] or os.getenv('HOME')
@@ -172,13 +180,15 @@ local function left(n)
 end
 function gotoxy (newcol, newrow)
 	-- TTY:write(T.tparm(T.get('cup'),newcol,newrow))
-    if newcol == 0 then TTY:write("\r") ; Icol = 0
-    elseif (newcol > Icol) then right(newcol-Icol)
-    elseif (newcol < Icol) then left(Icol-newcol)
+--    if     newcol == 0   then TTY:write("\r") ; TTY:flush() ; Icol = 0
+--    elseif newcol > Icol then right(newcol-Icol)
+--    elseif newcol < Icol then left(Icol-newcol)
+--    end
+	TTY:write("\r"); TTY:flush(); Icol=0 if newcol>0 then right(newcol) end
+    if     newrow > Irow then down(newrow-Irow)
+    elseif newrow < Irow then up(Irow-newrow)
     end
-    if (newrow > Irow)      then down(newrow-Irow)
-    elseif (newrow < Irow) then up(Irow-newrow)
-    end
+--Icol = newcol
 end
 -- 20150910 race-condition-avoidance stuff from midiloop : XXX needs fixing
 -- 1) STDERR=>TTY  2) Icol starts from 0 not 1
@@ -188,7 +198,7 @@ function puts_xy (newcol, newrow, raw_s, extras)
     newcol = round(newcol); newrow = round(newrow)
     if newrow > Irow  then Icol=0 end -- \n affects Icol, so detect it now
     -- small newcols would be quicker with "\r" . ' 'x(newcol-1)
-    if newcol <= 1 then table.insert(s, 1, "\r"); Icol = 0
+    if newcol <= 0 then table.insert(s, 1, "\r"); Icol = 0
     elseif newcol > Icol then
         table.insert(s,1, rep(TI['cursor_right'],newcol-Icol)); Icol = newcol
     elseif newcol < Icol then
@@ -214,9 +224,11 @@ end
 
 function puts_clr (s)   -- assumes no newlines
     s = gsub(s, '%s', ' ')
-    TTY:write(s..TI['clr_eol'])
+    TTY:write(s..TI['clr_eol']) ; TTY:flush()
     Icol = Icol + len(s)
 end
+
+-------------------------- global variables ---------------------
 
 TTY            = nil
 TTYIN          = nil
@@ -242,6 +254,7 @@ LinesPerPage   = 20   -- for KEY_NPAGE and KEY_PPAGE
 FindString     = ''
 FindForwards   = 1    -- / or ? == +1 or -1
 SeekForwards   = 1    -- f or F == +1 or -1
+LastSeekChar   = nil
 ForceWholeLine = { ['$']=true, ['}']=true, ['{']=true,  }
 -- c and d want the whole line
 HistoryGoBack    = {} -- list of patches, see Text::Diff and Text::Patch
@@ -275,23 +288,42 @@ function exit(rv)
 	print "\r"; endwin(); os.exit(rv)
 end
 function die(...) warn(...);  exit(1) end
-function splice(array, offset, length, list)
+
+--[[
+function splice(array, offset, length, list)   -- perl-compatible
+	if type(list) ~= 'table' then die('splice: 4th arg must be a table') end
 	local result = {}
 	if not offset then return {} end
 	if not length then length = -1 end
 	for i = 1,(offset-1) do result[#result+1] = array[i] end
-	if type(list) == 'table' then
-		for i,v in pairs(list) do result[#result+1] = v end
-	else
-		result[#result+1] = list
-	end
+	for i,v in pairs(list) do result[#result+1] = v end
 	if length < 0 then
 		for i = offset, (#array+1-length) do result[#result+1] = array[i] end
 	else 
 		for i = (offset+length), #array   do result[#result+1] = array[i] end
 	end
+	-- XXX following perl, should this also remove the elements from array ?
+	for i = offset, offset+length-1 do array[i] = array[i+length] end
+	array[offset+length] = nil
 	return result
 end
+]]
+function splice(array, offset, length, list)   -- perl-compatible
+	list = list or {}
+	if type(list) ~= 'table' then die('splice: 4th arg must be a table') end
+	local result = {}
+	if not offset then return {} end
+	if not length then length = -1 end
+	for i = offset, offset+length-1 do result[#result+1] = array[i] end
+	local after = {}
+	for i = offset+length, #array do table.insert(after, array[i]) end
+	for i = offset, #array do table.remove(array) end
+	for i,v in ipairs(list) do table.insert(array, v) end
+	for i,v in ipairs(after) do table.insert(array, v) end
+	return result
+end
+
+
 function split(s, pattern, maxNb) -- http://lua-users.org/wiki/SplitJoin
 	if not s or len(s)<2 then return {s} end
 	if not pattern then return {s} end
@@ -383,7 +415,7 @@ do
 end
 -- x = 'Aéŝ'; print(x..' is '..tostring(len(x))..' characters long')
 
-function initscr(args)
+function initscr()
 	TTY   = assert(io.open(P.ctermid(), 'a+')) -- the controlling terminal
 	TTYIN = assert(io.open(P.ctermid(), 'r'))
 	RK.ReadMode('ultra-raw', TTY);
@@ -391,8 +423,7 @@ function initscr(args)
 end
 
 function endwin()
-	TTY:write("\027[0m");
-	TTY:flush()
+	TTY:write("\027[0m") ; TTY:flush()
 	RK.ReadMode('restore', TTYIN)
 	RK.ReadMode(1, TTY)  -- not necessary in Perl ? why not ?
 	TTY:close()
@@ -412,7 +443,7 @@ function puts_30c(s)
 	local rest = 30 - len(s)
 	TTY:write(s)
 	TTY:write(rep(' ',rest))
-	TTY:write(rep('\027[D',rest))
+	TTY:write(rep('\027[D',rest)) ; TTY:flush()
 	Icol = Icol + len(s)
 end
 function clrtoeol ()  TTY:write(TI['clr_eol'])      TTY:flush() end
@@ -556,12 +587,12 @@ function get_default (question)
 		if db then break end
 		sleep( 0.25 * math.random() )
 	end
-	local choices = split(db:fetch(question) or '', '\28')  -- Perl $;
+	local choices = split(db:fetch(question) or '', '\028')  -- Perl $;
 	db:close()
 	if wantarray then return choices else return choices[1] end
 end
 function set_default (question, ...)
-	local s = table.concat({...}, '\28')  -- Perl $;
+	local s = table.concat({...}, '\028')  -- Perl $;
 	if os.getenv('CLUI_DIR')
 	  and find(string.lower(os.getenv('CLUI_DIR'),'off')) then return nil end
 	if not question then return nil end
@@ -614,12 +645,15 @@ end
 function charnum2colnum (charnum)  -- closely related to expand_tabs
     if charnum < 1 then charnum = 1 end
     local colnum = 0
-    local chars  = split('', Lines[LineNum])
+    -- local chars  = split('', Lines[LineNum]) NOPE, sorry :-
+    local chars  = {}
+	for i = 1, len(Lines[LineNum]) do chars[i] = sub(Lines[LineNum],i,i) end
 	if InsertMode then
     	if charnum > (#chars+1) then charnum = #chars+1 end
 	else
     	if charnum > #chars then charnum = #chars end
 	end
+if charnum > 1 then
     for i = 1, charnum-1 do   -- for all the previous chars
         if chars[i] == "\t" then  -- depends on 1=0
             colnum = -1 +
@@ -628,6 +662,7 @@ function charnum2colnum (charnum)  -- closely related to expand_tabs
             colnum = colnum + 1
         end
     end
+end
 	return colnum
 end
 function expand_tabs ()   -- closely related to charnum2colnum
@@ -652,7 +687,8 @@ end
 function message (s, option)
 	if  not s then
 		if LastWasLineNum then s = ''   -- 2.0
-		else s = "line "..tostring(LineNum)   -- ;  LastWasLineNum = LineNum
+		-- else s = "line "..tostring(LineNum) -- ; LastWasLineNum = LineNum
+		else s = "line "..tostring(LineNum)..' CharNum '..tostring(CharNum)..' Icol '..tostring(Icol)
 		end
 	end
 	if LastWasUpOrDown then
@@ -667,7 +703,7 @@ function message (s, option)
 			puts_xy_clr(0, DisplayLine+1, s)
 		end
 	end
-	if not (option == 'quitting') then
+	if option ~= 'quitting' then
 		gotoxy(charnum2colnum(CharNum), DisplayLine)
 	end
 	LastMessage = s
@@ -685,7 +721,7 @@ function display_line ()
 		local shave_off_start = colnum - new_colnum
 		if shave_off_start > 0 then
 			-- substr $s, 1, $shave_off_start, '';
-			s = sub(s, shave_off_start)
+			s = sub(s, shave_off_start+1)
 			colnum = new_colnum
 		end
 		if len(s) >= Cols   then s = sub(s, Cols) end
@@ -712,40 +748,40 @@ function read_line (prompt)
    	local cmdstr = RL.readline(prompt)
 	cmdstr = gsub(cmdstr, ' $','')
 	initscr()
-	TTY:write("\027[A"); Irow = DisplayLine + 1; clrtoeol()
+	TTY:write("\027[A") ; Irow = DisplayLine + 1; clrtoeol()
 	return cmdstr
 end
-function is_position (arg)
-	if match(arg, "^%d+$") or match(arg, "^%.([-+]%d+)?$") then
+function is_position (s)
+	if match(s, "^%d+$") or match(s, "^%.([-+]%d+)?$") then
 		return true
 	end
-	if match(arg, "^'[a-z]$") or match(arg, "^%$(-%d+)?$") then
+	if match(s, "^'[a-z]$") or match(s, "^%$(-%d+)?$") then
 		return true
 	end
 	-- needs expanding to recognise everything that find_position can handle
 	return false
 end
-function find_position (arg)
+function find_position (s)
 	-- handling 123, and (\d*)?[.}^$nNwbe]([-+]\d+)?
 	-- and returning ($line_num,$char_num) could then be used in d4w or
 	-- in  .,}+4w /tmp/t  by being invoked twice by a general  sub range
 	-- in vi, [nN] _is_ useable in a range, also in dn or d3n etc.
 	-- handle also marks, eg: 'a
-	local line_offset = tonumber(match(arg, '([-+]%d+)$') or 0)
-	if arg == '.' then   -- 1.3
+	local line_offset = tonumber(match(s, '([-+]%d+)$') or 0)
+	if s == '.' then   -- 1.3
 		local n = LineNum + line_offset
 		if n > #Lines then n = #Lines elseif n < 1 then n = 1 end
 		return n, 1
-	elseif arg == '$' then   -- 1.3
+	elseif s == '$' then   -- 1.3
 		local n = #Lines + line_offset
 		if n > #Lines then n = #Lines elseif n < 1 then n = 1 end
 		return n, 1;
-	elseif match(arg, '^%d+$') then   -- 1.3
-		local n = tonumber(arg) + line_offset
+	elseif match(s, '^%d+$') then   -- 1.3
+		local n = tonumber(s) + line_offset
 		if n > #Lines then n = #Lines elseif n < 1 then n = 1 end
 		return n, 1
-	elseif match(arg, "^'([a-zA-Z])$") then   -- 1.3  
-		local mark = match(arg, "^'([a-zA-Z])$")
+	elseif match(s, "^'([a-zA-Z])$") then   -- 1.3  
+		local mark = match(s, "^'([a-zA-Z])$")
 		if Mark2LineNum[mark] then
 			return Mark2LineNum[mark], Mark2CharNum[mark] or 1
 		else
@@ -753,17 +789,18 @@ function find_position (arg)
 		end
 	end
 	-- the remaining possibilities can take multipliers...
-	local t1,t2 = match(arg, '^(%d*)(.)$')
-	local multiplier = t1 or 1; local c = t2
+	local t1,t2 = match(s, '^(%d*)(.)$')
+	local multiplier = tonumber(t1) or 1; local c = t2
 	local find_direction    = 1
 	local find_string   = FindString
 	local find_forwards = FindForwards
-	if     c == 'n' then find_direction = 1    -- next
+	-- see  %f[%w] and %f[%W]  PiL3 p207  in perl \b means word-boundary
+	if     c == 'n' then find_direction =  1   -- next
 	elseif c == 'N' then find_direction = -1   -- previous
-	elseif c == 'w' then find_forwards  = 1;  find_string = '(?<=%W)%w'
-	elseif c == 'b' then find_forwards  = -1; find_string = '%b%w' -- XXX %b ?
-	elseif c == 'e' then find_forwards  = 1;  find_string = '(?<=%w)%b'
-	elseif c == '}' then find_forwards  = 1;  find_string = '^%s*$'
+	elseif c == 'w' then find_forwards  =  1; find_string = '%W%w'
+	elseif c == 'b' then find_forwards  = -1; find_string = '%f[%w]'
+	elseif c == 'e' then find_forwards  =  1; find_string = '%w%W'
+	elseif c == '}' then find_forwards  =  1; find_string = '^%s*$'
 	elseif c == '{' then find_forwards  = -1; find_string = '^%s*$'
 	else message("BUG: find_position called with c=$c"); return;
 	end
@@ -771,13 +808,15 @@ function find_position (arg)
 	local char_num = CharNum
 	for i = 1, multiplier do
 		local found_single   = false
-		-- first find from CharNum on the current line, unless { or end
-		if find(c, '{') and find(c, '}') then
+		-- first find from CharNum on the current line, unless { or }
+		if c ~= '{' and c ~= '}' then
 			if find_forwards > 0 then
 				local remainder = sub(Lines[LineNum], char_num+1)
+-- problem: %f[%w] matches not just %W%w but also ^%w of the remainder
 				local n = find(remainder, find_string)
 				if n then
 					char_num = char_num + n
+					if c == 'w' then char_num = char_num + 1 end
 					found_single = true; goto nextmultiplier
 				end
 			else
@@ -785,19 +824,12 @@ function find_position (arg)
 				local pre = match(previous, '(.*)'..find_string)
 				if pre then
 					char_num     = len(pre)
+					if c == 'b' then char_num = char_num + 1 end
 					found_single = true ; goto nextmultiplier
 				end
 			end
 		end
-		-- if not, look through the subsequent lines
-		-- see  %f[%w]  and  %f[%W]  PiL3 p207
-		-- if  c == 'w' then find_string = '\b\w'  -- \b means word-boundary
-		if     c == 'w' then find_string = '%f[%w]'
-		--elseif c=='b' then find_string = '(.*)\b\w'
-		elseif c == 'b' then find_string = '(.*)%f[%w]'
-		--elseif c=='e' then find_string = '(?<=\w)\b'  -- ??
-		elseif c == 'e' then find_string = '(?<=%w)%f[%W]'
-		end
+		-- in any case, look through the subsequent lines
 		line_num = line_num + find_forwards*find_direction
 		-- first, separate the '{' and '}' cases !
 		if c == '{' then
@@ -823,8 +855,8 @@ function find_position (arg)
 					found_single = true   char_num = 1   break
 				end
 				line_num = line_num + 1
--- XXX correctly placed; but deleting must now be special-cased to
---     delete the last character also...
+-- XXX correctly placed; but deleting must now be special-cased
+--     to delete the last character also...
 			end
 		else
 			while line_num >= 1 and line_num <= #Lines do
@@ -920,27 +952,80 @@ function read_dialogue (argument)
 	local lines = #buffer;  message("$lines lines from "..argument)
 end
 
-function colon_mode (arg)   -- to handle the vibe -c arg
+function delete_between (line1, char1, line2, char2)
+	-- Used by eg: d5w d2} cw c} !}fmt :.,$d
+	-- Because it is used by ! it returns the text deleted.
+	-- it sets @Buffer but it can't set $BufferIsWholeLine  (2dd is, d9w isn't)
+	if line2 < line1 then
+		local tmp=line1; line1=line2; line2=tmp
+		   tmp=char1; char1=char2; char2=tmp
+	elseif line1 == line2 then
+		if char1 == char2 then
+			message('0 chars');  display_line();  return ''
+		elseif char2 < char1 then
+		   local tmp=char1; char1=char2; char2=tmp
+		end
+	end
+	LineNum = line1;  CharNum = char1
+	if line1 == line2 then
+		local nchars  = char2-char1
+		local deleted = my_substr(Lines[line1], char1, nchars, '')
+		local msg = "1 char"
+		if nchars > 1 then msg = tostring(nchars).." chars" end
+		message(msg);  display_line()
+		Buffer = { deleted }
+		return deleted
+	else
+		local deleted = {};  local nlines
+		local end_of_first_line = sub(Lines[line1], char1)
+		Lines[line1]            = sub(Lines[line1], 1, char1-1)
+		if (char2-1) < len(Lines[line2]) then
+			local start_of_final_line = my_substr(Lines[line2],1,char2-1,'')
+			Lines[line1] = Lines[line1]..Lines[line2]
+			-- @deleted = splice @Lines, $line1+1, $line2-$line1;
+			for i = line1+1, line2 do table.insert(deleted, Lines[i]) end
+			table.insert(deleted, start_of_final_line)
+			nlines  = line2-line1
+		else   -- 20200507 past EOL is used as a signal for d} to EOF
+			-- @deleted = splice @Lines, $line1+1, $line2-$line1+1;
+			for i = line1+1, line2+1 do table.insert(deleted, Lines[i]) end
+			Lines[#Lines] = nil
+			if LineNum > 1 then LineNum = LineNum-1 end -- 2.4
+			nlines  = line2-line1+1
+		end
+		table.insert(deleted, 1, end_of_first_line)
+		-- we don't say "lines deleted" because it might be !end
+		local msg = "1 line"
+		if nlines > 1 then msg = tostring(nlines).." lines" end
+		message(msg);  display_line()
+		Buffer = deleted
+		if not Lines then Lines = {} end   -- 2.3 20200508
+		return table.concat(deleted,"\n")
+	end
+	warn "BUG: shouldn't reach here...";
+end
+
+function colon_mode (s)   -- to handle the vibe -c arg
 	-- colon_mode handles r w q (\d+) and /^$/,$-5 s/\t/    /g
 	--  does filename-completion as necessary,
 	--  and expects a \n to terminate the command.
 	-- Term::ReadLine::Gnu does tab-completion for filenames by default...
 	local line_num = 0
-	local cmdstr = arg or read_line(':')
+	local cmdstr = s or read_line(':')
 	LastMessage = ":"..cmdstr
 	gotoxy(0, DisplayLine+1)
 	if is_position(cmdstr) then goto_position(cmdstr, "not found"); return end
 --print('\rcolon_mode: before cmdstr = ',cmdstr)
---	local range,cmd,arg = match(cmdstr,'([.%d]+,[.%d%$]+)?(%S+)%s*(.*)$')
---print('\r1 after range, cmd, arg = ',range, cmd, arg)
---	range = range or '' ; cmd = cmd or '' ; arg = arg or ''
---print('\r2 after range, cmd, arg = ',range, cmd, arg)
+--	local range,cmd,s = match(cmdstr,'([.%d]+,[.%d%$]+)?(%S+)%s*(.*)$')
+--print('\r1 after range, cmd, s = ',range, cmd, s)
+--	range = range or '' ; cmd = cmd or '' ; s = s or ''
+--print('\r2 after range, cmd, s = ',range, cmd, s)
 	local range, rest = match(cmdstr, '^([%.%d]+,[%.%d%$]+)(.+)$')
 	if range then cmdstr = rest end
 	local cmd, arg = match(cmdstr, '^(%S+)%s*(.*)$')
 	if     cmd == 'q'   then quit_dialogue(); return
 	elseif cmd == 'q!'  then arg={};  exit(0)
-	elseif cmd == 'w'   then save_dialogue(arg); return
+	elseif cmd == 'w'   then save_dialogue(); return
 	elseif cmd == 'wq'  then save_dialogue(nil,'quitting'); quit_dialogue()
 		return;
 	elseif cmd == 'wq!' then save_dialogue(); arg={}; exit(0)
@@ -988,9 +1073,9 @@ function insert_mode (argument, replace)
 	-- this should be invoked only from sub perform_a_change
 	-- warning for substr: when appending, CharNum can lie beyond end-of-string
 	if argument then   -- if $arg is set (by '.'), we insert it here
--- BUG if $arg multiline
-		local before = sub(Lines[LineNum], 1, CharNum)
-		local after  = sub(Lines[LineNum], CharNum + arg['mult'])
+-- BUG if argument multiline
+		local before = sub(Lines[LineNum], 1, CharNum-1)
+		local after  = sub(Lines[LineNum], CharNum) -- XXX
 		Lines[LineNum] = before .. argument .. after
 		message()
 		return
@@ -1000,7 +1085,7 @@ function insert_mode (argument, replace)
 	local DcharsSoFar = 0
 	while true do   -- the insert LOOP
 		local c = getch()
-message('type(c) =', type(c)) ; sleep(2)
+--print('type(c)='.. type(c)..' c='..tostring(string.byte(c))) ; sleep(2)
 		if c == "\027" then
 			InsertMode = false;   constrain_char_num()
 			if #text>0 then
@@ -1039,7 +1124,8 @@ message('type(c) =', type(c)) ; sleep(2)
 				Lines[LineNum] = before .. after
 				display_line()  -- this is where we needed smdc and rmdc :-(
 			end
-		elseif c == "\b" or c == "\255" then  -- \cH (even at BOL!)
+		elseif c == "\008" or c == "\127" then  -- \cH (even at BOL!)
+print('backspace')
 			if CharNum > 1 then   -- CharNum=1 means EITHER one char, OR null
 				if CharNum >= len(Lines[LineNum]) then
 					Lines[LineNum] = sub(Lines[LineNum], 1, -2)
@@ -1085,13 +1171,34 @@ message('type(c) =', type(c)) ; sleep(2)
 			if replace == 'R' then puts(c) else puts(Smir..c..Rmir) end
 			CharNum = CharNum + 1; table.insert(text, c)
 			if Opt['keyecho'] then left(1); puts(c) end
+-- Icol should be maintained by puts() etc  Icol = charnum2colnum(CharNum)
 		end
 		::nextchar::
 	end
 	warn "shouldn't reach here";
 end
 
-function perform_a_change (arg)
+function  do_a_tilde (multiplier)
+	local before = sub(Lines[LineNum], 1, CharNum-1)
+	local this   = sub(Lines[LineNum], CharNum, CharNum+multiplier-1)
+	local after  = sub(Lines[LineNum], CharNum+multiplier)
+	local new = {}
+	for i = 1, len(this) do
+		local c = sub(this, i, i)
+		if match(c, '[a-z]') then
+			c = string.upper(c)
+		elseif match(c, '[A-Z]') then
+			c = string.lower(c)
+		end
+		new[i] = c
+	end
+	Lines[LineNum] = before .. table.concat(new, '') .. after
+	CharNum = CharNum + multiplier
+	local l = len(Lines[LineNum])
+	if CharNum > l then CharNum = l end
+end
+
+function perform_a_change (a)
 	-- called by the main LOOP whenever it wants to modify the file
 	-- And perhaps also by colon_mode eg:  !!   !}   .,$s/old/new/g
 	--   mult, eg: the 2 in 2dd
@@ -1100,47 +1207,47 @@ function perform_a_change (arg)
 	--   pos,  eg: $ or .-6 or 2end
 	--   text, eg: inserted text
 	--   shellcmd, eg: fmt or 8vab
-	if not arg['cmd'] then
-		die ("BUG: perform_a_change called without arg['cmd']")
+	if not a['cmd'] then
+		die ("BUG: perform_a_change called without a['cmd']")
 	end
-	if arg['cmd'] ~= '.' then
-		StoreLastChange = arg
+	if a['cmd'] ~= '.' then
+		StoreLastChange = a
 	else
 		if not StoreLastChange['cmd'] then
 			message("no previous command to repeat"); return nil
 		end
-		local tmp = arg['mult']
-		arg = StoreLastChange
+		local tmp = a['mult']
+		a = StoreLastChange
 	end
 	add_to_history()
 	FileIsChanged = true
-	if not arg['mult'] then arg['mult'] = 1 end
-	if arg['cmd'] == '~' then  -- all these cases started life in the LOOP
-		do_a_tilde(arg['mult'])
-	elseif arg['cmd'] == 'J' then
+	if not a['mult'] then a['mult'] = 1 end
+	if a['cmd'] == '~' then  -- all these cases started life in the LOOP
+		do_a_tilde(a['mult'])
+	elseif a['cmd'] == 'J' then
 		-- 20160811 it would be nice if J only spoke the remainder of the line
 		local tmp = gsub(Lines[LineNum], '%s*$', '')
-		for i = 1, arg['mult'] do   -- but vi sees 2J as meaning join 2 lines!
+		for i = 1, a['mult'] do   -- but vi sees 2J as meaning join 2 lines!
 			local nextline = gsub(Lines[LineNum+1], '^%s*', ' ')
 			table.remove(Lines, LineNum+1)
 			CharNum = length(tmp) + 1;
 			tmp = tmp .. nextline
 		end
 		Lines[LineNum] = tmp
-	elseif arg['cmd'] == 'x' or arg['cmd'] == KEY_DELETE then
+	elseif a['cmd'] == 'x' or a['cmd'] == KEY_DELETE then
 		BufferIsWholeLine = false
-		Buffer = { sub(Lines[LineNum], CharNum, arg['mult']) }
+		Buffer = { sub(Lines[LineNum], CharNum, a['mult']) }
 		local before =  sub(Lines[LineNum], 1, CharNum-1)
-		local after  =  sub(Lines[LineNum], CharNum + arg['mult'])
+		local after  =  sub(Lines[LineNum], CharNum + a['mult'])
 		Lines[LineNum] = before .. after
 		constrain_char_num()
-	elseif arg['cmd'] == 'p' or arg['cmd'] == 'P' then
+	elseif a['cmd'] == 'p' or a['cmd'] == 'P' then
 		-- There are whole-line Buffers (yy, Y) and within-the-line Buffers
 		--  (dw, d9w, d$)  (which can also include several lines!, eg d9w)
 		if BufferIsWholeLine then
 -- XXX BUG this does not get invoked for d} or y} or :.,$y etc
 			CharNum = 1
-			if arg['cmd'] == 'p' then
+			if a['cmd'] == 'p' then
 				if LineNum == #Lines then
 					for i,v in ipairs(Buffer) do table.insert(Lines, v) end
 				else
@@ -1151,83 +1258,83 @@ function perform_a_change (arg)
 				splice(Lines, LineNum, 0, Buffer)
 			end
 		else   -- it's a within-the-line Buffer
-			if arg['cmd'] == 'p' then CharNum = CharNum + 1 end
+			if a['cmd'] == 'p' then CharNum = CharNum + 1 end
 			-- BUG this handles only within-the-line Buffers containing no \n
 			local before =  sub(Lines[LineNum], 1, CharNum-1)
 			local after  =  sub(Lines[LineNum], CharNum)
-			Lines[LineNum] = before..rep(Buffer[1],arg['mult'])..after
+			Lines[LineNum] = before..rep(Buffer[1],a['mult'])..after
 		end
-	elseif arg['cmd'] == 'r' then
+	elseif a['cmd'] == 'r' then
 		local before =  sub(Lines[LineNum], 1, CharNum-1)
-		local after  =  sub(Lines[LineNum], CharNum + arg['mult'])
-		Lines[LineNum] = before..rep(arg['text'],arg['mult'])..after
-		CharNum = CharNum + arg['mult'] ; constrain_char_num()
-	elseif arg['cmd'] == 'R' then   -- 2.1 Replace successive chars
+		local after  =  sub(Lines[LineNum], CharNum + a['mult'])
+		Lines[LineNum] = before..rep(a['text'],a['mult'])..after
+		CharNum = CharNum + a['mult'] ; constrain_char_num()
+	elseif a['cmd'] == 'R' then   -- 2.1 Replace successive chars
 		message(' REPLACE')
-		insert_mode(arg['text'], 'R')
-	elseif arg['cmd'] == 'c' then
-		if arg['pos'] == 'c' then  -- special-cased ergonomic change-this-line
-			splice(Lines, LineNum, arg{'mult'}, '')
+		insert_mode(a['text'], 'R')
+	elseif a['cmd'] == 'c' then
+		if a['pos'] == 'c' then  -- special-cased ergonomic change-this-line
+			splice(Lines, LineNum, a{'mult'}, '')
 			constrain_line_num()
 			CharNum = 1
 		else  -- invoke find_position and delete to there
-			if ForceWholeLine[arg['pos']] then CharNum = 1 end
-			local end_line, endchar = find_position(arg['pos'])
+			if ForceWholeLine[a['pos']] then CharNum = 1 end
+			local end_line, endchar = find_position(a['pos'])
 			if end_line then
 				if end_line == #Lines then endchar = endchar+1 end
 				delete_between(LineNum, CharNum, end_line, endchar)
 				message("line "..tostring(LineNum)..' INSERT')
-				insert_mode(arg['text'])
+				insert_mode(a['text'])
 			else
-				message("can't find arg['pos']");
+				message("can't find a['pos']");
 			end
 		end
-	elseif arg['cmd'] == 'd' then  -- special-cased ergonomic delete-this-line
-		if arg['pos'] == 'd' or arg['pos'] == '$' then   -- 20200507
+	elseif a['cmd'] == 'd' then  -- special-cased ergonomic delete-this-line
+		if a['pos'] == 'd' or a['pos'] == '$' then   -- 20200507
 -- XXX not quite ... d$ should leave the empty line,
 --               but dd should delete the whole line
 			BufferIsWholeLine = true
-			Buffer = splice(Lines, LineNum, arg['mult'])
+			Buffer = splice(Lines, LineNum, a['mult'])
 			constrain_line_num()
 			CharNum = 1
 		else  -- invoke find_position and delete to there
-			local end_line, endchar = find_position(arg['pos'])
+			local end_line, endchar = find_position(a['pos'])
 			if end_line then
 				if end_line == #Lines then endchar = endchar+1 end
 				delete_between(LineNum, CharNum, end_line, endchar)
 			else
-				message("can't find "..tostring(arg['pos']))
+				message("can't find "..tostring(a['pos']))
 			end
 		end
-	elseif arg['cmd'] == 'y' then
-		if arg['pos'] == 'y' then  -- special-cased ergonomic yank-this-line
+	elseif a['cmd'] == 'y' then
+		if a['pos'] == 'y' then  -- special-cased ergonomic yank-this-line
 			BufferIsWholeLine = true
 			Buffer = {}
-			for i = LineNum, LineNum+arg['mult']-1 do
+			for i = LineNum, LineNum+a['mult']-1 do
 				Buffer[#Buffer+1] = Lines[i]
 			end
-			if arg['mult'] > 1 then
-				message(tostring(arg['mult']).." lines yanked")
+			if a['mult'] > 1 then
+				message(tostring(a['mult']).." lines yanked")
 			end
 		else  -- invoke find_position and yank to there
-			local end_line, endchar = find_position(arg['pos'])
+			local end_line, endchar = find_position(a['pos'])
 			if end_line then
 				if end_line == #Lines then endchar = endchar+1 end
 				delete_between(LineNum, CharNum, end_line, endchar)
 			else
-				message("can't find "..tostring(arg['pos']));
+				message("can't find "..tostring(a['pos']));
 			end
 		end
-	elseif arg['cmd'] == '!' then
-		if arg['pos'] == '!' then
+	elseif a['cmd'] == '!' then
+		if a['pos'] == '!' then
 			local T, msg = io.open(TmpFile, 'w') ; if not T then
 				message("can't create "..TmpFile.." "..msg)
 				goto nextchange
 			end
 			T:write(Lines[LineNum].."\n");   T:close()
-			local P, msg = io.popen(arg{'shellcmd'}.." < "..TmpFile)
+			local P, msg = io.popen(a{'shellcmd'}.." < "..TmpFile)
 			if not P then
-				message("can't run "..arg{'shellcmd'}..": "..msg)
+				message("can't run "..a{'shellcmd'}..": "..msg)
 				goto nextchange
 			end
 			local answer = {}
@@ -1235,16 +1342,16 @@ function perform_a_change (arg)
 			P:close();  os.remove(TmpFile)
 			splice(Lines, LineNum, 1, answer)
 		else
-			if ForceWholeLine[arg['pos']] then CharNum = 1 end
-			local end_line, endchar = find_position(arg['pos'])
+			if ForceWholeLine[a['pos']] then CharNum = 1 end
+			local end_line, endchar = find_position(a['pos'])
 			if end_line then
 				local T, msg = io.open(TmpFile, 'w') ; if not T then
 					message("can't create "..TmpFile.." "..msg)
 					goto nextchange
 				end
-				local P, msg = io.popen(arg{'shellcmd'}.." < "..TmpFile)
+				local P, msg = io.popen(a['shellcmd'].." < "..TmpFile)
 				if not P then
-					message("can't run "..arg{'shellcmd'}..": "..msg)
+					message("can't run "..a['shellcmd']..": "..msg)
 					goto nextchange
 				end
 				if end_line == #Lines then endchar = endchar+1 end
@@ -1254,50 +1361,159 @@ function perform_a_change (arg)
 				P:close();  os.remove(TmpFile)
 				splice(Lines, LineNum, 0, answer)
 			else
-				message("can't find "..arg['pos'])
+				message("can't find "..a['pos'])
 			end
 		end
-	elseif arg['cmd'] == 'i' then -- 20150905
+	elseif a['cmd'] == 'i' then -- 20150905
 		message("line "..tostring(LineNum)..' INSERT')
-		insert_mode(arg['text'])
-	elseif arg['cmd'] == 'I' then
+		insert_mode(a['text'])
+	elseif a['cmd'] == 'I' then
 		CharNum=1; display_line()
 		message("line "..tostring(LineNum)..' INSERT')
-		insert_mode(arg['text'])
-	elseif arg['cmd'] == 'a' then
+		insert_mode(a['text'])
+	elseif a['cmd'] == 'a' then
 		CharNum = CharNum+1; display_line()  -- already-at-EOL is special..
 		if CharNum > len(Lines[LineNum]) then right(1)
 		else  message("line "..tostring(LineNum)..' INSERT')
 		end
-		insert_mode(arg['text'])
-	elseif arg['cmd'] == 'A' then
+		insert_mode(a['text'])
+	elseif a['cmd'] == 'A' then
 		CharNum = 1 + len(Lines[LineNum])
 		display_line(); right(1)
-		insert_mode(arg['text'])   -- mustn't call message if after EOL
-	elseif arg['cmd'] == 'C' then
-		Lines[LineNum] = sub(Lines[LineNum], 1, CharNum)
-		clrtoeol(); insert_mode(arg['text'])   -- no message if after EOL
-	elseif arg['cmd'] == 'D' then
+		insert_mode(a['text'])   -- mustn't call message if after EOL
+	elseif a['cmd'] == 'C' then
+		Lines[LineNum] = sub(Lines[LineNum], 1, CharNum-1)  -- XXX -1 ?
+		clrtoeol(); insert_mode(a['text'])   -- no message if after EOL
+	elseif a['cmd'] == 'D' then
 		BufferIsWholeLine = false
-		local s = split(Lines[LineNum], '')
 		local before =  sub(Lines[LineNum], 1, CharNum-1)
-		local after  =  sub(Lines[LineNum], CharNum + arg['mult'])
+		local after  =  sub(Lines[LineNum], CharNum)
 		Lines[LineNum] = before
 		Buffer = { after }
-	elseif arg['cmd'] == 'O' then   -- open a new line above
+	elseif a['cmd'] == 'O' then   -- open a new line above
 		CharNum = 1
 		table.insert(Lines, LineNum, '');   display_line()
 		message("line "..tostring(LineNum)..' INSERT')
-		insert_mode(arg['text'])
-	elseif arg['cmd'] == 'o' then   -- open a new line below
+		insert_mode(a['text'])
+	elseif a['cmd'] == 'o' then   -- open a new line below
 		LineNum = LineNum+1; CharNum = 1
 		table.insert(Lines, LineNum, '');   display_line()
 		message("line "..tostring(LineNum)..' INSERT')
-		insert_mode(arg['text'])
+		insert_mode(a['text'])
 	end
 	display_line()
 	::nextchange::
 end
+
+function find_dialogue (c)   -- no multipliers here, please
+	-- need to separate finding from pre-dialogue and post-display. So:
+	if     c == '/' then FindForwards   = 1;  find_forwards = 1
+	elseif c == '?' then FindForwards   = -1; find_forwards = -1
+	else message("BUG: find_dialogue called with c="..c); return
+	end
+	local find_string = read_line(c)
+	if find_string == '' then display_line(); return end
+	local s, msg = pcall(function ()
+		return match('abcd', find_string)
+	end)
+	if not s then  -- avoid dieing on RE syntax errors
+		message (msg); return
+	end
+	FindString = find_string
+	local line_num, char_num = find_position('n')
+	if char_num then
+		LineNum = line_num; CharNum = char_num
+		LastWasUpOrDown = false
+		message()
+		display_line()
+	else message(find_string.." not found")
+	end
+end
+
+function endpos_dialogue (cmd)   -- eg: 'c' or 'd' or '!'
+	-- the $pos (eg: d5w) ends on } w b e ^ $ '[a-z] /astring\n ?astr\n
+	-- /astring/+4   many,many possibilities... (also from c,!,y)
+	local pos = {}
+	while true do
+		local c = getch()
+		if c == "\027" then return nil end
+		if c == 'w' or c == 'b' or c == 'e' or c == '}' or c == '{'
+		  or c == '^' or c == '$' or c == cmd then
+			table.insert(pos, c) ;   break
+		end
+-- XXX must handle d$ as delete-to-EOL (not to delete-to-last-line) !
+--     likewise y$ and c$ and !$
+--     in other words '$' AS THE FIRST GETCH() must be special-cased
+		if match(c, '%d') then
+			table.insert(pos, c);  goto nextdialogue
+		end
+		if c == "'" then
+			table.insert(pos, "'")
+			local c = getch()
+			if c == "\027" then return nil
+			elseif match(c, '[a-z]') then
+				table.insert(pos, c) ;   break
+			else message("strange mark '"..c);  return nil
+			end
+		end
+		if c == '/' or c == '?' then
+			table.insert(pos, c)
+			table.insert(pos, read_line(c))
+		end
+		message("strange position "..c)
+		::nextdialogue::
+	end
+	-- local $p = join '',@pos; debug("p=$p");
+	return table.concat(pos, '')
+end
+
+function seek_in_line (delta, c)   -- used by f F ; ,
+	local line = Lines[LineNum]
+	local seekchar
+	if c then seekchar=c; LastSeekChar=c else seekchar=LastSeekChar end
+	if not seekchar then message('no previous seek') ; return end
+	local char_num = CharNum + delta
+	while char_num >= 1 and char_num <= len(line) do
+		local c = sub(line, char_num, char_num)
+		if c == seekchar then CharNum = char_num break end
+		char_num = char_num + delta
+	end
+	message(format("character %d", CharNum))
+	return
+end
+
+function chomp (a)
+	for i = 1, #a do a[i] = string.gsub(a[i], '[\r\n]$', '') end
+end
+
+function re_do ()   -- 20130718 still just single-level, like Sun vi
+	local tmp = table.concat(Lines,"\n").."\n"
+	Lines = split("\n", HistoryMostRecent);  chomp(Lines)
+	HistoryMostRecent = tmp
+	LineNum = HistoryLineNums[1]  -- restore LineNum
+	CharNum = HistoryCharNums[1]  -- restore CharNum
+	message(); display_line()
+end
+function un_do ()   -- 20130718 still just single-level, like Sun vi
+	local tmp = table.concat(Lines, "\n").."\n"
+	Lines = split(HistoryMostRecent, "\n");  chomp(Lines)
+	HistoryMostRecent = tmp
+	LineNum = HistoryLineNums[1]  -- restore LineNum
+	CharNum = HistoryCharNums[1]  -- restore CharNum
+	message(); display_line()
+end
+
+function word_under_cursor ()
+	local line = Lines[LineNum];
+	local this   = substr(line, CharNum, 1)
+	if not match(this, '%w') then return nil end
+	local before = substr(line, 1, CharNum)
+	local after  = substr(line, CharNum+1)
+	before = match(before, '(%w*)$')
+	after  = match(after, '^(%w*')
+	return before..this..after
+end
+
 function command_mode ()
 	-- command_mode handles (\d+) h j k l u ^R m ' ~ x r b w p d.* c.*
 	--  and after  : / ? i I o O  it invokes another mode.
@@ -1309,10 +1525,12 @@ function command_mode ()
 	display_line()
 	while true do   -- the main LOOP
 		local c = getch()
--- print ('c = ',c,type(c))
+-- print ('c = '..c..'  '..type(c)) ; sleep(1)
 		if match(c, '^%d$') then
 			if multiplier == 0 and c == '0' then   -- BOL
-				CharNum = 1; display_line(); goto nextcommand
+--print('B O L')
+				CharNum=1; display_line()
+				goto nextcommand
 			end
 			multiplier = 10*multiplier + tonumber(c)
 			goto nextcommand
@@ -1353,16 +1571,18 @@ function command_mode ()
 				message("no word under cursor");
 			end
 		elseif c == 'f' then
-			SeekForwards = 1;  seek_in_line()
+			SeekForwards = 1;  seek_in_line( 1, getch())
 			display_line()
 		elseif c == 'F' then
-			SeekForwards = -1; seek_in_line()
+			SeekForwards = -1; seek_in_line(-1, getch())
 			display_line()
 		elseif c == ';' then
-			seek_in_line()
+			seek_in_line(SeekForwards)
 			display_line()
 		elseif c == ',' then
-			SeekForwards = -1 * SeekForwards; seek_in_line()
+-- BUG this inverts SeekForwards EVERY time it's pressed :(
+-- I think seek_in_line() needs an extra argument !
+			seek_in_line(-1*SeekForwards)
 			display_line()
 		elseif c == 'g' or c == KEY_HOME then
 			LineNum = 1;  CharNum = 1
@@ -1371,12 +1591,13 @@ function command_mode ()
 			LineNum = #Lines;  CharNum = len(Lines[LineNum])
 			constrain_char_num()
 			message(); display_line()
-		elseif c == KEY_LEFT or c == 'h' or c == "\008" or c == "\255" then
+		elseif c == KEY_LEFT or c == 'h' or c == "\008" or c == "\127" then
 			if CharNum <= 1 then message("already at B O L"); CharNum = 1
 			else
 				CharNum = CharNum - multiplier;
 				if CharNum < 1 then CharNum = 1 end
-				message();  display_line()
+				display_line()
+				message()
 			end
 		elseif c == KEY_DOWN or c == 'j' or c == "\r" then
 			if LineNum >= #Lines then
@@ -1402,13 +1623,15 @@ function command_mode ()
 			LastWasUpOrDown = true
 			message(); display_line()
 		elseif c == KEY_RIGHT or c == 'l' then
+-- print('right CharNum='..tostring(CharNum))
 			local l = len(Lines[LineNum])
 			if CharNum >= l then message("already at E O L")
 			else
 				CharNum = CharNum + multiplier
 				local l = len(Lines[LineNum])
 				if CharNum > l then CharNum = l end
-				message();  display_line()
+				display_line()
+				message()
 			end
 		elseif c == '$' then   -- to end of line
 			CharNum = len(Lines[LineNum])
@@ -1504,6 +1727,7 @@ for i = IARG, #arg do   -- LOOP over files
 	-- print('FileName =',FileName)
 	FileLastSaved = os.time()
 	LineNum = tonumber(get_default(FileName)) or 1
+	CharNum = 1 ; Icol=0
 	local msg = "line "..LineNum
 	if is_directory(FileName)  then
 		if i < #arg then
@@ -1529,7 +1753,7 @@ for i = IARG, #arg do   -- LOOP over files
 			msg = " warning: editing a read-only file"; end
 		F,msg = io.open(FileName, 'r')
 		if not F then
-			warn(format("can't write to %s: $s\r\n", FileName,msg));
+			warn(format("can't write to %s: %s\r\n", FileName,msg));
 			goto nextfile
 		end
 		F:close()
@@ -1541,6 +1765,7 @@ for i = IARG, #arg do   -- LOOP over files
 	FileIsChanged = false
 	-- Modes: command, insert, replace, colon, find
 	if MinusC then colon_mode(MinusC) end   -- should be a list
+	display_line()
 	message(msg)
 	command_mode() -- every other mode returns to command_mode
 	::nextfile::
@@ -1557,107 +1782,16 @@ function word_under_cursor ()
 	after  = match(after, '^(%w*')
 	return before..this..after
 end
-function seek_in_line ()   -- used by f F ; ,
-	local line = Lines[LineNum]
-	local seekchar = substr(line, CharNum, 1)
-	local char_num = CharNum + SeekForwards
-	while (char_num >= 1 and char_num <= len(line)) do
-		local c = substr(line, char_num, 1)
-		if c == seekchar then CharNum = char_num; break end
-		char_num = char_num + SeekForwards
-	end
-	message(sprintf("character %d", CharNum))
-	return
-end
 
 
 
 
 
-function  do_a_tilde (multiplier)
-	local before = sub(Lines[LineNum], 1, CharNum-1)
-	local this   = sub(Lines[LineNum], CharNum, CharNum+multiplier-1)
-	local after  = sub(Lines[LineNum], CharNum+multiplier)
-	local new = {}
-	for i = 1, len(this) do
-		local c = sub(this, i, i)
-		if match(c, '[a-z]') then
-			c = string.upper(c)
-		elseif match(c, '[A-Z]') then
-			c = string.lower(c)
-		end
-		new[i] = c
-	end
-	Lines[LineNum] = before .. table.concat(new, '') .. after
-	CharNum = CharNum + multiplier
-	local l = len(Lines[LineNum])
-	if CharNum > l then CharNum = l end
-end
 
 
 
-function endpos_dialogue (cmd)   -- eg: 'c' or 'd' or '!'
-	-- the $pos (eg: d5w) ends on } w b e ^ $ '[a-z] /astring\n ?astr\n
-	-- /astring/+4   many,many possibilities... (also from c,!,y)
-	local pos = {}
-	while true do
-		local c = getch()
-		if c == "\027" then return nil end
-		if c == 'w' or c == 'b' or c == 'e' or c == '}' or c == '{'
-		  or c == '^' or c == '$' or c == cmd then
-			table.insert(pos, c) ;   break
-		end
--- XXX must handle d$ as delete-to-EOL (not to delete-to-last-line) !
---     likewise y$ and c$ and !$
---     in other words '$' AS THE FIRST GETCH() must be special-cased
-		if match(c, '%d') then
-			table.insert(pos, c);  goto nextdialogue
-		end
-		if c == "'" then
-			table.insert(pos, "'")
-			local c = getch()
-			if c == "\027" then return nil
-			elseif match(c, '[a-z]') then
-				table.insert(pos, c) ;   break
-			else message("strange mark '"..c);  return nil
-			end
-		end
-		if c == '/' or c == '?' then
-			table.insert(pos, c)
-			table.insert(pos, read_line(c))
-		end
-		message("strange position "..c)
-		::nextdialogue::
-	end
-	-- local $p = join '',@pos; debug("p=$p");
-	return table.concat(pos, '')
-end
 
-function find_dialogue (c)   -- no multipliers here, please
-	-- need to separate finding from pre-dialogue and post-display. So:
-	if     c == '/' then FindForwards   = 1;  find_forwards = 1
-	elseif c == '?' then FindForwards   = -1; find_forwards = -1
-	else message("BUG: find_dialogue called with c="..c); return
-	end
-	local find_string = read_line(c)
-	if find_string == '' then display_line(); return end
-	local s, msg = pcall(function ()
-		return match('abcd', find_string)
-	end)
-	if not s then  -- avoid dieing on RE syntax errors
-		message (msg); return
-	end
-	FindString = find_string
-	local line_num, char_num = find_position('n')
-	if char_num then
-		LineNum = line_num; CharNum = char_num
-		LastWasUpOrDown = false
-		message()
-		display_line()
-	else message(find_string.." not found")
-	end
-end
-
+--[[
 function handle_command (cmd)
 	if     cmd == 'q'  then exit(0)
 	elseif cmd == '.=' then print(tostring(LineNum).."\r")
@@ -1669,88 +1803,8 @@ function handle_command (cmd)
 	elseif (cmd == 'p')  then print(tostring(Lines[LineNum]).."\r")
 	end
 end
+]]
 
-function chomp (a)
-	for i = 1, #a do a[i] = string.gsub(a[i], '[\r\n]$', '') end
-end
-function re_do ()   -- 20130718 still just single-level, like Sun vi
-	local tmp = table.concat(Lines,"\n").."\n"
-	Lines = split("\n", HistoryMostRecent);  chomp(Lines)
-	HistoryMostRecent = tmp
-	LineNum = HistoryLineNums[1]  -- restore LineNum
-	CharNum = HistoryCharNums[1]  -- restore CharNum
-	message(); display_line()
-end
-function un_do ()   -- 20130718 still just single-level, like Sun vi
-	local tmp = table.concat(Lines, "\n").."\n"
-	Lines = split(HistoryMostRecent, "\n");  chomp(Lines)
-	HistoryMostRecent = tmp
-	LineNum = HistoryLineNums[1]  -- restore LineNum
-	CharNum = HistoryCharNums[1]  -- restore CharNum
-	message(); display_line()
-end
-
-
-function delete_between (line1, char1, line2, char2)
-	-- Used by eg: d5w d2} cw c} !}fmt :.,$d
-	-- Because it is used by ! it returns the text deleted.
-	-- it sets @Buffer but it can't set $BufferIsWholeLine  (2dd is, d9w isn't)
-	if line2 < line1 then
-		local tmp=line1; line1=line2; line2=tmp
-		   tmp=char1; char1=char2; char2=tmp
-	elseif line1 == line2 then
-		if char1 == char2 then
-			message('0 chars');  display_line();  return ''
-		elseif char2 < char1 then
-		   local tmp=char1; char1=char2; char2=tmp
-		end
-	end
-	LineNum = line1;  CharNum = char1
-	if line1 == line2 then
-		local nchars  = char2-char1
-		local deleted = my_substr(Lines[line1], char1, nchars, '')
-		local msg = "1 char"
-		if nchars > 1 then msg = tostring(nchars).." chars" end
-		message(msg);  display_line()
-		Buffer = { deleted }
-		return deleted
-	else
-		local deleted = {};  local nlines
-		local end_of_first_line = sub(Lines[line1], char1)
-		Lines[line1]            = sub(Lines[line1], 1, char1-1)
-		if (char2-1) < len(Lines[line2]) then
-			local start_of_final_line = my_substr(Lines[line2],1,char2-1,'')
-			Lines[line1] = Lines[line1]..Lines[line2]
-			-- @deleted = splice @Lines, $line1+1, $line2-$line1;
-			for i = line1+1, line2 do table.insert(deleted, Lines[i]) end
-			table.insert(deleted, start_of_final_line)
-			nlines  = line2-line1
-		else   -- 20200507 past EOL is used as a signal for d} to EOF
-			-- @deleted = splice @Lines, $line1+1, $line2-$line1+1;
-			for i = line1+1, line2+1 do table.insert(deleted, Lines[i]) end
-			Lines[#Lines] = nil
-			if LineNum > 1 then LineNum = LineNum-1 end -- 2.4
-			nlines  = line2-line1+1
-		end
-		table.insert(deleted, 1, end_of_first_line)
-		-- we don't say "lines deleted" because it might be !end
-		local msg = "1 line"
-		if nlines > 1 then msg = tostring(nlines).." lines" end
-		message(msg);  display_line()
-		Buffer = deleted
-		if not Lines then Lines = {} end   -- 2.3 20200508
-		return table.concat(deleted,"\n")
-	end
-	warn "BUG: shouldn't reach here...";
-end
-
-local function _debug(...)
-	local DEBUG = io.open('/tmp/debug', 'a')
-	local a = {}
-	for k,v in pairs{...} do table.insert(a, tostring(v)) end
-	DEBUG:write(table.concat(a),'\n') ; DEBUG:flush()
-	DEBUG:close()
-end
 
 function write_spoken (s)
 	-- examine text to guess if punctuation should be pronounced;
