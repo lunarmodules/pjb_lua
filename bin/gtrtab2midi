@@ -5,8 +5,8 @@
 --  This script is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
-local Version = '1.6  for Lua5' -- add a VM or VF voice-line
-local VersionDate  = '19aug2018'
+local Version = '1.7  for Lua5' -- add back-compatible *a for io.read()
+local VersionDate  = '02jun2020'
 local Synopsis = [[
   gtrtab2midi infile.gtab > /tmp/t.mid
   gtrtab2midi infile.gtab | aplaymidi -
@@ -152,7 +152,7 @@ else
 	InFh, msg = io.open(InFile, 'r')
 	if not InFh then die('  '..msg) end
 end
-InpTxt = InFh:read('a')
+InpTxt = InFh:read('*a')
 io.close(InFh)
 
 Str2onNote     = {}   -- start with no on_notes
@@ -523,6 +523,7 @@ so you should be able to install it by:
 
 =head1 CHANGES
 
+ 20200602 1.7 add back-compatible argument *a for io.read()
  20180826 1.6 add a VM or VF voice-line
  20180819 1.5 -T option for pulses/sec
  20180809 1.4 bending with -3-b3- and -p3-r1- also ^, P and R
