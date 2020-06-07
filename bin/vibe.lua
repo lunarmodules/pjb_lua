@@ -219,7 +219,7 @@ end
 
 function puts_xy_clr (x, y, s)
     s = gsub(s, '%s', ' ')
-    puts_xy(x, y, s..TI['clr_eol'])
+    puts_xy(x, y, s, TI['clr_eol'])
 end
 
 function puts_clr (s)   -- assumes no newlines
@@ -687,8 +687,7 @@ end
 function message (s, option)
 	if  not s then
 		if LastWasLineNum then s = ''   -- 2.0
-		-- else s = "line "..tostring(LineNum) -- ; LastWasLineNum = LineNum
-		else s = "line "..tostring(LineNum)..' CharNum '..tostring(CharNum)..' Icol '..tostring(Icol)
+		else s = "line "..tostring(LineNum) ; LastWasLineNum = true
 		end
 	end
 	if LastWasUpOrDown then
@@ -767,6 +766,7 @@ function find_position (s)
 	-- in  .,}+4w /tmp/t  by being invoked twice by a general  sub range
 	-- in vi, [nN] _is_ useable in a range, also in dn or d3n etc.
 	-- handle also marks, eg: 'a
+	-- message('s='..tostring(s)) ; sleep(2)
 	local line_offset = tonumber(match(s, '([-+]%d+)$') or 0)
 	if s == '.' then   -- 1.3
 		local n = LineNum + line_offset
@@ -956,6 +956,9 @@ function delete_between (line1, char1, line2, char2)
 	-- Used by eg: d5w d2} cw c} !}fmt :.,$d
 	-- Because it is used by ! it returns the text deleted.
 	-- it sets @Buffer but it can't set $BufferIsWholeLine  (2dd is, d9w isn't)
+--message('line1='..tostring(line1)..' char1='..tostring(char1)
+--..'  line2='..tostring(line2)..' char2='..tostring(char2))
+--sleep(2)
 	if line2 < line1 then
 		local tmp=line1; line1=line2; line2=tmp
 		   tmp=char1; char1=char2; char2=tmp
@@ -969,25 +972,25 @@ function delete_between (line1, char1, line2, char2)
 	LineNum = line1;  CharNum = char1
 	if line1 == line2 then
 		local nchars  = char2-char1
-		local deleted = my_substr(Lines[line1], char1, nchars, '')
+		local before,this,after = split_3(Lines[line1], char1, nchars)
+		Lines[line1] = before .. after
 		local msg = "1 char"
 		if nchars > 1 then msg = tostring(nchars).." chars" end
 		message(msg);  display_line()
-		Buffer = { deleted }
-		return deleted
+		Buffer = { this }
+		return this
 	else
 		local deleted = {};  local nlines
 		local end_of_first_line = sub(Lines[line1], char1)
 		Lines[line1]            = sub(Lines[line1], 1, char1-1)
 		if (char2-1) < len(Lines[line2]) then
+-- better use sub() ?
 			local start_of_final_line = my_substr(Lines[line2],1,char2-1,'')
 			Lines[line1] = Lines[line1]..Lines[line2]
-			-- @deleted = splice @Lines, $line1+1, $line2-$line1;
 			for i = line1+1, line2 do table.insert(deleted, Lines[i]) end
 			table.insert(deleted, start_of_final_line)
 			nlines  = line2-line1
 		else   -- 20200507 past EOL is used as a signal for d} to EOF
-			-- @deleted = splice @Lines, $line1+1, $line2-$line1+1;
 			for i = line1+1, line2+1 do table.insert(deleted, Lines[i]) end
 			Lines[#Lines] = nil
 			if LineNum > 1 then LineNum = LineNum-1 end -- 2.4
@@ -1063,8 +1066,7 @@ end
 function my_substr (str, offset, length, replacement)
 	if offset > len(str) then return str..replacement
 	else -- substr($str,$offset,$length,$replacement);
-		local before = sub(str, 1, offset)
-		local after  = sub(str, offset+length)
+		local before,this,after = split_3(str, offset, length)
 		return before .. replacement .. after
 	end
 end
@@ -1092,7 +1094,8 @@ function insert_mode (argument, replace)
 				StoreLastChange['text'] = table.concat(text, '')
 			end
 			-- should do multiple inserts...
-			LastWasUpOrDown = false;  message();  display_line()  return
+			LastWasUpOrDown = false;  LastWasLineNum = false
+			display_line();  message(); return  
 		elseif c == "\r" then
 			if replace == 'R' then goto nextchar end
 			local before   = sub(Lines[LineNum], 1, CharNum-1)
@@ -1102,7 +1105,6 @@ function insert_mode (argument, replace)
 			LineNum = LineNum+1; CharNum = 1; table.insert(text, '\n')
 			message("line "..tostring(LineNum)..' INSERT')
 			display_line()
---XXX
 		elseif c == KEY_LEFT then
 			if CharNum > 1 then
 				local oldcolnum = charnum2colnum(CharNum)
@@ -1124,8 +1126,10 @@ function insert_mode (argument, replace)
 				Lines[LineNum] = before .. after
 				display_line()  -- this is where we needed smdc and rmdc :-(
 			end
+		elseif c == KEY_UP or c == KEY_DOWN then
+			message('UP and DOWN are not supported in insert mode')
 		elseif c == "\008" or c == "\127" then  -- \cH (even at BOL!)
-print('backspace')
+--print('backspace')
 			if CharNum > 1 then   -- CharNum=1 means EITHER one char, OR null
 				if CharNum >= len(Lines[LineNum]) then
 					Lines[LineNum] = sub(Lines[LineNum], 1, -2)
@@ -1178,10 +1182,19 @@ print('backspace')
 	warn "shouldn't reach here";
 end
 
+function split_3 (s, offset, length)
+	-- if not s then s = Lines[LineNum] end
+	local before = sub(s, 1, offset-1)
+	local this   = sub(s, offset, offset+length-1)
+	local after  = sub(s, offset+length)
+	return before, this, after
+end
+
 function  do_a_tilde (multiplier)
-	local before = sub(Lines[LineNum], 1, CharNum-1)
-	local this   = sub(Lines[LineNum], CharNum, CharNum+multiplier-1)
-	local after  = sub(Lines[LineNum], CharNum+multiplier)
+    --local before = sub(Lines[LineNum], 1, CharNum-1)
+    --local this   = sub(Lines[LineNum], CharNum, CharNum+multiplier-1)
+    --local after  = sub(Lines[LineNum], CharNum+multiplier)
+	local before,this,after = split_3(Lines[LineNum], CharNum, multiplier)
 	local new = {}
 	for i = 1, len(this) do
 		local c = sub(this, i, i)
@@ -1230,15 +1243,17 @@ function perform_a_change (a)
 		for i = 1, a['mult'] do   -- but vi sees 2J as meaning join 2 lines!
 			local nextline = gsub(Lines[LineNum+1], '^%s*', ' ')
 			table.remove(Lines, LineNum+1)
-			CharNum = length(tmp) + 1;
+			CharNum = len(tmp) + 1;
 			tmp = tmp .. nextline
 		end
 		Lines[LineNum] = tmp
 	elseif a['cmd'] == 'x' or a['cmd'] == KEY_DELETE then
 		BufferIsWholeLine = false
-		Buffer = { sub(Lines[LineNum], CharNum, a['mult']) }
-		local before =  sub(Lines[LineNum], 1, CharNum-1)
-		local after  =  sub(Lines[LineNum], CharNum + a['mult'])
+		local before,this,after = split_3(Lines[LineNum], CharNum, a['mult'])
+		-- local before =  sub(Lines[LineNum], 1, CharNum-1)
+		-- local after  =  sub(Lines[LineNum], CharNum + a['mult'])
+		-- Buffer = { sub(Lines[LineNum], CharNum, a['mult']) }
+		Buffer = { this }
 		Lines[LineNum] = before .. after
 		constrain_char_num()
 	elseif a['cmd'] == 'p' or a['cmd'] == 'P' then
@@ -1280,6 +1295,8 @@ function perform_a_change (a)
 		else  -- invoke find_position and delete to there
 			if ForceWholeLine[a['pos']] then CharNum = 1 end
 			local end_line, endchar = find_position(a['pos'])
+-- message('end_line='..tostring(end_line)..' endchar='..tostring(endchar))
+-- sleep(2)
 			if end_line then
 				if end_line == #Lines then endchar = endchar+1 end
 				delete_between(LineNum, CharNum, end_line, endchar)
@@ -1320,6 +1337,7 @@ function perform_a_change (a)
 			local end_line, endchar = find_position(a['pos'])
 			if end_line then
 				if end_line == #Lines then endchar = endchar+1 end
+-- NO ! BUG ! yank, not delete !
 				delete_between(LineNum, CharNum, end_line, endchar)
 			else
 				message("can't find "..tostring(a['pos']));
@@ -1772,57 +1790,7 @@ for i = IARG, #arg do   -- LOOP over files
 end  -- end of LOOP over files
 exit(1)  -- the normal exit is through colon_mode
 
-function word_under_cursor ()
-	local line = Lines[LineNum];
-	local this   = substr(line, CharNum, 1)
-	if not match(this, '%w') then return nil end
-	local before = substr(line, 1, CharNum)
-	local after  = substr(line, CharNum+1)
-	before = match(before, '(%w*)$')
-	after  = match(after, '^(%w*')
-	return before..this..after
-end
-
-
-
-
-
-
-
-
-
---[[
-function handle_command (cmd)
-	if     cmd == 'q'  then exit(0)
-	elseif cmd == '.=' then print(tostring(LineNum).."\r")
-	elseif cmd == '='  then print(tostring(#Lines).."\r")
-	elseif cmd == 'd'  then
-		if #Lines>0 then table.remove(Lines, LineNum) end
-	elseif cmd == 'n'  then
-		print(tostring(LineNum).." "..tostring(Lines[LineNum]).."\r")
-	elseif (cmd == 'p')  then print(tostring(Lines[LineNum]).."\r")
-	end
-end
-]]
-
-
-function write_spoken (s)
-	-- examine text to guess if punctuation should be pronounced;
-	-- if inconclusive, go with what was done last time.
-	if Opt['reader'] == 'yasr' then  -- write to STDOUT
-	else
-	end
-end
-function write_silent (s)
-	if Opt['reader'] == 'yasr' then -- kludge with Smir Rmir; insert is silent!
-	else
-	end
-end
-
-
-
 --[=[
-__END__
 
 =pod
 
@@ -1839,7 +1807,7 @@ vibe - a vi-like line-editor designed to work with I<yasr> or I<speakup>
 
 =head1 DESCRIPTION
 
-This script is a line-based editor written, in I<Perl>,
+This script is a line-based editor written, in I<Perl> and in I<Lua>,
 to work well with I<speakup> or with I<yasr>,
 and to be easy to learn for people familiar with I<vi>.
 It is mostly keystroke-compatible with I<vi>.
@@ -1950,15 +1918,6 @@ Based on I<vi>, I<yasr> and I<speakup>
  http://search.cpan.org/perdoc?Text::Diff
  http://search.cpan.org/perdoc?Algorithm::Diff
  http://search.cpan.org/perdoc?Text::Patch
-
- http://search.cpan.org/perdoc?Term::Terminfo
- which unfortunately also needs:
- http://search.cpan.org/perdoc?ExtUtils::CChecker
- http://search.cpan.org/perdoc?Test::Fatal
- http://search.cpan.org/perdoc?Test::Tiny
- http://search.cpan.org/perdoc?Try::Tiny
- http://search.cpan.org/perdoc?Test::Pod
- http://search.cpan.org/perdoc?Sub::Name
 
  http://search.cpan.org/perdoc?Term::ReadKey
  http://www.pjb.com.au/

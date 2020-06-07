@@ -582,6 +582,7 @@ sub perform_a_change {  my %arg = @_;
 			my ($end_line, $endchar) = find_position($arg{'pos'});
 			if (defined $end_line) {
 				if ($end_line == $#Lines) { $endchar = $endchar+1; }
+# NO ! BUG ! yank, not delete !
 				delete_between($LineNum, $CharNum, $end_line, $endchar);
 			} else {
 				message("can't find $arg{'pos'}");
@@ -948,7 +949,8 @@ sub insert_mode {  my ($arg, $replace) = @_;
 			$InsertMode = 0;   constrain_char_num();
 			if (@text) { $StoreLastChange{'text'} = join '',@text; }
 			# should do multiple inserts...
-			$LastWasUpOrDown = 0;  message();  display_line();  return;
+			$LastWasUpOrDown = 0; $LastWasLineNum = 0;
+			message();  display_line();  return;
 		} elsif ($c eq "\r") {
 			if ($replace eq 'R') { next; }
 			my $pre = substr $Lines[$LineNum], $[, $CharNum-$[, '';
