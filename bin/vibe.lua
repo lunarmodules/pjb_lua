@@ -323,7 +323,6 @@ function splice(array, offset, length, list)   -- perl-compatible
 	return result
 end
 
-
 function split(s, pattern, maxNb) -- http://lua-users.org/wiki/SplitJoin
 	if not s or len(s)<2 then return {s} end
 	if not pattern then return {s} end
@@ -952,7 +951,7 @@ function read_dialogue (argument)
 	local lines = #buffer;  message("$lines lines from "..argument)
 end
 
-function delete_between (line1, char1, line2, char2)
+function delete_between (line1, char1, line2, char2, yank)
 	-- Used by eg: d5w d2} cw c} !}fmt :.,$d
 	-- Because it is used by ! it returns the text deleted.
 	-- it sets @Buffer but it can't set $BufferIsWholeLine  (2dd is, d9w isn't)
@@ -973,39 +972,41 @@ function delete_between (line1, char1, line2, char2)
 	if line1 == line2 then
 		local nchars  = char2-char1
 		local before,this,after = split_3(Lines[line1], char1, nchars)
-		Lines[line1] = before .. after
+		if not yank then Lines[line1] = before .. after end
 		local msg = "1 char"
 		if nchars > 1 then msg = tostring(nchars).." chars" end
 		message(msg);  display_line()
 		Buffer = { this }
 		return this
 	else
-		local deleted = {};  local nlines
+		local nlines
 		local end_of_first_line = sub(Lines[line1], char1)
-		Lines[line1]            = sub(Lines[line1], 1, char1-1)
+		if not yank then Lines[line1] = sub(Lines[line1], 1, char1-1) end
 		if (char2-1) < len(Lines[line2]) then
 -- better use sub() ?
 			local start_of_final_line = my_substr(Lines[line2],1,char2-1,'')
-			Lines[line1] = Lines[line1]..Lines[line2]
-			for i = line1+1, line2 do table.insert(deleted, Lines[i]) end
-			table.insert(deleted, start_of_final_line)
+			if not yank then Lines[line1] = Lines[line1]..Lines[line2] end
+			for i = line1+1, line2 do table.insert(Buffer, Lines[i]) end
+			table.insert(Buffer, start_of_final_line)
 			nlines  = line2-line1
 		else   -- 20200507 past EOL is used as a signal for d} to EOF
-			for i = line1+1, line2+1 do table.insert(deleted, Lines[i]) end
-			Lines[#Lines] = nil
+			Buffer = splice(Lines, line1+1, line2-line1)
+			if not yank then Lines[#Lines] = nil end
 			if LineNum > 1 then LineNum = LineNum-1 end -- 2.4
 			nlines  = line2-line1+1
 		end
-		table.insert(deleted, 1, end_of_first_line)
+		table.insert(Buffer, 1, end_of_first_line)
 		-- we don't say "lines deleted" because it might be !end
 		local msg = "1 line"
 		if nlines > 1 then msg = tostring(nlines).." lines" end
 		message(msg);  display_line()
-		Buffer = deleted
-		if not Lines then Lines = {} end   -- 2.3 20200508
-		return table.concat(deleted,"\n")
+		if not yank and not Lines then Lines = {} end   -- 2.3 20200508
+		return table.concat(Buffer,"\n")
 	end
 	warn "BUG: shouldn't reach here...";
+end
+function yank_between (line1, char1, line2, char2)
+	delete_between(line1, char1, line2, char2, 'yank')
 end
 
 function colon_mode (s)   -- to handle the vibe -c arg
@@ -1338,7 +1339,7 @@ function perform_a_change (a)
 			if end_line then
 				if end_line == #Lines then endchar = endchar+1 end
 -- NO ! BUG ! yank, not delete !
-				delete_between(LineNum, CharNum, end_line, endchar)
+				yank_between(LineNum, CharNum, end_line, endchar)
 			else
 				message("can't find "..tostring(a['pos']));
 			end
@@ -1676,7 +1677,7 @@ function command_mode ()
 			perform_a_change( {cmd=c} )
 		elseif c == '=' then
 			local s = format("line %d out of %d, char %d, file ",
-			  LineNum+1,  #Lines,  CharNum+1)
+			  LineNum+1,  #Lines,  CharNum)
 			if FileIsChanged then s=s..'is changed' else s=s..'unchanged' end
 			message(s)
 		elseif c == 'r' then  -- replace one char
@@ -1819,9 +1820,13 @@ It currently handles:
 
 and many combinations of the above, like B<.,$d>
 
-Unlike I<vi>, B<cw> is not special-cased to mean B<ce>
+=head1 DIFFERENCES
 
-It is currently in its early versions.
+Unlike I<vi>, B<cw> is not special-cased to mean B<ce>,
+find with B</> or B<?> do not loop through the file,
+B<=> is introduced to mean display-where-we-are
+
+vibe is currently in its early versions.
 Currently, the "u" undo-command only stores one level of history
 (like the old I<Sun> vi did).
 

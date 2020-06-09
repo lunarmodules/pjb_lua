@@ -978,6 +978,8 @@ sub insert_mode {  my ($arg, $replace) = @_;
 				substr $Lines[$LineNum], $CharNum, 1, '';
 				display_line();  # this is where we needed smdc and rmdc :-(
 			}
+		} elsif ($c == $KEY_UP or $c == $KEY_DOWN) {
+			message('UP and DOWN are not supported in insert mode');
 		} elsif ($c eq "\cH" or $c eq "\x7f") {  # \cH (even at BOL!)
 			if ($CharNum > $[) {   # CharNum=$[ means EITHER one char, OR null
 				if ($CharNum >= ($[ -1 + length $Lines[$LineNum])) {
