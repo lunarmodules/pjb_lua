@@ -130,6 +130,8 @@ TI['cursor_up']    = T.get('cursor_up')    or "\027[A"
 TI['cursor_down']  = T.get('cursor_down')  or "\n"
 TI['cursor_left']  = T.get('cursor_left')  or "\027[D"
 TI['cursor_right'] = T.get('cursor_right') or "\027[C"
+TI['cub']          = T.get('cub')
+TI['cuf']          = T.get('cuf')
 TI['clear_screen'] = T.get('clear_screen') or "\027[H\027[J"
 function output_of(cmd)
 	local F,msg = io.popen(cmd, 'r')
@@ -168,15 +170,29 @@ local function down(n)
 	TTY:write(rep(TI['cursor_down'], n)); TTY:flush()
 	Irow = Irow + n
 end
-local function right(n)
-	-- if n < 0 then left(0-n); return end
-	TTY:write(rep(TI['cursor_right'], n)); TTY:flush()
-	Icol = Icol + n
+if TI['cuf'] then
+	function right(n)
+		TTY:write(T.tparm(TI['cuf'], n)); TTY:flush()
+		Icol = Icol + n
+	end
+else
+	function right(n)
+		-- if n < 0 then left(0-n); return end
+		TTY:write(rep(TI['cursor_right'], n)); TTY:flush()
+		Icol = Icol + n
+	end
 end
-local function left(n)
-	-- if n < 0 then right(0-n); return end
-	TTY:write(rep(TI['cursor_left'], n)); TTY:flush()
-	Icol = Icol - n
+if TI['cub'] then
+	function left(n)
+		TTY:write(T.tparm(TI['cub'], n)); TTY:flush()
+		Icol = Icol - n
+	end
+else
+	function left(n)
+		-- if n < 0 then right(0-n); return end
+		TTY:write(rep(TI['cursor_left'], n)); TTY:flush()
+		Icol = Icol - n
+	end
 end
 function gotoxy (newcol, newrow)
 	-- TTY:write(T.tparm(T.get('cup'),newcol,newrow))
@@ -249,7 +265,7 @@ Opt = {}
 consult_vimrc()           -- consult ~/.vimrc to reset %Opt if necessary
 DisplayLine    = 0
 Buffer         = {}   --  array of lines
-BufferIsWholeLine = 0 --  1 is yy, y}, .,$d   0 is d3w y$   etc
+BufferIsWholeLine = false --  1 is yy, y}, .,$d   0 is d3w y$   etc
 LinesPerPage   = 20   -- for KEY_NPAGE and KEY_PPAGE
 FindString     = ''
 FindForwards   = 1    -- / or ? == +1 or -1
@@ -271,7 +287,9 @@ Prompt2Name = {
 StoreLastChange  = {}  -- perform_a_change remembers multiplier,range,cmd...
 LastWasUpOrDown  = false  -- 20150905 1.9
 LastWasLineNum   = false  -- 20150910 2.0
-TmpFile          = "/tmp/vibe.$$";
+-- ARGHH posix.unistd.html#getpid says getpid() returns an integer ?!??
+pid = P.getpid() ; if type(pid) == 'table' then pid = pid['pid'] end
+TmpFile          = "/tmp/vibe." .. pid
 Smir, Rmir, Dch1 = get_smir_rmir_dch1()   -- for use in insert_mode
 Icol = 0
 Irow = 0
@@ -685,14 +703,17 @@ end
 
 function message (s, option)
 	if  not s then
-		if LastWasLineNum then s = ''   -- 2.0
-		else s = "line "..tostring(LineNum) ; LastWasLineNum = true
-		end
+-- perhaps  :lines :nolines :wrap :nowrap :case :nocase
+--		if LastWasLineNum then s = ''   -- 2.0
+--		else
+			s = "line "..tostring(LineNum) ; LastWasLineNum = true
+--		end
 	end
-	if LastWasUpOrDown then
-		s = ''; puts_xy_clr(0, DisplayLine+1, s)
-		LastWasUpOrDown = false
-	elseif s ~= LastMessage then
+--	if LastWasUpOrDown then
+--		puts_xy_clr(0, DisplayLine+1, '')
+--		LastWasUpOrDown = false
+--	elseif s ~= LastMessage then
+	if s ~= LastMessage then
 		-- 20150914 dont rewrite the word 'line' if it's already there
 		if string.match(LastMessage, '^line ') then
 			local linenum = string.match(s, '^line (.+)$')
@@ -706,6 +727,7 @@ function message (s, option)
 	end
 	LastMessage = s
 end
+function fmessage (...) message(format(...)) end
 
 function display_line ()
 	-- Handle long lines by just displaying $Cols-1 of them at once, and
@@ -766,6 +788,7 @@ function find_position (s)
 	-- in vi, [nN] _is_ useable in a range, also in dn or d3n etc.
 	-- handle also marks, eg: 'a
 	-- message('s='..tostring(s)) ; sleep(2)
+	if not s then return nil end
 	local line_offset = tonumber(match(s, '([-+]%d+)$') or 0)
 	if s == '.' then   -- 1.3
 		local n = LineNum + line_offset
@@ -796,9 +819,10 @@ function find_position (s)
 	-- see  %f[%w] and %f[%W]  PiL3 p207  in perl \b means word-boundary
 	if     c == 'n' then find_direction =  1   -- next
 	elseif c == 'N' then find_direction = -1   -- previous
-	elseif c == 'w' then find_forwards  =  1; find_string = '%W%w'
-	elseif c == 'b' then find_forwards  = -1; find_string = '%f[%w]'
-	elseif c == 'e' then find_forwards  =  1; find_string = '%w%W'
+	-- use [_%w] because %W doesn't include complement of _
+	elseif c == 'w' then find_forwards  =  1; find_string = '[^_%w][_%w]'
+	elseif c == 'b' then find_forwards  = -1; find_string = '%f[_%w]'
+	elseif c == 'e' then find_forwards  =  1; find_string = '[_%w][^_%w]'
 	elseif c == '}' then find_forwards  =  1; find_string = '^%s*$'
 	elseif c == '{' then find_forwards  = -1; find_string = '^%s*$'
 	else message("BUG: find_position called with c=$c"); return;
@@ -930,34 +954,36 @@ function quit_dialogue ()
 	exit(0)
 end
 
-function read_dialogue (argument)
-	local filename = argument
-	gsub(filename, '^~/', HOME..'/', 1)
+function read_dialogue (fn)
+	local filename = gsub(fn, '^~/', HOME..'/', 1)
 	local F,msg = io.open(filename, 'r')
-	F:close()
-	if not F then message("can't open "..filename.." : "..msg); return 0 end
+	if not F then
+		message(format("can't open %s : %s",fn,msg)); return nil
+	else
+		F:close()
+	end
 	local buffer = {}
 	for line in io.lines(filename) do buffer[#buffer+1] = line end
--- print ('io.lines('..filename)
-	if #buffer == 0 then message("empty file"); return 0 end
-	-- foreach (@buffer) do s/\n$//; end
+	if #buffer == 0 then message("empty file"); return nil end
 	for i,v in ipairs(buffer) do buffer[i] = gsub(v, '\n$', '') end
-	if CharNum == 1 then splice(Lines, LineNum, 0, buffer); -- if at BOL
+	if CharNum == 1 then -- if at BOL
+		splice(Lines, LineNum, 0, buffer)
 	elseif LineNum == #Lines then
 		for i,v in ipairs(buffer) do Lines[#Lines+1] = v end
 	else splice(Lines, LineNum+1, 0, buffer)
 	end
 	FileIsChanged = true
-	local lines = #buffer;  message("$lines lines from "..argument)
+	message(format("%d lines from %s", #buffer, filename))
 end
 
-function delete_between (line1, char1, line2, char2, yank)
+function delete_between (line1, char1, line2, char2, opts)
+	opts = opts or {}
+local s = " ";
+if opts then for k,v in pairs(opts) do s=s..k.."="..tostring(v).." " end end
+_debug(format("delete_between(%d, %d, %d, %d,%s)",line1,char1,line2,char2,s))
 	-- Used by eg: d5w d2} cw c} !}fmt :.,$d
 	-- Because it is used by ! it returns the text deleted.
-	-- it sets @Buffer but it can't set $BufferIsWholeLine  (2dd is, d9w isn't)
---message('line1='..tostring(line1)..' char1='..tostring(char1)
---..'  line2='..tostring(line2)..' char2='..tostring(char2))
---sleep(2)
+	-- it sets @Buffer but it can't set $BufferIsWholeLine (2dd is, d9w isn't)
 	if line2 < line1 then
 		local tmp=line1; line1=line2; line2=tmp
 		   tmp=char1; char1=char2; char2=tmp
@@ -970,9 +996,9 @@ function delete_between (line1, char1, line2, char2, yank)
 	end
 	LineNum = line1;  CharNum = char1
 	if line1 == line2 then
-		local nchars  = char2-char1
+		local nchars  = char2-char1 -- BUG this leaves de, ce one char short
 		local before,this,after = split_3(Lines[line1], char1, nchars)
-		if not yank then Lines[line1] = before .. after end
+		if not opts['yank'] then Lines[line1] = before .. after end
 		local msg = "1 char"
 		if nchars > 1 then msg = tostring(nchars).." chars" end
 		message(msg);  display_line()
@@ -981,17 +1007,19 @@ function delete_between (line1, char1, line2, char2, yank)
 	else
 		local nlines
 		local end_of_first_line = sub(Lines[line1], char1)
-		if not yank then Lines[line1] = sub(Lines[line1], 1, char1-1) end
-		if (char2-1) < len(Lines[line2]) then
--- better use sub() ?
-			local start_of_final_line = my_substr(Lines[line2],1,char2-1,'')
-			if not yank then Lines[line1] = Lines[line1]..Lines[line2] end
+		if opts['yank'] then Lines[line1] = sub(Lines[line1], 1, char1-1) end
+		if len(Lines[line2])==0 or not opts['EOF'] then
+_debug("opts['EOF']\n")
+			local start_of_final_line = sub(Lines[line2], 1, char2) -- XXX
+			Lines[line2] = sub(Lines[line2], char2+1)
+			if opts['yank'] then Lines[line1] = Lines[line1]..Lines[line2] end
 			for i = line1+1, line2 do table.insert(Buffer, Lines[i]) end
 			table.insert(Buffer, start_of_final_line)
 			nlines  = line2-line1
-		else   -- 20200507 past EOL is used as a signal for d} to EOF
+		else
+_debug("not opts['EOF']\n")
 			Buffer = splice(Lines, line1+1, line2-line1)
-			if not yank then Lines[#Lines] = nil end
+			if opts['yank'] then Lines[#Lines] = nil end
 			if LineNum > 1 then LineNum = LineNum-1 end -- 2.4
 			nlines  = line2-line1+1
 		end
@@ -1000,13 +1028,10 @@ function delete_between (line1, char1, line2, char2, yank)
 		local msg = "1 line"
 		if nlines > 1 then msg = tostring(nlines).." lines" end
 		message(msg);  display_line()
-		if not yank and not Lines then Lines = {} end   -- 2.3 20200508
+		if opts['yank'] and not Lines then Lines = {} end   -- 2.3 20200508
 		return table.concat(Buffer,"\n")
 	end
 	warn "BUG: shouldn't reach here...";
-end
-function yank_between (line1, char1, line2, char2)
-	delete_between(line1, char1, line2, char2, 'yank')
 end
 
 function colon_mode (s)   -- to handle the vibe -c arg
@@ -1016,6 +1041,7 @@ function colon_mode (s)   -- to handle the vibe -c arg
 	-- Term::ReadLine::Gnu does tab-completion for filenames by default...
 	local line_num = 0
 	local cmdstr = s or read_line(':')
+	if not cmdstr then return nil end
 	LastMessage = ":"..cmdstr
 	gotoxy(0, DisplayLine+1)
 	if is_position(cmdstr) then goto_position(cmdstr, "not found"); return end
@@ -1027,6 +1053,7 @@ function colon_mode (s)   -- to handle the vibe -c arg
 	local range, rest = match(cmdstr, '^([%.%d]+,[%.%d%$]+)(.+)$')
 	if range then cmdstr = rest end
 	local cmd, arg = match(cmdstr, '^(%S+)%s*(.*)$')
+	if not cmd then gotoxy(0, DisplayLine); return nil end
 	if     cmd == 'q'   then quit_dialogue(); return
 	elseif cmd == 'q!'  then arg={};  exit(0)
 	elseif cmd == 'w'   then save_dialogue(); return
@@ -1261,7 +1288,6 @@ function perform_a_change (a)
 		-- There are whole-line Buffers (yy, Y) and within-the-line Buffers
 		--  (dw, d9w, d$)  (which can also include several lines!, eg d9w)
 		if BufferIsWholeLine then
--- XXX BUG this does not get invoked for d} or y} or :.,$y etc
 			CharNum = 1
 			if a['cmd'] == 'p' then
 				if LineNum == #Lines then
@@ -1298,13 +1324,16 @@ function perform_a_change (a)
 			local end_line, endchar = find_position(a['pos'])
 -- message('end_line='..tostring(end_line)..' endchar='..tostring(endchar))
 -- sleep(2)
+_debug("a['cmd'] = ",a['cmd']," a['pos'] = ",a['pos'])
+-- BUG totally weird intermittent off-by-one behaviour with de and ce
+			if a['pos'] == 'e' then endchar = endchar + 1 end -- XXX
 			if end_line then
-				if end_line == #Lines then endchar = endchar+1 end
-				delete_between(LineNum, CharNum, end_line, endchar)
+				local opts ; if end_line == #Lines then opts={EOF=true} end
+				local txt=delete_between(LineNum,CharNum,end_line,endchar,opts)
 				message("line "..tostring(LineNum)..' INSERT')
 				insert_mode(a['text'])
 			else
-				message("can't find a['pos']");
+				fmessage("can't find %s", a['pos'])
 			end
 		end
 	elseif a['cmd'] == 'd' then  -- special-cased ergonomic delete-this-line
@@ -1317,11 +1346,13 @@ function perform_a_change (a)
 			CharNum = 1
 		else  -- invoke find_position and delete to there
 			local end_line, endchar = find_position(a['pos'])
+_debug("a['cmd'] = ",a['cmd']," a['pos'] = ",a['pos'])
+			if a['pos'] == 'e' then endchar = endchar + 1 end -- XXX
 			if end_line then
-				if end_line == #Lines then endchar = endchar+1 end
-				delete_between(LineNum, CharNum, end_line, endchar)
+				local opts ; if end_line == #Lines then opts={EOF=true} end
+				delete_between(LineNum,CharNum,end_line,endchar,opts)
 			else
-				message("can't find "..tostring(a['pos']))
+				fmessage("can't find %s", a['pos'])
 			end
 		end
 	elseif a['cmd'] == 'y' then
@@ -1337,9 +1368,9 @@ function perform_a_change (a)
 		else  -- invoke find_position and yank to there
 			local end_line, endchar = find_position(a['pos'])
 			if end_line then
-				if end_line == #Lines then endchar = endchar+1 end
--- NO ! BUG ! yank, not delete !
-				yank_between(LineNum, CharNum, end_line, endchar)
+				local opts = { yank=true }
+				if end_line==#Lines then opts['EOF'] = true end
+				delete_between(LineNum, CharNum, end_line, endchar, opts)
 			else
 				message("can't find "..tostring(a['pos']));
 			end
@@ -1350,14 +1381,17 @@ function perform_a_change (a)
 				message("can't create "..TmpFile.." "..msg)
 				goto nextchange
 			end
-			T:write(Lines[LineNum].."\n");   T:close()
-			local P, msg = io.popen(a{'shellcmd'}.." < "..TmpFile)
+			T:write((Lines[LineNum] or '').."\n");   T:close()
+			local P, msg = io.popen(a['shellcmd'].." < "..TmpFile)
 			if not P then
-				message("can't run "..a{'shellcmd'}..": "..msg)
+				message("can't run "..a['shellcmd']..": "..msg)
 				goto nextchange
 			end
 			local answer = {}
-			for line in io.lines(P) do table.insert(answer, line) end
+			while true do local line = P:read('*l')
+				if not line then break end
+				table.insert(answer, line)
+			end
 			P:close();  os.remove(TmpFile)
 			splice(Lines, LineNum, 1, answer)
 		else
@@ -1368,15 +1402,20 @@ function perform_a_change (a)
 					message("can't create "..TmpFile.." "..msg)
 					goto nextchange
 				end
+				local opts ; if end_line==#Lines then opts = {yank=true} end
+				local txt=delete_between(LineNum,CharNum,end_line,endchar,opts)
+				T:write(txt.."\n");   T:close()
 				local P, msg = io.popen(a['shellcmd'].." < "..TmpFile)
 				if not P then
 					message("can't run "..a['shellcmd']..": "..msg)
 					goto nextchange
 				end
-				if end_line == #Lines then endchar = endchar+1 end
-				local txt = delete_between(LineNum,CharNum,end_line,endchar)
-				T:write(txt.."\n");   T:close()
-				for line in io.lines(P) do table.insert(answer, line) end
+				local answer = {}
+				while true do local line = P:read('*l')    -- XXX
+					if not line then break end
+					table.insert(answer, line)
+				end
+-- _debug(table.unpack(answer))
 				P:close();  os.remove(TmpFile)
 				splice(Lines, LineNum, 0, answer)
 			else
@@ -1497,7 +1536,7 @@ function seek_in_line (delta, c)   -- used by f F ; ,
 		if c == seekchar then CharNum = char_num break end
 		char_num = char_num + delta
 	end
-	message(format("character %d", CharNum))
+	fmessage("character %d", CharNum)
 	return
 end
 
@@ -1677,9 +1716,10 @@ function command_mode ()
 			perform_a_change( {cmd=c} )
 		elseif c == '=' then
 			local s = format("line %d out of %d, char %d, file ",
-			  LineNum+1,  #Lines,  CharNum)
-			if FileIsChanged then s=s..'is changed' else s=s..'unchanged' end
+			  LineNum,  #Lines,  CharNum)
+--			if FileIsChanged then s=s..'is changed' else s=s..'unchanged' end
 			message(s)
+			LastWasLineNum = true
 		elseif c == 'r' then  -- replace one char
 			local c2 = getch();   if c2 == "\027" then goto nextcommand end
 			perform_a_change( {mult=multiplier, cmd=c, text=c2} );
@@ -1738,7 +1778,7 @@ gotoxy(0, DisplayLine+2)
 
 
 if #arg > IARG+1 then
-	message(format("%d files to edit", #arg-IARG))
+	fmessage("%d files to edit", #arg-IARG)
 	sleep(1)
 end
 for i = IARG, #arg do   -- LOOP over files
@@ -1750,7 +1790,7 @@ for i = IARG, #arg do   -- LOOP over files
 	local msg = "line "..LineNum
 	if is_directory(FileName)  then
 		if i < #arg then
-			message(format("%s is a directory, skipping", FileName))
+			fmessage("%s is a directory, skipping", FileName)
 			sleep(2); goto nextfile
 		else
 			up(2); warn(format("sorry, %s is a directory\n", FileName));
