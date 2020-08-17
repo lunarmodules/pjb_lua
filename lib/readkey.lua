@@ -7,8 +7,9 @@
 ---------------------------------------------------------------------
 
 local M = {} -- public interface
-M.Version = '1.6'  --
-M.VersionDate = '19sep2017'
+M.Version = '1.7'  -- if using X over a framebuffer and have su'd
+        -- to a non-root user, then suppress the xwininfo errmsg
+M.VersionDate = '28jul2020'
 
 --  luaposix now has tcgetattr and tcsetattr and the constants ECHONL etc !
 --  https://github.com/luaposix/luaposix/blob/master/examples/termios.lua
@@ -323,7 +324,10 @@ function M.GetTerminalSize()
 	local xwininfo = which('xwininfo')  -- do we have xwininfo ?
 	if xwininfo and os.getenv('WINDOWID') then
 		-- _debug('GetTerminalSize: using xwininfo')
-		local p = io.popen(xwininfo..' -id '..os.getenv('WINDOWID'),'r')
+		-- 1.7 if you're using X over a framebuffer and have su'd to a
+		-- non-root user, then xwininfo exists but generates an errmsg
+		local p = io.popen(
+		  xwininfo..' -id '..os.getenv('WINDOWID')..' 2>/dev/null','r') --1.7
 		local txt = ''
 		if p then txt = p:read('*all'); p:close() end
 		local pixwidth  = tonumber(string.match(txt, 'Width:%s(%d+)') or 0)
@@ -628,6 +632,9 @@ http://search.cpan.org/perldoc?Term::ReadKey
 
 =head1 CHANGES
 
+ 20200628 1.7 suppress the xwininfo errmsg if su'd to a non-root user
+ 20191125 1.6 tests now work on freebsd (stty -a output different!)
+ 20170919 1.5 protect against missing ECHOCTL and ECHOKE
  20150417 1.4 works with lua 5.3
  20140608 1.3 switch pod and doc over to using moonrocks
  20131021 1.2 xwininfo lets GetTerminalSize work even after ReadLine
