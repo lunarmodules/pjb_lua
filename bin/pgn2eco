@@ -12,9 +12,9 @@ pgn2eco.lua  1. d4 f5 2. g3
 ]]
 
 -- local FEN = require 'chess.fen'
-local FEN = require 'fen'
+local FEN = require 'chess.fen'
 local DBM = require 'gdbm'
--- local POS = require 'posix'
+local POS = require 'posix'
 local STA = require "posix.sys.stat"
 -- or LuaFileSystem http://keplerproject.github.io/luafilesystem/manual.html
 
@@ -47,6 +47,9 @@ function warn(...)
     io.stderr:write(table.concat(a),'\n') ; io.stderr:flush()
 end
 function die(...) warn(...);  os.exit(1) end
+function exists(fn)
+    if POS.stat(fn) then return true else return false end
+end
 function more_recent(f1, f2)
 	local f1_stat = STA.stat(f1)
 	local f2_stat = STA.stat(f2)
@@ -84,6 +87,9 @@ if iarg <= #arg then
 	pgn = table.concat(a, ' ')
 else
 	pgn = io.read('*a')
+end
+if not exists(infile) then
+	die("you should set environment variable ECOMAST_FILE")
 end
 
 local eco2fen_db = out_dbdir..'/eco2fen.gdbm'
