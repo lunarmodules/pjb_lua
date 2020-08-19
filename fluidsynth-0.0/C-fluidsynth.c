@@ -11,6 +11,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <stdio.h>
+#include <stdlib.h>   /* for the declaration of malloc */
 #include <string.h>   /* for bcopy, memcopy */
 #include <unistd.h>   /* for dup, dup2; perhaps isatty */
 

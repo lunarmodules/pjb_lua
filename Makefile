@@ -6,13 +6,13 @@ DUMPVER = 1.1
 ECASVER = 0.4
 EVVER   = 1.14
 FENVER  = 1.9
-FSVER   = 2.2
+FSVER   = 2.3
 # Note: No more RK! RUNGE means Runge-Kutta; KEY means Term::ReadKey 
-KEYVER  = 1.7
+KEYVER  = 1.8
 MIDIVER = 6.9
 MTVER   = 1.18
 RANDVER = 1.7
-RLVER   = 2.7
+RLVER   = 2.8
 RUNGEVER = 1.09
 SOXVER  = 0.1
 TIVER   = 1.8
@@ -135,7 +135,7 @@ distrunge: ${RUNGEROCKSPEC}
 	/home/pbin/upload ${RUNGETARBALL}
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove math-rungekutta
-	#  luarocks install http://www.pjb.com.au/comp/lua/math-rungekutta-${RUNGEVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/math-rungekutta-${RUNGEVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload math-rungekutta-${RUNGEVER}-0.rockspec
 
@@ -146,7 +146,7 @@ distwt: ${WTROCKSPEC}
 	/home/pbin/upload ${WTTARBALL}
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove math-walshtransform
-	#  luarocks install http://www.pjb.com.au/comp/lua/math-walshtransform-${WTVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/math-walshtransform-${WTVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload math-walshtransform-${WTVER}-0.rockspec
 
@@ -157,7 +157,7 @@ distev: ${EVROCKSPEC}
 	/home/pbin/upload ${EVTARBALL}
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove math-evol
-	#  luarocks install http://www.pjb.com.au/comp/lua/math-evol-${EVVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/math-evol-${EVVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload math-evol-${EVVER}-0.rockspec
 
@@ -173,7 +173,7 @@ distfen: ${FENROCKSPEC}
 	/home/pbin/upload ${FENTARBALL}
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove chess-fen
-	#  luarocks install http://www.pjb.com.au/comp/lua/chess-fen-${FENVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/chess-fen-${FENVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload chess-fen-${FENVER}-0.rockspec
 
@@ -186,7 +186,7 @@ distmidi: ${MIDIDIR}/MIDI.lua ${MIDIDIR}/MIDI.html ${MIDIROCKSPEC} \
 	/home/pbin/upload ${MIDIDIR}/test_mi.lua
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove midi
-	#  luarocks install http://www.pjb.com.au/comp/lua/midi-${MIDIVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/midi-${MIDIVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload midi-${MIDIVER}-0.rockspec
 
@@ -196,7 +196,7 @@ distalsa: ${ALSADIR}/midialsa.html ${ALSAROCKSPEC}
 	/home/pbin/upload ${ALSADIR}/midialsa-${ALSAVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove midialsa
-	#  luarocks install http://www.pjb.com.au/comp/lua/midialsa-${ALSAVER}-0.rockspec ALSA_LIBDIR=/usr/lib/i386-linux-gnu/
+	#  luarocks install https://www.pjb.com.au/comp/lua/midialsa-${ALSAVER}-0.rockspec ALSA_LIBDIR=/usr/lib/i386-linux-gnu/
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload midialsa-${ALSAVER}-0.rockspec
 
@@ -208,7 +208,7 @@ distclui : ${CLUIDIR}/commandlineui.html ${CLUIROCKSPEC}
 	# /home/pbin/upload ${CLUIDIR}/audio_stuff.lua
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove commandlineui
-	#  luarocks install http://www.pjb.com.au/comp/lua/commandlineui-${CLUIVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/commandlineui-${CLUIVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload commandlineui-${CLUIVER}-0.rockspec
 
@@ -220,7 +220,7 @@ distdfil : ${DFILROCKSPEC} ${DFILDIR}/test_digitalfilter.lua
 	/home/pbin/upload ${DFILDIR}/digitalfilter-${DFILVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove digitalfilter
-	#  luarocks install http://www.pjb.com.au/comp/lua/digitalfilter-${DFILVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/digitalfilter-${DFILVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload digitalfilter-${DFILVER}-0.rockspec
 
@@ -229,7 +229,7 @@ distdump : ${DUMPROCKSPEC}
 	/home/pbin/upload ${DUMPDIR}/DataDumper-${DUMPVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove datadumper
-	#  luarocks install http://www.pjb.com.au/comp/lua/datadumper-${DUMPVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/datadumper-${DUMPVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload datadumper-${DUMPVER}-0.rockspec
 
@@ -239,7 +239,7 @@ distecas: ${ECASDIR}/ecasound.html ${ECASROCKSPEC}
 	/home/pbin/upload ${ECASDIR}/ecasound-${ECASVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove ecasound
-	#  luarocks install http://www.pjb.com.au/comp/lua/ecasound-${ECASVER}-0.rockspec ECAS_LIBDIR=/usr/lib/i386-linux-gnu/
+	#  luarocks install https://www.pjb.com.au/comp/lua/ecasound-${ECASVER}-0.rockspec ECAS_LIBDIR=/usr/lib/i386-linux-gnu/
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload ecasound-${ECASVER}-0.rockspec
 
@@ -249,9 +249,9 @@ distfs: ${FSROCKSPEC}
 	/home/pbin/upload ${FSDIR}/fluidsynth-${FSVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove fluidsynth
-	#  luarocks install http://www.pjb.com.au/comp/lua/fluidsynth-${FSVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/fluidsynth-${FSVER}-0.rockspec
 	# or:
-	#  luarocks install http://www.pjb.com.au/comp/lua/fluidsynth-${FSVER}-0.rockspec FSSA_LIBDIR=/usr/lib/i386-linux-gnu/
+	#  luarocks install https://www.pjb.com.au/comp/lua/fluidsynth-${FSVER}-0.rockspec FSSA_LIBDIR=/usr/lib/i386-linux-gnu/
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload fluidsynth-${FSVER}-0.rockspec
 
@@ -260,7 +260,7 @@ distrand : ${RANDROCKSPEC}
 	/home/pbin/upload ${RANDDIR}/randomdist-${RANDVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove randomdist
-	#  luarocks install http://www.pjb.com.au/comp/lua/randomdist-${RANDVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/randomdist-${RANDVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload randomdist-${RANDVER}-0.rockspec
 
@@ -270,7 +270,7 @@ distrkey: ${KEYDIR}/readkey.html ${KEYROCKSPEC}
 	/home/pbin/upload ${KEYDIR}/readkey-${KEYVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove readkey
-	#  luarocks install http://www.pjb.com.au/comp/lua/readkey-${KEYVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/readkey-${KEYVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload readkey-${KEYVER}-0.rockspec
 
@@ -283,7 +283,7 @@ distrlin : ${RLDIR}/readline.html ${RLROCKSPEC} ${RLDIR}/test_rl.lua
 	/home/pbin/upload ${RLDIR}/readline-${RLVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove readline
-	#  luarocks install http://www.pjb.com.au/comp/lua/readline-${RLVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/readline-${RLVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload readline-${RLVER}-0.rockspec
 
@@ -293,7 +293,7 @@ distterm : ${TIDIR}/terminfo.html ${TIROCKSPEC}
 	/home/pbin/upload ${TIDIR}/terminfo-${TIVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove terminfo
-	#  luarocks install http://www.pjb.com.au/comp/lua/terminfo-${TIVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/terminfo-${TIVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload terminfo-${TIVER}-0.rockspec
 
@@ -303,14 +303,14 @@ disttc : ${DISTDIR}/testcases.html ${TCROCKSPEC}
 	/home/pbin/upload ${DISTDIR}/testcases-${TCVER}.tar.gz
 	# Install by:
 	#  luarocks remove testcases
-	#  luarocks install http://www.pjb.com.au/comp/lua/testcases-${TCVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/testcases-${TCVER}-0.rockspec
 
 distgdbm: ${DBMDIR}/lgdbm.html ${DBMROCKSPEC}
 	/home/pbin/upload ${DBMDIR}/lgdbm.html
 	/home/pbin/upload ${DBMDIR}/lgdbm-${DBMVER}-0.rockspec
 	# If a trial install works on 5.2 and 5.3:
 	#  luarocks remove lgdbm
-	#  luarocks install http://www.pjb.com.au/comp/lua/lgdbm-${DBMVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/lgdbm-${DBMVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload lgdbm-${DBMVER}-0.rockspec
 
@@ -320,7 +320,7 @@ distsox : ${SOXDIR}/sox.html ${SOXROCKSPEC}
 	/home/pbin/upload ${SOXDIR}/sox-${SOXVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove sox
-	#  luarocks install http://www.pjb.com.au/comp/lua/sox-${SOXVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/sox-${SOXVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload sox-${SOXVER}-0.rockspec
 
@@ -334,7 +334,7 @@ disttif : ${DISTDIR}/terminfofont.html \
 	/home/pbin/upload ${DISTDIR}/terminfofont-${TIFVER}.tar.gz
 	# If a trial install works on 5.1, 5.2 and 5.3:
 	#  luarocks remove terminfofont
-	#  luarocks install http://www.pjb.com.au/comp/lua/terminfofont-${TIFVER}-0.rockspec
+	#  luarocks install https://www.pjb.com.au/comp/lua/terminfofont-${TIFVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload terminfofont-${TIFVER}-0.rockspec
 
