@@ -15,7 +15,7 @@ description = {
 }
 -- http://www.luarocks.org/en/Rockspec_format
 dependencies = {
-   "lua >=5.1, <5.4",
+   "lua >=5.1, <5.5",
    "luaposix >= 30",
 }
 external_dependencies = {  -- Duarn 20150216, 20150416

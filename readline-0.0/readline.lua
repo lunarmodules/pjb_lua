@@ -24,6 +24,8 @@ void rl_callback_sigcleanup (void)
 void rl_callback_handler_remove (void)
 ]]
 
+if string.tonumber then tonumber = string.tonumber end  -- 5.4
+
 -------------------- private utility functions -------------------
 local function warn(str) io.stderr:write(str,'\n') end
 local function die(str) io.stderr:write(str,'\n') ;  os.exit(1) end
@@ -514,6 +516,7 @@ or on Centos you may need:
 
 =head1 CHANGES
 
+ 20200801 2.7 add 5.4
  20180924 2.2 add set_completion_append_character 
  20180912 2.1 C code stack-bug fix in handler_calls_completion_callback
  20180910 2.0 add set_complete_list and set_complete_function
