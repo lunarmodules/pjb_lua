@@ -92,6 +92,7 @@ function _debug(...)
 	DEBUG:write(table.concat(a),'\n') ; DEBUG:flush()
 	DEBUG:close()
 end
+_debug('')
 
 HOME = P.getpwuid(P.geteuid())['pw_dir'] or os.getenv('HOME')
 
@@ -655,12 +656,13 @@ function constrain_char_num ()
 	return
 end
 function constrain_line_num ()
+_debug('constrain_line_num: LineNum=',LineNum)
 	if LineNum <= 1 then LineNum = 1; return end
 	if LineNum > #Lines then LineNum = #Lines end
 	return
 end
 function charnum2colnum (charnum)  -- closely related to expand_tabs
-    if charnum < 1 then charnum = 1 end
+    if not charnum or charnum<1 then charnum = 1 end
     local colnum = 0
     -- local chars  = split('', Lines[LineNum]) NOPE, sorry :-
     local chars  = {}
@@ -670,16 +672,16 @@ function charnum2colnum (charnum)  -- closely related to expand_tabs
 	else
     	if charnum > #chars then charnum = #chars end
 	end
-if charnum > 1 then
-    for i = 1, charnum-1 do   -- for all the previous chars
-        if chars[i] == "\t" then  -- depends on 1=0
-            colnum = -1 +
-			  Opt['tabstop'] * (1 + math.floor((colnum+1) / Opt['tabstop']))
-        else
-            colnum = colnum + 1
-        end
-    end
-end
+	local tabstop = Opt['tabstop']
+	if charnum > 1 then
+    	for i = 1, charnum-1 do   -- for all the previous chars
+        	if chars[i] == "\t" then  -- depends on 1=0
+            	colnum = -1 + tabstop * (1 + math.floor((colnum+1)/tabstop))
+        	else
+            	colnum = colnum + 1
+        	end
+    	end
+	end
 	return colnum
 end
 function expand_tabs ()   -- closely related to charnum2colnum
@@ -861,7 +863,7 @@ function find_position (s)
 				if line_num == 1 then
 					found_single = true;   char_num = 1   break
 				elseif match(Lines[line_num], '^%s*$') and
-				       match(Lines[line_num-1], '%S') then
+				  match(Lines[line_num+1], '%S') then
 					found_single = true;   char_num = 1   break
 				end
 				line_num = line_num - 1
@@ -954,8 +956,19 @@ function quit_dialogue ()
 	exit(0)
 end
 
+function is_dir(fn)
+    local S = require('posix.sys.stat')
+    local stat = S.stat(fn)
+    if not stat then return false end
+    return S.S_ISDIR(stat['st_mode']) ~= 0
+end
+
 function read_dialogue (fn)
 	local filename = gsub(fn, '^~/', HOME..'/', 1)
+	-- doesn't handle  ~uname/foo  :-(
+	if is_dir(filename) then
+		message(format("%s is a directory", filename)) ; return nil
+	end
 	local F,msg = io.open(filename, 'r')
 	if not F then
 		message(format("can't open %s : %s",fn,msg)); return nil
@@ -976,7 +989,15 @@ function read_dialogue (fn)
 	message(format("%d lines from %s", #buffer, filename))
 end
 
+function subarray (a, i1, i2)
+	local result = {}
+	for i = i1, i2 do result[#result+1] = a[i] end
+_debug('#result=',#result)
+	return result
+end
+
 function delete_between (line1, char1, line2, char2, opts)
+	-- if char1<1 then char1=1 end ; if char2<1 then char2=1 end
 	opts = opts or {}
 local s = " ";
 if opts then for k,v in pairs(opts) do s=s..k.."="..tostring(v).." " end end
@@ -995,41 +1016,62 @@ _debug(format("delete_between(%d, %d, %d, %d,%s)",line1,char1,line2,char2,s))
 		end
 	end
 	LineNum = line1;  CharNum = char1
-	if line1 == line2 then
+	local buffer = {}
+	if not opts['yank'] then add_to_history() end
+	if line1 == line2 then  -- delete a part of one line
 		local nchars  = char2-char1 -- BUG this leaves de, ce one char short
 		local before,this,after = split_3(Lines[line1], char1, nchars)
 		if not opts['yank'] then Lines[line1] = before .. after end
 		local msg = "1 char"
 		if nchars > 1 then msg = tostring(nchars).." chars" end
 		message(msg);  display_line()
-		Buffer = { this }
+		buffer = { this }
 		return this
-	else
+	else          -- delete more than one line
 		local nlines
 		local end_of_first_line = sub(Lines[line1], char1)
-		if opts['yank'] then Lines[line1] = sub(Lines[line1], 1, char1-1) end
-		if len(Lines[line2])==0 or not opts['EOF'] then
-_debug("opts['EOF']\n")
-			local start_of_final_line = sub(Lines[line2], 1, char2) -- XXX
-			Lines[line2] = sub(Lines[line2], char2+1)
-			if opts['yank'] then Lines[line1] = Lines[line1]..Lines[line2] end
-			for i = line1+1, line2 do table.insert(Buffer, Lines[i]) end
-			table.insert(Buffer, start_of_final_line)
+		if len(Lines[line2])==0 or opts['EOF'] then
+			if opts['yank'] then
+_debug("yank and EOF")
+				buffer    = subarray(Lines, line1, line2)
+				buffer[1] = end_of_first_line
+			else  -- delete
+_debug("delete and EOF")
+				buffer    = subarray(Lines, line1, line2)
+_debug('#buffer=',#buffer)
+				buffer[1] = end_of_first_line
+				-- Lines[line2] = sub(Lines[line2], char2+1)
+				splice(Lines, line1, line2-line1+1)
+--				Lines[line1] = end_of_first_line
+			end
 			nlines  = line2-line1
-		else
-_debug("not opts['EOF']\n")
-			Buffer = splice(Lines, line1+1, line2-line1)
-			if opts['yank'] then Lines[#Lines] = nil end
+		else  -- not-to-EOF, the normal case
+			local start_of_final_line = sub(Lines[line2], 1, char2) -- XXX
+			if opts['yank'] then
+_debug("yank and not EOF")
+				buffer = subarray(Lines, line1, line2)
+				buffer[1]       = end_of_first_line
+				buffer[#buffer] = start_of_final_line
+			else  -- delete
+_debug("delete and not EOF")
+				buffer = splice(Lines, line1, line2-line1)
+				Lines[line1] = sub(Lines[line1], 1, char1-1)
+				Lines[line2] = sub(Lines[line2], char2+1)
+				Lines[line1] = Lines[line1]..Lines[line2]  -- ???
+				-- Lines[line2]=nil -- does this reliably truncate the array?
+			end
 			if LineNum > 1 then LineNum = LineNum-1 end -- 2.4
 			nlines  = line2-line1+1
 		end
-		table.insert(Buffer, 1, end_of_first_line)
+		table.insert(buffer, 1, end_of_first_line)
 		-- we don't say "lines deleted" because it might be !end
 		local msg = "1 line"
 		if nlines > 1 then msg = tostring(nlines).." lines" end
 		message(msg);  display_line()
 		if opts['yank'] and not Lines then Lines = {} end   -- 2.3 20200508
-		return table.concat(Buffer,"\n")
+		if not opts['paste'] then Buffer = buffer ; return true
+		else           return table.concat(buffer, '\n')
+		end
 	end
 	warn "BUG: shouldn't reach here...";
 end
@@ -1045,18 +1087,16 @@ function colon_mode (s)   -- to handle the vibe -c arg
 	LastMessage = ":"..cmdstr
 	gotoxy(0, DisplayLine+1)
 	if is_position(cmdstr) then goto_position(cmdstr, "not found"); return end
---print('\rcolon_mode: before cmdstr = ',cmdstr)
---	local range,cmd,s = match(cmdstr,'([.%d]+,[.%d%$]+)?(%S+)%s*(.*)$')
---print('\r1 after range, cmd, s = ',range, cmd, s)
---	range = range or '' ; cmd = cmd or '' ; s = s or ''
---print('\r2 after range, cmd, s = ',range, cmd, s)
+-- BUG !! there's not always a comma, eg   :3d
 	local range, rest = match(cmdstr, '^([%.%d]+,[%.%d%$]+)(.+)$')
 	if range then cmdstr = rest end
 	local cmd, arg = match(cmdstr, '^(%S+)%s*(.*)$')
+_debug('colon_mode cmdstr=',cmdstr,' cmd=',cmd,' arg=',arg)
 	if not cmd then gotoxy(0, DisplayLine); return nil end
 	if     cmd == 'q'   then quit_dialogue(); return
 	elseif cmd == 'q!'  then arg={};  exit(0)
 	elseif cmd == 'w'   then save_dialogue(); return
+-- BUG not always the whole file, could be eg 3,5w /tmp/x
 	elseif cmd == 'wq'  then save_dialogue(nil,'quitting'); quit_dialogue()
 		return;
 	elseif cmd == 'wq!' then save_dialogue(); arg={}; exit(0)
@@ -1065,11 +1105,15 @@ function colon_mode (s)   -- to handle the vibe -c arg
 	elseif cmd == 'r'   then read_dialogue(arg) return
 	-- 20150905 also delete and yank ?  see eg: delete_between()
 	elseif cmd == 'd' or cmd == 'y'  then   -- 20200506 added 'y'
-		local line1,line2 = split(range,',',2)
+-- XXX need to add_to_history()
+		local line1,line2 = table.unpack(split(range,',',2))
 		local staline, stachar = find_position(line1)
 		local endline, endchar = find_position(line2)
+_debug('colon_mode staline=',staline,' endline=',endline)
 		if cmd == 'd' then
-			delete_between(staline,0,endline,0) -- also .+4 $-2  +3 -17 etc
+			delete_between(staline,1,endline,1) -- also .+4 $-2 +3 -17 etc
+		else
+			delete_between(staline,1,endline,1,{yank=true})
 		end
 		BufferIsWholeLine = true
 		return
@@ -1301,10 +1345,16 @@ function perform_a_change (a)
 			end
 		else   -- it's a within-the-line Buffer
 			if a['cmd'] == 'p' then CharNum = CharNum + 1 end
-			-- BUG this handles only within-the-line Buffers containing no \n
+			-- this handles only within-the-line Buffers containing no \n
 			local before =  sub(Lines[LineNum], 1, CharNum-1)
 			local after  =  sub(Lines[LineNum], CharNum)
-			Lines[LineNum] = before..rep(Buffer[1],a['mult'])..after
+-- XXX
+			if Buffer[1] then
+_debug('pasting when not BufferIsWholeLine')
+				Lines[LineNum] = before..rep(Buffer[1],a['mult'])..after
+--			else
+--				message("the paste buffer is empty") -- BUG doesn't display!
+			end
 		end
 	elseif a['cmd'] == 'r' then
 		local before =  sub(Lines[LineNum], 1, CharNum-1)
@@ -1329,7 +1379,7 @@ _debug("a['cmd'] = ",a['cmd']," a['pos'] = ",a['pos'])
 			if a['pos'] == 'e' then endchar = endchar + 1 end -- XXX
 			if end_line then
 				local opts ; if end_line == #Lines then opts={EOF=true} end
-				local txt=delete_between(LineNum,CharNum,end_line,endchar,opts)
+				delete_between(LineNum,CharNum,end_line,endchar,opts)
 				message("line "..tostring(LineNum)..' INSERT')
 				insert_mode(a['text'])
 			else
@@ -1402,8 +1452,10 @@ _debug("a['cmd'] = ",a['cmd']," a['pos'] = ",a['pos'])
 					message("can't create "..TmpFile.." "..msg)
 					goto nextchange
 				end
-				local opts ; if end_line==#Lines then opts = {yank=true} end
-				local txt=delete_between(LineNum,CharNum,end_line,endchar,opts)
+				local opts = {paste=true}
+				if end_line==#Lines then opts['EOF']=true end
+				local txt = delete_between(
+				  LineNum, CharNum, end_line, endchar, opts)
 				T:write(txt.."\n");   T:close()
 				local P, msg = io.popen(a['shellcmd'].." < "..TmpFile)
 				if not P then
@@ -1415,7 +1467,7 @@ _debug("a['cmd'] = ",a['cmd']," a['pos'] = ",a['pos'])
 					if not line then break end
 					table.insert(answer, line)
 				end
--- _debug(table.unpack(answer))
+-- _debug('answer= ',table.unpack(answer))
 				P:close();  os.remove(TmpFile)
 				splice(Lines, LineNum, 0, answer)
 			else
@@ -1541,7 +1593,7 @@ function seek_in_line (delta, c)   -- used by f F ; ,
 end
 
 function chomp (a)
-	for i = 1, #a do a[i] = string.gsub(a[i], '[\r\n]$', '') end
+	for i = 1, #a do a[i] = gsub(a[i], '[\r\n]$', '') end
 end
 
 function re_do ()   -- 20130718 still just single-level, like Sun vi
@@ -1715,8 +1767,8 @@ function command_mode ()
 		elseif c == 'C' or c == 'D' or c == 'A' then
 			perform_a_change( {cmd=c} )
 		elseif c == '=' then
-			local s = format("line %d out of %d, char %d, file ",
-			  LineNum,  #Lines,  CharNum)
+			local s = format("line %d out of %d, char %d",
+			  LineNum, #Lines, CharNum)
 --			if FileIsChanged then s=s..'is changed' else s=s..'unchanged' end
 			message(s)
 			LastWasLineNum = true
@@ -1762,7 +1814,11 @@ function command_mode ()
 end
 ------------------------------------------------------ 
 
-Cols, Rows,Xpix,Ypix = RK.GetTerminalSize();
+-- Cols, Rows,Xpix,Ypix = RK.GetTerminalSize();
+-- BUT when X is started by root and we're in an "su pjb" xterm, then
+-- /usr/bin/xwininfo: error: unable to open display ":0"
+Cols = T.get('cols')  -- _debug('Cols=',Cols,' ',type(Cols))
+
 --[[
 	SIGWINCH is shown in kill -l but is not known to luaposix
 	SIG{'WINCH'} = sub {
