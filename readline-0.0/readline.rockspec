@@ -10,7 +10,7 @@ description = {
 	  This Lua module offers a simple calling interface
       to the GNU Readline/History Library.
    ]],
-   homepage = "http://www.pjb.com.au/comp/lua/readline.html",
+   homepage = "http://pjb.com.au/comp/lua/readline.html",
    license = "MIT/X11",
 }
 -- http://www.luarocks.org/en/Rockspec_format
