@@ -7,8 +7,8 @@
 ---------------------------------------------------------------------
 
 local M = {} -- public interface
-M.Version     = '2.0' -- lua5.3, and keep pointers in C arrays
-M.VersionDate = '24apr2015'
+M.Version     = '2.3' -- 20201103 2.3 adapt to gcc9 and libfluidsynth 1.12
+M.VersionDate = '20201103'
 
 local ALSA = nil -- not needed if you never use play_event
 
@@ -189,7 +189,9 @@ end
 
 function new_audio_driver(synthnum)
 	local audio_driver = prv.new_fluid_audio_driver(synthnum)
-	if audio_driver == nil then return nil, M.synth_error(synthnum) end
+	if audio_driver == nil then
+		return nil, synth_error('new_fluid_audio_driver')
+	end
 	return audio_driver
 end
 
@@ -229,34 +231,37 @@ function set(synthnum, key, val)  -- typically called before a synth exists,
 	if key=='synth.sample-rate' or key=='synth.gain' then
 		local rc = prv.fluid_settings_setnum(synthnum, key, val)
 		if rc == 1 then return true
-		else return nil,M.synth_error(synthnum) end
+		else return nil,synth_error('fluid_settings_setnum') end
 	elseif type(val) == 'number' then
 		local rc = prv.fluid_settings_setint(synthnum, key, round(val))
 		if rc == 1 then return true
-		else return nil,M.synth_error(synthnum) end
+		else return nil,synth_error('fluid_settings_setint') end
 	elseif type(val) == 'boolean' then   -- 1.1
 		local v = 0
 		if val then v = 1 end
 		local rc = prv.fluid_settings_setint(synthnum, key, v)
 		if rc == 1 then return true
-		else return nil,M.synth_error(synthnum) end
+		else return nil,synth_error('fluid_settings_setint') end
 	elseif type(val) == 'string' then
 		local rc = prv.fluid_settings_setstr(synthnum, key, val)
 		if rc == 1 then return true
-		else return nil,M.synth_error(synthnum) end
+		else return nil,synth_error('fluid_settings_setstr') end
 	else
 		return nil,'fluidsynth knows no '..key..' setting of '..type(val)..' type'
 	end
 	return true
 end
 
------------------------- public functions ----------------------
-
-function M.synth_error(synthnum)   -- undocumented
+-- function M.synth_error(synthnum)   -- undocumented
  	-- Get a textual representation of the most recent synth error
-	if not synthnum  then return '' end
-	return prv.fluid_synth_error(synthnum)
+	-- 20201102 but fluid_synth_error now seems to be FLUID_DEPRECATED :-(
+function synth_error(caller)
+	if not caller  then return 'fluidsynth error' end
+	return 'fluidsynth error in '..caller
+	-- return prv.fluid_synth_error(synthnum)
 end
+
+------------------------ public functions ----------------------
 
 function M.error_file_name()   -- so the app can remove it
 	return TmpName
@@ -343,7 +348,7 @@ end
 function M.sf_load( synth, commands )
 	if type(commands) == 'string' then
 		local sf_id = prv.fluid_synth_sfload(synth, filename)
-		if sf_id == nil then return nil, M.synth_error(synth)
+		if sf_id == nil then return nil, synth_error('fluid_synth_sfload')
 		else return { sf_id } end
 	elseif type(commands) == 'table' then
 		--- 1.7 apply not just load but also select commands (eg for drumset)
@@ -354,7 +359,8 @@ function M.sf_load( synth, commands )
 				if filename and M.is_soundfont(filename) then
 					local sf_id = prv.fluid_synth_sfload(synth, filename)
 					-- print('filename =',filename, ' sf_id =',sf_id)
-					if sf_id==nil then return nil,M.synth_error(synth)
+					if sf_id==nil then
+						return nil,synth_error('fluid_synth_sfload')
 					else filename2sf_id[filename] = sf_id
 					end
 				end
@@ -391,7 +397,7 @@ end
 function M.sf_select(synth, channel, sf_id)   -- not documented :-(
 	local rc = prv.fluid_synth_sfont_select(synth, channel, sf_id)
 	if rc == nil then
-		return nil, 'sf_select: '..M.synth_error(synth)
+		return nil, synth_error('fluid_synth_sfont_select')
 	else return true end
 end
 
@@ -416,7 +422,7 @@ function M.delete_synth(synth)
 	delete_audio_driver(synth)
 	local rc = prv.delete_fluid_synth(synth)
 	if rc == nil then
-		return nil, 'delete_synth: '..M.synth_error(synth)
+		return nil, synth_error('delete_fluid_synth')
 	end
 	-- >=2.0 each synth only has one settings
 	prv.delete_fluid_settings(synth)
@@ -433,7 +439,7 @@ function M.new_player(synth, midifile)
 	if not midifile then return nil,'new_player: midifile was nil' end
 	local playernum = first_free_playernum()
 	local player = prv.new_fluid_player(synth, playernum)
-	if player == nil then return nil, M.synth_error(synth) end
+	if player == nil then return nil, synth_error('new_fluid_player') end
 	local rc
 	if M.is_midifile(midifile) then   -- 1.5
 		rc = prv.fluid_player_add(player, midifile)
@@ -448,7 +454,7 @@ function M.new_player(synth, midifile)
 	end
 	if rc == nil then
 		delete_player(player)
-		return nil, M.synth_error(synth)
+		return nil, synth_error('delete_player')
 	end
 	Player2synth[player] = synth
 	return player
@@ -468,7 +474,7 @@ end
 
 function M.player_play(player)
 	local rc = prv.fluid_player_play(player)
-	if rc == nil then return nil, M.synth_error(Player2synth[player])
+	if rc == nil then return nil, synth_error('fluid_player_play')
 	else return true end
 end
 
@@ -484,13 +490,13 @@ function M.player_join(player)
 		return true
 	end
 	local rc = prv.fluid_player_join(player)
-	if rc == nil then return nil, M.synth_error(synth)
+	if rc == nil then return nil, synth_error('fluid_player_join')
 	else return true end
 end
 
 function M.player_stop(player)
 	local rc = prv.fluid_player_stop(player)
-	if rc == nil then return nil, M.synth_error(Player2synth[player])
+	if rc == nil then return nil, synth_error('fluid_player_stop')
 	else
 		-- player_play can not be reinvoked ! so just delete_player
 		delete_player(player)
@@ -500,7 +506,7 @@ end
 
 function M.player_add_mem(player, buffer)
 	local rc = prv.fluid_player_add_mem(player, buffer, string.len(buffer)+1)
-	if rc == nil then return nil, M.synth_error(Player2synth[player])
+	if rc == nil then return nil, synth_error('fluid_player_add_mem')
 	else return true
 	end
 end
@@ -509,38 +515,38 @@ end
 
 function M.note_on(synth, channel, note, velocity)
 	local rc = prv.fluid_synth_noteon(synth, channel, note, velocity)
-	if rc == nil then return nil, M.synth_error(synth)
+	if rc == nil then return nil, synth_error('fluid_synth_noteon')
 	else return true end
 end
 
 function M.note_off(synth, channel, note)
 	if note == nil then return nil, 'note_off: argument #3 was nil' end
 	local rc = prv.fluid_synth_noteoff(synth, channel, note)
-	if rc == nil then return nil, M.synth_error(synth)
+	if rc == nil then return nil, synth_error('fluid_synth_noteoff')
 	else return true end
 end
 
 function M.patch_change(synth, channel, patch)
 	local rc = prv.fluid_synth_program_change(synth, channel, patch)
-	if rc == nil then return nil, M.synth_error(synth)
+	if rc == nil then return nil, synth_error('fluid_synth_program_change')
 	else return true end
 end
 
 function M.control_change(synth, channel, cc, val)
 	local rc = prv.fluid_synth_cc(synth, channel, cc, val)
-	if rc == nil then return nil, M.synth_error(synth)
+	if rc == nil then return nil, synth_error('fluid_synth_cc')
 	else return true end
 end
 
 function M.pitch_bend(synth, channel, val) -- val = 0..8192..16383
 	local rc = prv.fluid_synth_pitch_bend(synth, channel, val)
-	if rc == nil then return nil, M.synth_error(synth)
+	if rc == nil then return nil, synth_error('fluid_synth_pitch_bend')
 	else return true end
 end
 
 function M.pitch_bend_sens(synth, channel, val) -- val = semitones
 	local rc = prv.fluid_synth_pitch_bend_sens(synth, channel, val)
-	if rc == nil then return nil, M.synth_error(synth)
+	if rc == nil then return nil, synth_error('fluid_synth_pitch_bend_sens')
 	else return true end
 end
 
@@ -628,19 +634,19 @@ function M.get(synth, key)  -- typically called AFTER the synth exists
 	local val = DefaultOption[key]
 	if key=='synth.sample-rate' or key=='synth.gain' then
 		local rc = prv.fluid_settings_getnum(settings, key)
-		if rc == nil then return nil,M.synth_error(synth) end
+		if rc==nil then return nil,synth_error('fluid_settings_getnum') end
 		return rc
 	elseif type(val) == 'number' then
 		local rc = prv.fluid_settings_getint(settings, key)
-		if rc == nil then return nil,M.synth_error(synth) end
+		if rc == nil then return nil,synth_error('fluid_settings_getint') end
 		return round(rc)
 	elseif type(val) == 'boolean' then
 		local rc = prv.fluid_settings_getint(settings, key, v)
-		if rc == nil then return nil,M.synth_error(synth) end
+		if rc == nil then return nil,synth_error('fluid_settings_getint') end
 		if rc == 0 then return false else return true end
 	elseif type(val) == 'string' then
 		local rc = prv.fluid_settings_copystr(settings, key)
-		if rc == nil then return nil,M.synth_error(synth) end
+		if rc==nil then return nil,synth_error('fluid_settings_copystr') end
 		return rc
 	end
 	return nil, 'fluidsynth knows no '..key..' setting'

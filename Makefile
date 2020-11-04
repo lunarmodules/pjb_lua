@@ -6,7 +6,7 @@ DUMPVER = 1.1
 ECASVER = 0.4
 EVVER   = 1.14
 FENVER  = 1.9
-FSVER   = 2.3
+FSVER   = 2.4
 # Note: No more RK! RUNGE means Runge-Kutta; KEY means Term::ReadKey 
 KEYVER  = 1.8
 MIDIVER = 6.9

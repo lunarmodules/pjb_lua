@@ -48,7 +48,7 @@ fluid_audio_driver_t* audio_drivers[128] = { 0 };  /* 2.0 to keep ptrs in C */
 static int c_redirect_stderr(lua_State *L) {
 	save_stderr = dup(fileno(stderr));
 	char* tmp_file = tmpnam(NULL);
-	freopen(tmp_file, "w", stderr);
+	FILE* tmp_fptr = freopen(tmp_file, "w", stderr);   /* 2.3 */
 	/* The C library function FILE *freopen(const char *filename,
 	   const char *mode, FILE *stream) associates a new filename with the
 	   given open stream and same time closing the old file in stream.
@@ -121,8 +121,10 @@ static int c_new_fluid_synth(lua_State *L) {  /* synthnum */
 static int c_delete_fluid_synth(lua_State *L) {  /* synthnum */
 	/* fluid_settings_t* settings = (fluid_settings_t*)lua_tointeger(L, 1); */
 	fluid_synth_t* synth = synths[(int)luaL_checkinteger(L, 1)];
-	int rc = delete_fluid_synth(synth);
-   	lua_pushinteger(L, rc);
+	/* int rc = delete_fluid_synth(synth);   returns void
+   	lua_pushinteger(L, rc); */
+	delete_fluid_synth(synth);
+   	lua_pushinteger(L, 1);
 	return 1;
 }
 
@@ -203,12 +205,14 @@ fluid_synth_pitch_wheel_sens(), and fluid_synth_program_change() functions.
 For convenience, there's also a fluid_synth_bank_select() function (the
 bank select message is normally sent using a control change message).
 */
-static int c_fluid_synth_error(lua_State *L) {  /* synth */
+/*   20201104 2.3 fluid_synth_error is now being removed from libfluidsynth
+static int c_fluid_synth_error(lua_State *L) {  // synth
 	fluid_synth_t* synth = synths[(int)luaL_checkinteger(L, 1)];
-	char* msg = fluid_synth_error(synth);
+	const char* msg = fluid_synth_error(synth);
    	lua_pushstring(L, msg);
 	return 1;
 }
+*/
 
 static int c_fluid_synth_sfload(lua_State *L) {  /* synth,filename,reassign */
 	fluid_synth_t* synth = synths[(int)luaL_checkinteger(L, 1)];
@@ -443,7 +447,7 @@ static const luaL_Reg prv[] = {  /* private functions */
     {"delete_fluid_audio_driver",  c_delete_fluid_audio_driver},
     {"delete_fluid_settings",      c_delete_fluid_settings},
 	{"fluid_synth_sfload",         c_fluid_synth_sfload},
-	{"fluid_synth_error",          c_fluid_synth_error},
+	/* {"fluid_synth_error",          c_fluid_synth_error}, 2.3 */
 	{"fluid_synth_sfont_select",   c_fluid_synth_sfont_select},
 	{"fluid_synth_program_change", c_fluid_synth_program_change},
 	{"fluid_synth_cc",             c_fluid_synth_cc},
