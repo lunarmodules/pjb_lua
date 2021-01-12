@@ -376,7 +376,7 @@ so you should be able to install it with the command:<BR><CODE>
  &nbsp; # luarocks install readline</CODE>
 </p><p>
 or:<BR><CODE>
-&nbsp; # luarocks install https://pjb.com.au/comp/lua/readline-2.7-0.rockspec
+&nbsp; # luarocks install https://pjb.com.au/comp/lua/readline-2.8-0.rockspec
 </CODE>
 </P><p>
 It depends on the <em>readline</em> library and its header-files;
@@ -387,11 +387,12 @@ or on Centos you may need:<BR>
 <CODE> &nbsp; # yum install readline-devel</CODE></P>
 </P><P>
 You can see the source-code in:<BR>
-<CODE> &nbsp; https://pjb.com.au/comp/lua/readline-2.7.tar.gz</CODE>
+<CODE> &nbsp; https://pjb.com.au/comp/lua/readline-2.8.tar.gz</CODE>
 </P>
 <hr />
 <h2><a name="changes">CHANGES</a></h2>
 <pre>
+ 20210106 2.8 include string.h
  20200801 2.7 add lua 5.4
  20200409 2.6 jaawerth: added set_readline_name()
  20190110 2.5 fix a lua_rawlen v. lua_objlen bug if using lua 5.1
