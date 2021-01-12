@@ -80,6 +80,8 @@ pgn2fen.lua - Constructs PGN into its resulting FEN position
 
 =head1 DESCRIPTION
 
+=over 3
+
 Constructs PGN in a file, or on the standard input,
 into its resulting FEN position on standard output.
 
