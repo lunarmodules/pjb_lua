@@ -16,6 +16,7 @@
 /* --------------- from man readline -------------------- */
 #include <stdio.h>
 #include <stdlib.h>
+/* #include <strings.h>  2.8 20210106 strerror is not in string.h ? */
 #include <string.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -269,7 +270,7 @@ static char **handler_calls_completion_callback(const char *text, int start, int
 
 static int c_set_readline_name(lua_State *L) {
     luaL_checktype(L, 1, LUA_TSTRING);
-    rl_readline_name = (char *) lua_tolstring(L, 1, NULL);
+    rl_readline_name = (const char *) lua_tolstring(L, 1, NULL);  /* 2.8 */
     return 0;
 }
 
