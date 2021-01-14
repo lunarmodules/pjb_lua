@@ -63,9 +63,13 @@ end
 
 ------------------- private specific to this module ------------------
 
-local function np_dot(a,b)
+local function np_dot(a,b)    -- dot product
     -- http://docs.scipy.org/doc/numpy/reference/generated/numpy.dot.html
 	-- In matrices, the top row is i=1 , and the left column is j=1 ,
+	-- so a matrix is a table of rows, and each row is a table of columns
+	--    |1 2 3|
+	-- so |4 5 6| is { {1,2,3}, {4,5,6}, {7,8,9} }
+	--    |7 8 9|
 	-- which is alphabetically the other way round from x and y !
 	-- but it means a[i][j] displays correctly with DataDumper :-)
 	-- require 'DataDumper'
@@ -82,14 +86,26 @@ local function np_dot(a,b)
         	for i_c = 1,nia do       -- loop by rows
             	c[i_c] = {}
             	for j_c = 1,njb do   -- loop by columns
-                	local sum = 0.0
+                	local sum = 0
                 	for j = 1,nja do sum = sum + a[i_c][j]*b[j][j_c] end
                 	c[i_c][j_c] = sum
             	end
 			end
         	return c
 		else -- 2D x 1D
-			die('np_dot: 2D x 1D not yet implemented')
+        	local nia = #a ; local nja = #a[1] ; local njb = #b
+			if nja ~= njb then
+            	warn('np_dot: matrix dimensions do not match')
+				-- warn('a = ',DataDumper(a)) warn('b = ',DataDumper(b))
+            	die('nia=',nia,'  njb=',njb,' nja=',nja)
+			end
+			local c = {}
+			for i = 1,nia do
+				local sum = 0
+				for j = 1,nja do sum = sum + a[i][j]*b[j] end
+				c[i] = sum
+			end
+			return c
         end
 	else   -- so a is 1D ...
 		if type(b[1]) == 'table' then  -- 1D x 2D
@@ -101,18 +117,19 @@ local function np_dot(a,b)
 			end
 			local c = {}
 			for j_b = 1,njb do
-				local sum = 0.0
+				local sum = 0
 				for i = 1,nia do sum = sum + a[i]*b[i][j_b] end
 				c[j_b] = sum
 			end
 			return c
     	else  -- scalar-product of 1D-arrays
-        	local sum = 0.0
+        	local sum = 0
         	for i = 1,#a do sum = sum + a[i]*b[i] end
         	return sum
 		end
     end
 end
+M.np_dot = np_dot
 
 local function for_all_elems(func, a)
 	if type(a) == 'number' then return func(a) end -- it was a scalar
@@ -137,10 +154,12 @@ function M.stochastic(x)
 	-- when shifting data between machines, binary data is 32 time faster :-)
 	if (1/(1+math.exp(0-x))) > math.random() then return 1 else return 0 end
 end
--- for the Learning-Rule see 2012_geoff_hinton_at_ipam.mp4 at 19:30
+-- for the  Learning-Rule  see 2012_geoff_hinton_at_ipam.mp4 at 19:30
 -- for the Energy-Function see 2012_geoff_hinton_at_ipam.mp4 at 36:18
+-- https://www.youtube.com/watch?v=GJdWESd543Y
 function M.energy(v,h,w)   -- visible units, hidden units, weights
 	-- for the Energy-Function see 2012_geoff_hinton_at_ipam.mp4 at 36:18
+	-- https://www.youtube.com/watch?v=GJdWESd543Y
 	-- v could be number or binary; h is quite likely binary
 	-- - \Sum v_i h_j w_i_j
 	local sum = 0.0
@@ -153,11 +172,13 @@ function M.energy(v,h,w)   -- visible units, hidden units, weights
 end
 function M.energy_gradient(v,h,w)   -- visible units, hidden units, weights
 	-- for the Energy-Gradient see 2012_geoff_hinton_at_ipam.mp4 at 36:18
+	-- https://www.youtube.com/watch?v=GJdWESd543Y
 	-- v and h are binary
 	-- v_i h_j = - (\Sum v_i h_j w_i_j ) / w_i_j
 end
 function M.partition_function(v,h)   -- visible units, hidden units, weights
 	-- for the Partition-Function see 2012_geoff_hinton_at_ipam.mp4 at 38:00
+	-- https://www.youtube.com/watch?v=GJdWESd543Y
 end
 
 local function logistic(a)  -- a smooth 0-to-1, crossing 0.5 at x=0
@@ -166,10 +187,9 @@ local function logistic(a)  -- a smooth 0-to-1, crossing 0.5 at x=0
 	return for_all_elems(function(x) return 1.0/(1.0+math.exp(0.0-x)) end,a)
 end
 
-
 local function gt_rand(a)  -- is each element greater than random [0,1) ?
 	return for_all_elems(
-	function(x) if x>math.random() then return 1.0 else return 0.0 end end,a)
+	function(x) if x>math.random() then return 1 else return 0 end end,a)
 end
 
 function transpose(a)
@@ -310,9 +330,9 @@ function M.vis2hid(rbm, data)
 		hidden_states[irow] = {}
 		for icol = 1,#vrow do -- hidden_activations already has no bias units
 			if hidden_probs[irow][icol] > math.random() then
-				 hidden_states[irow][icol] = 1.0
+				 hidden_states[irow][icol] = 1
 			else
-				 hidden_states[irow][icol] = 0.0
+				 hidden_states[irow][icol] = 0
 			end
 		end
 	end
@@ -330,9 +350,9 @@ function M.hid2vis(rbm, data)
 		visible_states[irow] = {}
 		for icol = 2,#vrow do -- visible_activations has bias units
 			if visible_probs[irow][icol] > math.random() then
-				 visible_states[irow][icol-1] = 1.0
+				 visible_states[irow][icol-1] = 1
 			else
-				 visible_states[irow][icol-1] = 0.0
+				 visible_states[irow][icol-1] = 0
 			end
 		end
 	end
