@@ -1,31 +1,28 @@
-#!/usr/bin/env lua
 ---------------------------------------------------------------------
---     This Lua5 script is Copyright (c) 2021, Peter J Billam      --
+--     This Lua5 module is Copyright (c) 2021, Peter J Billam      --
 --                         pjb.com.au                              --
---  This script is free software; you can redistribute it and/or   --
+--  This module is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
-local Version = '1.0  for Lua5'
-local VersionDate  = '8jan2021'
-local Synopsis = [[
-program_name [options] [filenames]
-]]
-local iarg=1; while arg[iarg] ~= nil do
-	if not string.find(arg[iarg], '^-[a-z]') then break end
-	local first_letter = string.sub(arg[iarg],2,2)
-	if first_letter == 'v' then
-		local n = string.gsub(arg[0],"^.*/","",1)
-		print(n.." version "..Version.."  "..VersionDate)
-		os.exit(0)
-	elseif first_letter == 'c' then
-		whatever()
-	else
-		local n = string.gsub(arg[0],"^.*/","",1)
-		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
-		os.exit(0)
-	end
-	iarg = iarg+1
+-- Example usage:
+-- local MM = require 'mymodule'
+-- MM.foo()
+
+local M = {} -- public interface
+M.Version = '1.0'
+M.VersionDate = '15jan2021'
+
+------------------------------ private ------------------------------
+function warn(...)
+    local a = {}
+    for k,v in pairs{...} do table.insert(a, tostring(v)) end
+    io.stderr:write(table.concat(a),'\n') ; io.stderr:flush()
 end
+function die(...) warn(...);  os.exit(1) end
+function qw(s)  -- t = qw[[ foo  bar  baz ]]
+    local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
+end
+
 
 -- default dict in /usr/share/dict/ and .gz's in /usr/share/aspell/
 -- and /etc/dictionaries-common/words and /var/cache/dictionaries-common/
@@ -46,13 +43,15 @@ local function utf8get (s, i)
 	return utf8.char(utf8.codepoint(s, utf8.offset(s, i)))
 end
 
-function damerau_levenshtein (a, b)
+------------------------------ public ------------------------------
+
+function M.damerau_levenshtein (a, b)
 	-- https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
 	local len_a = utf8.len(a)
 	local len_b = utf8.len(b)
 	local da = {}
 	local maxdist = len_a + len_b
-print("a = ",a,"  b =",b, "  maxdist = ", maxdist)
+-- print("a = ",a,"  b =",b, "  maxdist = ", maxdist)
 	local d = {[-1] = {}, [0] = {} }
 	d[-1][-1] = maxdist
 	for i = 0, len_a do
@@ -92,13 +91,7 @@ print("a = ",a,"  b =",b, "  maxdist = ", maxdist)
 	return d[len_a][len_b]
 end
 
-print("no change    ",damerau_levenshtein("gloop", "gloop"))
-print("transposition",damerau_levenshtein("gloop", "golop"),"  ?")
-print("substitution ",damerau_levenshtein("gloop", "bloop"))
-print("substitution ",damerau_levenshtein("gloop", "gl0op"))
-print("deletion     ",damerau_levenshtein("gloop", "glop"))
-print("addition     ",damerau_levenshtein("gloop", "gloopx"))
-print("wikipedia    ",damerau_levenshtein("CA", "ABC"),"  should be 2")
+return M
 
 --[=[
 
