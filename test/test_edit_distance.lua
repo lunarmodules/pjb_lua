@@ -56,6 +56,7 @@ ok(ED.damerau_levenshtein("gloop", "glop")  == 1, "deletion")
 ok(ED.damerau_levenshtein("gloop","gloopx") == 1, "addition")
 ok(ED.damerau_levenshtein("CA", "ABC")      == 2, "addition and exchange")
 summary()
+for i,v in ipairs(ED.test_load_words()) do print(v) end
 
 --[=[
 

@@ -26,10 +26,6 @@ end
 
 -- default dict in /usr/share/dict/ and .gz's in /usr/share/aspell/
 -- and /etc/dictionaries-common/words and /var/cache/dictionaries-common/
--- should make a copy separating the words by their lengths
--- how does ispell do it ? www.lasr.cs.ucla.edu/geoff/ispell.html
--- but lasr.cs.ucla.edu is unpingable :-(
--- aptitude search wamerican ; aptitude search iamerican ...
 
 local function minimum (...)   -- PiL p.53
 	local min = math.maxinteger
@@ -43,8 +39,33 @@ local function utf8get (s, i)
 	return utf8.char(utf8.codepoint(s, utf8.offset(s, i)))
 end
 
+-- should make a copy separating the words by their lengths
+-- how does ispell do it ? www.lasr.cs.ucla.edu/geoff/ispell.html
+-- but lasr.cs.ucla.edu is unpingable :-(
+-- aptitude search wamerican ; aptitude search iamerican ...
+local words_by_length = {}  
+local function load_words (word_file)
+	if not word_file then word_file = "/usr/share/dict/words" end
+	local wf = io.open(word_file)
+	if not wf then return nil, "can't open "..word_file end
+	while true do
+		local line = wf:read("l")
+		if not line then break end
+		local len  = utf8.len(line)
+		if len > #words_by_length then
+			for i = #words_by_length+1, len do words_by_length[i] = {} end
+		end
+		table.insert(words_by_length[len], line)
+	end
+	wf:close()
+end
+
 ------------------------------ public ------------------------------
 
+function M.test_load_words()
+	if #words_by_length == 0 then load_words() end
+	return words_by_length[2]
+end
 function M.damerau_levenshtein (a, b)
 	-- https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
 	local len_a = utf8.len(a)
