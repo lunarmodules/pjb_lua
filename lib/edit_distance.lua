@@ -43,28 +43,38 @@ end
 -- how does ispell do it ? www.lasr.cs.ucla.edu/geoff/ispell.html
 -- but lasr.cs.ucla.edu is unpingable :-(
 -- aptitude search wamerican ; aptitude search iamerican ...
-local words_by_length = {}  
+words_arrays = false
+words_dicts  = false
 local function load_words (word_file)
 	if not word_file then word_file = "/usr/share/dict/words" end
 	local wf = io.open(word_file)
 	if not wf then return nil, "can't open "..word_file end
+	words_arrays = {}
+	words_dicts  = {}
 	while true do
 		local line = wf:read("l")
 		if not line then break end
 		local len  = utf8.len(line)
-		if len > #words_by_length then
-			for i = #words_by_length+1, len do words_by_length[i] = {} end
+		if len > #words_arrays then
+			for i = #words_arrays+1, len do
+				words_arrays[i] = {}
+				words_dicts[i]  = {}
+			end
 		end
-		table.insert(words_by_length[len], line)
+		table.insert(words_arrays[len], line)
+		words_dicts[len][line] = true
+-- if len == 4 and string.match(line, "^ev") then
 	end
 	wf:close()
+-- print("load_words: words_dicts[4]['ever'] = ", words_dicts[4]['ever'])
+	return true
 end
 
 ------------------------------ public ------------------------------
 
 function M.test_load_words()
-	if #words_by_length == 0 then load_words() end
-	return words_by_length[2]
+	if not words_arrays then load_words() end
+	return words_arrays[2]
 end
 function M.damerau_levenshtein (a, b)
 	-- https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
@@ -103,13 +113,57 @@ function M.damerau_levenshtein (a, b)
 				d[i-1][j] + 1,       -- deletion
 				d[k-1][db_tmp-1] + i-k-1 + 1 + j-db_tmp-1 -- transposition
 			)
--- but the transposition seems ineffective, it gets handled as 2 substitutions
--- I think I've confused it with the OSA-algorithm ... if utf8 what is Sigma ?
--- can I do da with dictionaries instead of arrays ?
-		da[utf8get(a,i)] = i
+			da[utf8get(a,i)] = i
 		end
 	end
 	return d[len_a][len_b]
+end
+
+function M.is_a_word (word)  -- case-insensitive ? not so easy ...
+	if not words_arrays or not words_dicts then assert(load_words()) end
+	local len = utf8.len(word)
+	return  words_dicts[len][word] ~= nil
+end
+function M.is_a_typo (word)   -- deprecated ?
+	-- returns false if there's a dictionary-match,
+	-- or an array of the dictionary-words with a DL-distance of 1,
+	-- or true if the smallest DL-distance is > 1
+	if not words_arrays or not words_dicts then assert(load_words()) end
+	local len = utf8.len(word)
+-- print(words_arrays[len][2])
+-- print("word =",word,  "  len =",len, words_dicts[len]["ever"])
+	if words_dicts[len][word] then return 0 end
+-- for k,v in pairs(words_dicts) do print(k,v) end
+	return 1
+end
+function M.candidates (word)
+	if not words_arrays or not words_dicts then assert(load_words()) end
+	local len = utf8.len(word)
+	if words_dicts[len][word] then return word end  -- if match return string
+	local typos = {}  -- contains damerau_levenshtein==1
+	for i,dictword in pairs(words_arrays[len]) do
+		if M.damerau_levenshtein (dictword, word) == 1 then
+			-- could speed this up with a specialised function for 1
+			table.insert(typos, dictword)
+		end
+	end
+	if len > 1 then
+		for i,dictword in pairs(words_arrays[len-1]) do
+			if M.damerau_levenshtein (dictword, word) == 1 then
+				-- could speed this up with a specialised for 1 deletion
+				table.insert(typos, dictword)
+			end
+		end
+	end
+	if len < #words_arrays then
+		for i,dictword in pairs(words_arrays[len+1]) do
+			if M.damerau_levenshtein (dictword, word) == 1 then
+				-- could speed this up with a specialised for 1 insertion
+				table.insert(typos, dictword)
+			end
+		end
+	end
+	return typos -- return an array of typos with damerau_levenshtein==1
 end
 
 return M

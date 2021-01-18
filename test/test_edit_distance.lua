@@ -55,8 +55,21 @@ ok(ED.damerau_levenshtein("gloop", "gl0op") == 1, "substitution")
 ok(ED.damerau_levenshtein("gloop", "glop")  == 1, "deletion")
 ok(ED.damerau_levenshtein("gloop","gloopx") == 1, "addition")
 ok(ED.damerau_levenshtein("CA", "ABC")      == 2, "addition and exchange")
+ok(ED.is_a_word('ever'), "ever is a word")
+ok(not ED.is_a_word('xvfr'), "xvfr is not a word")
+ok(ED.candidates('ever') == 'ever', "candidates() thinks ever is a word")
+local t = ED.candidates('evex')
+ok(type(t) == 'table',
+  "candidates('evex') returns {'"..table.concat(t, "','").."'}"
+)
+local t = ED.candidates('oo')
+ok(type(t) == 'table',
+  "candidates('oo') returns {'"..table.concat(t, "','").."'}"
+)
+local t = ED.candidates('xvfr')
+ok(type(t) == 'table' and #t == 0, "candidates('xvfr') returns {}")
 summary()
-for i,v in ipairs(ED.test_load_words()) do print(v) end
+-- for i,v in ipairs(ED.test_load_words()) do print(v) end
 
 --[=[
 
