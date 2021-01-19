@@ -62,11 +62,15 @@ local t = ED.candidates('evex')
 ok(type(t) == 'table',
   "candidates('evex') returns {'"..table.concat(t, "','").."'}"
 )
-local t = ED.candidates('oo')
+t = ED.candidates('oo')
 ok(type(t) == 'table',
   "candidates('oo') returns {'"..table.concat(t, "','").."'}"
 )
-local t = ED.candidates('xvfr')
+t = ED.candidates('replicatex')
+ok(type(t) == 'table',
+  "candidates('replicatex') returns {'"..table.concat(t, "','").."'}"
+)
+t = ED.candidates('xvfr')
 ok(type(t) == 'table' and #t == 0, "candidates('xvfr') returns {}")
 summary()
 -- for i,v in ipairs(ED.test_load_words()) do print(v) end

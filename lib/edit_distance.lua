@@ -76,7 +76,7 @@ function M.test_load_words()
 	if not words_arrays then load_words() end
 	return words_arrays[2]
 end
-function M.damerau_levenshtein (a, b)
+function M.damerau_levenshtein (a, b, speedup)
 	-- https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
 	local len_a = utf8.len(a)
 	local len_b = utf8.len(b)
@@ -113,6 +113,7 @@ function M.damerau_levenshtein (a, b)
 				d[i-1][j] + 1,       -- deletion
 				d[k-1][db_tmp-1] + i-k-1 + 1 + j-db_tmp-1 -- transposition
 			)
+			if speedup and d[i][j] > len_a then return 2 end
 			da[utf8get(a,i)] = i
 		end
 	end
@@ -124,32 +125,20 @@ function M.is_a_word (word)  -- case-insensitive ? not so easy ...
 	local len = utf8.len(word)
 	return  words_dicts[len][word] ~= nil
 end
-function M.is_a_typo (word)   -- deprecated ?
-	-- returns false if there's a dictionary-match,
-	-- or an array of the dictionary-words with a DL-distance of 1,
-	-- or true if the smallest DL-distance is > 1
-	if not words_arrays or not words_dicts then assert(load_words()) end
-	local len = utf8.len(word)
--- print(words_arrays[len][2])
--- print("word =",word,  "  len =",len, words_dicts[len]["ever"])
-	if words_dicts[len][word] then return 0 end
--- for k,v in pairs(words_dicts) do print(k,v) end
-	return 1
-end
 function M.candidates (word)
 	if not words_arrays or not words_dicts then assert(load_words()) end
 	local len = utf8.len(word)
 	if words_dicts[len][word] then return word end  -- if match return string
 	local typos = {}  -- contains damerau_levenshtein==1
 	for i,dictword in pairs(words_arrays[len]) do
-		if M.damerau_levenshtein (dictword, word) == 1 then
+		if M.damerau_levenshtein (dictword, word, true) == 1 then
 			-- could speed this up with a specialised function for 1
 			table.insert(typos, dictword)
 		end
 	end
 	if len > 1 then
 		for i,dictword in pairs(words_arrays[len-1]) do
-			if M.damerau_levenshtein (dictword, word) == 1 then
+			if M.damerau_levenshtein (dictword, word, true) == 1 then
 				-- could speed this up with a specialised for 1 deletion
 				table.insert(typos, dictword)
 			end
@@ -157,7 +146,7 @@ function M.candidates (word)
 	end
 	if len < #words_arrays then
 		for i,dictword in pairs(words_arrays[len+1]) do
-			if M.damerau_levenshtein (dictword, word) == 1 then
+			if M.damerau_levenshtein (dictword, word, true) == 1 then
 				-- could speed this up with a specialised for 1 insertion
 				table.insert(typos, dictword)
 			end
