@@ -7,8 +7,8 @@
 ---------------------------------------------------------------------
 
 local M = {} -- public interface
-M.Version     = '2.7' -- add set_readline_name() and fix version number
-M.VersionDate = '15apr2020'
+M.Version     = '2.9' -- fix version number again
+M.VersionDate = '27jan2021'
 
 --[[
 Alexander Adler suggests adding four Alternate-Interface functions:
@@ -516,6 +516,9 @@ or on Centos you may need:
 
 =head1 CHANGES
 
+
+ 20210127 2.9 fix version number again
+ 20210106 2.8 add set_readline_name() and fix version number
  20200801 2.7 add 5.4
  20180924 2.2 add set_completion_append_character 
  20180912 2.1 C code stack-bug fix in handler_calls_completion_callback
