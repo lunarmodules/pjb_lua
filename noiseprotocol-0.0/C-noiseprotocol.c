@@ -14,11 +14,11 @@
 #include <lauxlib.h>
 
 int handshakestate_id = -1;
-int ninputports, noutputports, createqueue;
-int firstoutputport, lastoutputport;
+int max_cistate_id    = -1;
 NoiseHandshakeState *dhstate_by_id[10];
 NoiseProtocolId     *protocol_by_id[10];
 NoiseBuffer         *buffer_by_id[10];
+NoiseCipherState    *cistate_by_id[10];
 
 static int c_handshakestate_fallback(lua_State *L) {
 	/* Falls back to the "XXfallback" handshake pattern */
@@ -35,7 +35,6 @@ static int c_handshakestate_fallback_to(lua_State *L) {
 	lua_Integer pattern_id = lua_tointeger(L, 2);
 	NoiseHandshakeState *state = dhstate_by_id[id];
 	int rc = noise_handshakestate_fallback_to(state, pattern_id);
-	/* lua_pushboolean(L, rc==0); */
 	lua_pushinteger(L, rc);
 	return 1;
 }
@@ -171,7 +170,7 @@ static int c_handshakestate_needs_pre_shared_key(lua_State *L) {
 	lua_Integer state_id       = lua_tointeger(L, 1);
 	NoiseHandshakeState *state = dhstate_by_id[state_id];
 	int rc = noise_handshakestate_needs_pre_shared_key(state);
-	if (handshakestate_id < 0) { lua_pushinteger(L,0) ; return 1; }
+	if (handshakestate_id < 0) { lua_pushinteger(L,0) ; return 1; }  /* ?? */
 	return 1;
 }
 
@@ -228,7 +227,7 @@ static int c_handshakestate_set_pre_shared_key(lua_State *L) {
 	/* Sets the pre shared key for a HandshakeState */
 	lua_Integer state_id       = lua_tointeger(L, 1);
 	size_t key_len             = (size_t) lua_tointeger(L, 3);
-	uint8_t * key              = lua_tolstring(L, 2, &key_len);
+	const uint8_t * key        = lua_tolstring(L, 2, &key_len);
 	NoiseHandshakeState *state = dhstate_by_id[state_id];
 	int rc = noise_handshakestate_set_pre_shared_key(state, key, key_len);
 	lua_pushinteger(L, rc);
@@ -237,7 +236,11 @@ static int c_handshakestate_set_pre_shared_key(lua_State *L) {
 
 static int c_handshakestate_set_prologue(lua_State *L) {
 	/* Sets the prologue for a HandshakeState */
-	int rc = noise_handshakestate_set_prologue();
+	lua_Integer state_id       = lua_tointeger(L, 1);
+	size_t prologue_len        = (size_t) lua_tointeger(L, 3);
+	const uint8_t * prologue   = lua_tolstring(L, 2, &prologue_len);
+	NoiseHandshakeState *state = dhstate_by_id[state_id];
+	int rc = noise_handshakestate_set_prologue(state, prologue, prologue_len);
 	lua_pushinteger(L, rc);
 	return 1;
 }
@@ -245,7 +248,13 @@ static int c_handshakestate_set_prologue(lua_State *L) {
 static int c_handshakestate_split(lua_State *L) {
 	/* Splits the transport encryption CipherState objects
 	   out of this HandshakeState object. */
-	int rc = noise_handshakestate_split();
+	lua_Integer state_id       = lua_tointeger(L, 1);
+	lua_Integer send_id        = lua_tointeger(L, 2);
+	lua_Integer receive_id     = lua_tointeger(L, 3);
+	NoiseHandshakeState *state = dhstate_by_id[state_id];
+	NoiseCipherState    *send  = cistate_by_id[send_id];
+	NoiseCipherState *receive  = cistate_by_id[receive_id];
+	int rc = noise_handshakestate_split(state, &send, &receive);
 	lua_pushinteger(L, rc);
 	return 1;
 }
@@ -254,104 +263,169 @@ static int c_handshakestate_start(lua_State *L) {
 	/* Starts the handshake on a HandshakeState object */
 	lua_Integer state_id       = lua_tointeger(L, 1);
 	NoiseHandshakeState *state = dhstate_by_id[state_id];
-	int rc = noise_handshakestate_start(start);
+	int rc = noise_handshakestate_start(state);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_handshakestate_write_message(lua_State *L) {
 	/* Writes a message payload using a HandshakeState */
-	int rc = noise_handshakestate_write_message();
+	lua_Integer state_id       = lua_tointeger(L, 1);
+	lua_Integer message_id     = lua_tointeger(L, 2);
+	lua_Integer payload_id     = lua_tointeger(L, 3);
+	NoiseHandshakeState *state = dhstate_by_id[state_id];
+	NoiseBuffer *message       = buffer_by_id[message_id];
+	NoiseBuffer *payload       = buffer_by_id[payload_id];
+	int rc = noise_handshakestate_write_message(state, message, payload);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_decrypt(lua_State *L) {
-	int rc = noise_cipherstate_decrypt();
+	/* Decrypts a block of data with this CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	lua_Integer buffer_id     = lua_tointeger(L, 2);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	NoiseBuffer *buffer       = buffer_by_id[buffer_id];
+	int rc = noise_cipherstate_decrypt(cistate, buffer);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_decrypt_with_ad(lua_State *L) {
-	int rc = noise_cipherstate_decrypt_with_ad();
+	/* Decrypts a block of data with this CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	size_t ad_len             = (size_t) lua_tointeger(L, 3);
+	const uint8_t * ad        = lua_tolstring(L, 2, &ad_len);
+	lua_Integer buffer_id     = lua_tointeger(L, 4);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	NoiseBuffer *buffer       = buffer_by_id[buffer_id];
+	int rc = noise_cipherstate_decrypt_with_ad(cistate, ad, ad_len, buffer);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_encrypt(lua_State *L) {
-	int rc = noise_cipherstate_encrypt();
+	/* Encrypts a block of data with this CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	lua_Integer buffer_id     = lua_tointeger(L, 2);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	NoiseBuffer *buffer       = buffer_by_id[buffer_id];
+	int rc = noise_cipherstate_encrypt(cistate, buffer);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_encrypt_with_ad(lua_State *L) {
-	int rc = noise_cipherstate_encrypt_with_ad();
+	/* Encrypts a block of data with this CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	size_t ad_len             = (size_t) lua_tointeger(L, 3);
+	const uint8_t * ad        = lua_tolstring(L, 2, &ad_len);
+	lua_Integer buffer_id     = lua_tointeger(L, 4);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	NoiseBuffer *buffer       = buffer_by_id[buffer_id];
+	int rc = noise_cipherstate_encrypt_with_ad(cistate, ad, ad_len, buffer);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_free(lua_State *L) {
-	int rc = noise_cipherstate_free();
+	/* Frees a CipherState object after destroying all sensitive material */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	int rc = noise_cipherstate_free(cistate);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_get_cipher_id(lua_State *L) {
-	int rc = noise_cipherstate_get_cipher_id();
+	/* Gets the algorithm identifier for a CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	int rc = noise_cipherstate_get_cipher_id(cistate);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_get_key_length(lua_State *L) {
-	int rc = noise_cipherstate_get_key_length();
+	/* Gets the length of the encryption key for a CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	int rc = noise_cipherstate_get_key_length(cistate);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_get_mac_length(lua_State *L) {
-	int rc = noise_cipherstate_get_mac_length();
+	/* Gets the length of packet MAC values for a CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	int rc = noise_cipherstate_get_mac_length(cistate);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_get_max_key_length(lua_State *L) {
+	/* Gets the maximum key length for the supported algorithms */
 	int rc = noise_cipherstate_get_max_key_length();
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_get_max_mac_length(lua_State *L) {
+	/* Gets the maximum MAC length for the supported algorithms */
 	int rc = noise_cipherstate_get_max_mac_length();
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_has_key(lua_State *L) {
-	int rc = noise_cipherstate_has_key();
+	/* Determine if the key has been set on a CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+    NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	int rc = noise_cipherstate_has_key(cistate);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_init_key(lua_State *L) {
-	int rc = noise_cipherstate_init_key();
+	/* Initializes the key on a CipherState object */
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	size_t key_len             = (size_t) lua_tointeger(L, 3);
+	const uint8_t * key        = lua_tolstring(L, 2, &key_len);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	int rc = noise_cipherstate_init_key(cistate, key, key_len);
 	lua_pushinteger(L, rc);
 	return 1;
 }
 
 static int c_cipherstate_new_by_id(lua_State *L) {
-	int rc = noise_cipherstate_new_by_id();
-	lua_pushinteger(L, rc);
+	/* Creates a new CipherState object by its algorithm identifier */
+	lua_Integer algorithm_id    = lua_tointeger(L, 1);
+	NoiseCipherState * new_cistate ;
+	int rc = noise_cipherstate_new_by_id(&new_cistate, algorithm_id);
+	cistate_by_id[max_cistate_id] = new_cistate;
+	lua_pushinteger(L, max_cistate_id);
+	max_cistate_id++;
 	return 1;
 }
 
 static int c_cipherstate_new_by_name(lua_State *L) {
-	int rc = noise_cipherstate_new_by_name();
-	lua_pushinteger(L, rc);
+	/* Creates a new CipherState object by its algorithm name */
+    const char *algorithm_name  = lua_tostring(L, 1);
+	NoiseCipherState * new_cistate ;
+	int rc = noise_cipherstate_new_by_name(&new_cistate, algorithm_name);
+	cistate_by_id[max_cistate_id] = new_cistate;
+	lua_pushinteger(L, max_cistate_id);
+	max_cistate_id++;
 	return 1;
 }
 
 static int c_cipherstate_set_nonce(lua_State *L) {
-	int rc = noise_cipherstate_set_nonce();
+	lua_Integer cistate_id    = lua_tointeger(L, 1);
+	uint64_t nonce            = (uint64_t) lua_tointeger(L, 2);
+	NoiseCipherState *cistate = cistate_by_id[cistate_id];
+	int rc = noise_cipherstate_set_nonce(cistate, nonce);
 	lua_pushinteger(L, rc);
 	return 1;
 }
@@ -462,7 +536,7 @@ static const struct constant constants[] = {  /* noise/protocol/constants.h */
 };
 
 static const luaL_Reg prv[] = {  /* private functions */
-	{"handshakestate_fallback",    c_noise_handshakestate_fallback},
+	{"handshakestate_fallback",    c_handshakestate_fallback},
 	{"handshakestate_fallback_to", c_handshakestate_fallback_to},
 	{"handshakestate_free",        c_handshakestate_free},
 	{"handshakestate_get_action ", c_handshakestate_get_action },
@@ -470,15 +544,14 @@ static const luaL_Reg prv[] = {  /* private functions */
 	{"handshakestate_get_fixed_hybrid_dh",     c_handshakestate_get_fixed_hybrid_dh},
 	{"handshakestate_get_handshake_hash", c_handshakestate_get_handshake_hash},
 	{"handshakestate_get_local_keypair_dh",   c_handshakestate_get_local_keypair_dh},
-	{"handshakestate_id",        c_handshakestate_id},
 	{"handshakestate_get_protocol_id",    c_handshakestate_get_protocol_id},
 	{"handshakestate_get_remote_public_key_dh",          c_handshakestate_get_remote_public_key_dh},
 	{"handshakestate_has_local_keypair",  c_handshakestate_has_local_keypair},
-	{"handshakestate_has_pre_shared_key", c_handshakestate_has_pre_shared_key
-	{"handshakestate_has_remote_public_key",              c_handshakestate_has_remote_public_key},
-	{"handshakestate_needs_local_keypair",           c_handshakestate_needs_local_keypair},
-	{"handshakestate_needs_pre_shared_key",    c_handshakestate_needs_pre_shared_key},
-	{"handshakestate_needs_remote_public_key",          c_handshakestate_needs_remote_public_key},
+	{"handshakestate_has_pre_shared_key", c_handshakestate_has_pre_shared_key},
+	{"handshakestate_has_remote_public_key", c_handshakestate_has_remote_public_key},
+	{"handshakestate_needs_local_keypair",   c_handshakestate_needs_local_keypair},
+	{"handshakestate_needs_pre_shared_key",  c_handshakestate_needs_pre_shared_key},
+	{"handshakestate_needs_remote_public_key", c_handshakestate_needs_remote_public_key},
 	{"handshakestate_new_by_id",          c_handshakestate_new_by_id},
 	{"handshakestate_new_by_name",        c_handshakestate_new_by_name},
 	{"handshakestate_read_message",       c_handshakestate_read_message},
@@ -525,7 +598,7 @@ static int initialise(lua_State *L) {  /* Lua Programming Gems p. 335 */
 #endif
 }
 
-int luaopen_midialsa(lua_State *L) {
+int luaopen_noiseprotocol(lua_State *L) {
 	lua_pushcfunction(L, initialise);
 	return 1;
 }

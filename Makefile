@@ -19,6 +19,7 @@ TIVER   = 1.8
 TCVER   = 0.1
 TIFVER  = 0.9
 WTVER   = 1.19
+NPVER   = 0.01
 
 # NO! should make these Math-* modules independent of their CPAN equivalents!
 # and give them dist* targets!
@@ -54,6 +55,7 @@ SOXSRC  = sox-0.0
 TISRC   = terminfo-0.0
 TCSRC   = testcases-0.0
 TIFSRC  = /home/pjb/lua/lib
+NPSRC   = noiseprotocol-0.0
 
 DOCDIR = /home/pjb/www/comp/lua
 
@@ -92,6 +94,8 @@ SOXROCKSPEC  = ${SOXDIR}/sox-${SOXVER}-0.rockspec
 SOXTARBALL   = ${SOXDIR}/sox-${SOXVER}.tar.gz
 TIFROCKSPEC  = ${DISTDIR}/terminfofont-${TIFVER}-0.rockspec
 TIFTARBALL   = ${DISTDIR}/terminfofont-${TIFVER}.tar.gz
+NPROCKSPEC   = ${DISTDIR}/noiseprotocol-${NPVER}-0.rockspec
+NPTARBALL    = ${DISTDIR}/noiseprotocol-${NPVER}.tar.gz
 WTROCKSPEC   = ${WTDIR}/math-walshtransform-${WTVER}-0.rockspec
 WTTARBALL    = ${WTDIR}/math-walshtransform-${WTVER}.tar.gz
 
@@ -113,6 +117,7 @@ TIMD5   ?= $(shell md5sum -b ${TITARBALL} | sed 's/\s.*//')
 TCMD5   ?= $(shell md5sum -b ${TCTARBALL} | sed 's/\s.*//')
 SOXMD5  ?= $(shell md5sum -b ${SOXTARBALL} | sed 's/\s.*//')
 TIFMD5  ?= $(shell md5sum -b ${TIFTARBALL} | sed 's/\s.*//')
+NPMD5   ?= $(shell md5sum -b ${NPTARBALL} | sed 's/\s.*//')
 DATESTAMP ?= $(shell /home/pbin/datestamp)
 
 all: \
@@ -337,6 +342,20 @@ disttif : ${DISTDIR}/terminfofont.html \
 	#  luarocks install https://www.pjb.com.au/comp/lua/terminfofont-${TIFVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload terminfofont-${TIFVER}-0.rockspec
+
+${DISTDIR}/test_noiseprotocol.lua : ${TESTDIR}/test_noiseprotocol.lua
+	cp ${TESTDIR}/test_noiseprotocol.lua $@
+	upload $@
+distnp : ${DISTDIR}/noiseprotocol.html \
+  ${DISTDIR}/test_noiseprotocol.lua ${NPROCKSPEC}
+	/home/pbin/upload ${DISTDIR}/noiseprotocol.html
+	/home/pbin/upload ${DISTDIR}/noiseprotocol-${NPVER}-0.rockspec
+	/home/pbin/upload ${DISTDIR}/noiseprotocol-${NPVER}.tar.gz
+	# If a trial install works on 5.1, 5.2 and 5.3:
+	#  luarocks remove noiseprotocol
+	#  luarocks install https://www.pjb.com.au/comp/lua/noiseprotocol-${NPVER}-0.rockspec
+	#  box8 (debian) ~> cd ~/www/comp/lua/
+	#  box8 (debian) lua> luarocks upload noiseprotocol-${NPVER}-0.rockspec
 
 ${RUNGEDIR}/RungeKutta.lua: lib/RungeKutta.lua
 	perl -pe "s/VERSION/${RUNGEVER}/ ; s/DATESTAMP/${DATESTAMP}/" \
@@ -696,4 +715,21 @@ ${TIFTARBALL} : ${TIFSRC}/terminfofont.lua test/test_terminfofont.lua
 ${TIFROCKSPEC} : ${TIFTARBALL} /home/pjb/lua/dist/terminfofont.rockspec
 	perl -pe \
 	 "s/VERSION/${TIFVER}/ ; s/TARBALL/terminfofont-${TIFVER}.tar.gz/ ; s/MD5/${TIFMD5}/" /home/pjb/lua/dist/terminfofont.rockspec > $@
+	lua $@
+
+${NPTARBALL} : ${NPSRC}/noiseprotocol.lua ${NPSRC}/C-noiseprotocol.c \
+	test/test_noiseprotocol.lua
+	md5sum ${NPSRC}/noiseprotocol.lua
+	mkdir noiseprotocol-${NPVER}
+	mkdir noiseprotocol-${NPVER}/test
+	mkdir noiseprotocol-${NPVER}/doc
+	cp ${DISTDIR}/noiseprotocol.html noiseprotocol-${NPVER}/doc
+	cp ${NPSRC}/noiseprotocol.lua noiseprotocol-${NPVER}/
+	cp ${NPSRC}/C-noiseprotocol.c noiseprotocol-${NPVER}/
+	cp /home/pjb/lua/test/test_noiseprotocol.lua noiseprotocol-${NPVER}/test/
+	tar cvzf $@ noiseprotocol-${NPVER}
+	rm -rf noiseprotocol-${NPVER}
+${NPROCKSPEC} : ${NPTARBALL} /home/pjb/lua/dist/noiseprotocol.rockspec
+	perl -pe \
+	 "s/VERSION/${NPVER}/ ; s/TARBALL/noiseprotocol-${NPVER}.tar.gz/ ; s/MD5/${NPMD5}/" /home/pjb/lua/dist/noiseprotocol.rockspec > $@
 	lua $@

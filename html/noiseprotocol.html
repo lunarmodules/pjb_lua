@@ -1,0 +1,260 @@
+<HTML><HEAD><TITLE>noiseprotocol.lua</TITLE>
+<LINK rel=stylesheet type="text/css"
+href="../styles.css" title="PJB Computing Styles">
+<META HTTP-EQUIV="Keywords"
+CONTENT="noiseprotocol, Lua, module, luarock">
+</HEAD>
+<BODY LINK="#000066" VLINK="#000066" ALINK="#000066">
+<DIV>
+<H1><IMG SRC="../logo.jpg" ALT=" " WIDTH=126 HEIGHT=52>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<FONT COLOR="#800000"><I>noiseprotocol.lua</I></FONT>
+</H1>
+
+<!-- INDEX BEGIN -->
+<A NAME="index"></A>
+
+<TABLE ALIGN="center" WIDTH="85%" BORDER=0 CELLSPACING=0>
+<TR><TD ALIGN="left">
+<ul>
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#functions">FUNCTIONS</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+	<li><a href="#download">DOWNLOAD</a></li>
+	<li><a href="#changes">CHANGES</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+</TD></TR></TABLE>
+
+<!-- INDEX END -->
+<hr />
+<h3><a name="name">NAME</a></h3>
+<p><code>noiseprotocol</code> - access the <em>noiseprotocol</em> library</p>
+<p>
+</p>
+<hr />
+<h3><a name="synopsis">SYNOPSIS</a></h3>
+<pre>
+ local NP = require 'noiseprotocol'  -- see:  man noiseprotocol
+ print("Can a vt100 do overstrike ? ",
+    tostring(NP<A HREF="#getflag">.getflag('os','vt100')</A>))
+ print("NP on this terminal are initially every ",
+    NP<A HREF="#getnum">.getnum('it')</A>)
+ print("Can this terminal do overstrike ? ",
+    tostring(NP<A HREF="#flag_by_varname">.flag_by_varname('over_strike')</A>))
+ print("Tabs on xterm are initially every ",
+    NP<A HREF="#flag_by_varname">.num_by_varname('init_tabs', 'xterm')</A>)
+ if NP<A HREF="#get">.get('km')</A> then  -- this kbd has a Meta-Key :-)
+    if NP<A HREF="#get">.get('init_tabs')</A> &lt; 8 then
+       print('someone changed the tabstop setting !')
+    end
+    print('testing the Home key:'..<A HREF="#get">NP.get</A>('key_home'))
+    if NP<A HREF="#get">.get('cud1') ~= NP.get('cursor_down')</A> then
+       print('BUG: capname and varname gave different answers')
+    end
+ end
+ local P = require 'posix'
+ local tty = io.open(P.ctermid(), 'a+') -- the controlling terminal
+ tty:write(NP<A HREF="#tparm">.tparm</A>(<A HREF="#get">NP.get('cup')</A>,20,30))
+ tty:write(NP.tparm(NP.get('setaf'), 1)) -- set foreground colour to red
+</pre><p>
+</p>
+<hr />
+<h3><a name="description">DESCRIPTION</a></h3>
+<p>This module provides access to <em>noiseprotocol</em> database entries,
+see <em>man noiseprotocol</em>.
+</p><p>
+This database provides information about a terminal,
+in three separate sets of capabilities.
+Flag capabilities are boolean
+(more accurately, they are either <I>true</I> or <I>nil</I>);
+they indicate the presence of a particular ability, feature, or bug.
+Number capabilities give the size,
+count or other numeric detail of some feature of the terminal.
+String capabilities are usually control strings
+that the terminal will recognise, or send.
+</p><p>
+String capabilities involving no parameters (e.g. <I>clear_screen</I>)
+can be printed directly to the screen and will work as expected.
+Any parameters (e.g. with <I>cursor_address</I>)
+are represented, using <B>%</B> characters,
+in a notation documented in the
+<I>Parameterized&nbsp;Strings</I> section
+of <I>man&nbsp;noiseprotocol</I>;
+these parameters must be put in place with the function
+<B><A HREF="#tparm">tparm(capability, parameters...)</A></B>
+This function is not present in the Perl module.
+</p><p>
+Each capability has two names; a short name called the <em>capname</em>,
+and a longer name called the <em>varname</em>;
+for details, see <em>man noiseprotocol</em>.
+This module, like the Perl <em>
+<a href="http://search.cpan.org/perldoc?Term::Terminfo">Term::Terminfo</a>
+</em> module, provides two sets of functions,
+one that works on <em>capnames</em>, one that works on <em>varnames</em>.
+It also, unlike the Perl module, provides a general-purpose function
+<B><A HREF="#get">get(name)</A></B> which returns
+the capability whether it is a flag, number or string,
+and whether the name is a <em>capname</em> or a <em>varname</em>.
+</p><p>
+Some of the many useful <em>capname</em>s are: &nbsp;
+<I>cols</I> (number of columns),
+<I>lines</I> (number of lines)<BR>
+<I>el</I> (clear to end of line),
+<I>ed</I> (clear to end of screen)<BR>
+<I>cub1</I> (cursor left),
+<I>cud1</I> (cursor down),
+<I>cuf1</I> (cursor right),
+<I>cuu1</I> (cursor up)<BR>
+<I>cup</I> (move the cursor :
+line and column are numbered from 0,0 in the top left corner,
+and remember the parameters are needed in <I>line,column</I> order,
+so if you're thinking in <I>x,y</I>&nbsp; then it's &nbsp;
+<CODE>tty:write(NP<A HREF="#tparm">.tparm</A>(<A HREF="#get">NP.get('cup')</A>,y,x)</CODE> )<BR>
+<I>civis</I> (make cursor invisible),
+<I>cnorm</I> (cursor normal)<BR>
+<I>rev</I> (reverse video),
+<I>setaf</I> (set foreground color),
+<I>setbf</I> (set background color),
+<I>sgr0</I> (exit attribute mode)<BR>
+For more details, see <em>man noiseprotocol</em>.
+</p><p>
+Unlike the Perl <em>
+<a href="http://search.cpan.org/perldoc?Term::Terminfo">Term::Terminfo</a></em>
+module, there is no separate constructor.
+The <I>term</I> parameter is passed as an optional second argument.
+If it is not present, the current terminal,
+from the environment variable <em>TERM</em>, is used.
+</p><p>
+</p>
+<hr />
+<h3><a name="functions">FUNCTIONS</a></h3>
+<p>
+</p>
+<B><a name="get">NP.get( name [, term] )</a></B><BR>
+Returns the value of the capability of the given name,
+whether the capability is a flag, number or string,
+and whether the name is a <em>capname</em> or a <em>varname</em>.
+This function is not present in the Perl <em>
+<a href="http://search.cpan.org/perldoc?Term::Terminfo">Term::Terminfo</a>
+</em> module.
+<p>
+</p>
+<B><a name="tparm">NP.tparm( capability, &lt;param1, param2, ...&gt; )</a></B><BR>
+Substitutes the parameters according to the notation documented in the
+<I>Parameterized Strings</I> section of <I>man noiseprotocol</I>,
+and returns the resulting string, for example,<BR>
+&nbsp; <CODE> io.stderr:write(NP.tparm(NP.get('cursor_address'),20,30))</CODE>
+<BR>
+So that you remain in control of your input/output at the Lua level,
+no <I>tputs</I> function is provided;
+thus, as a side effect, any padding information will be lost.
+This is very rarely a problem nowadays, but it could mean that
+for example: the <I>flash</I> capability may not work as expected.
+If you really need this, you can resort to:
+&nbsp; <CODE>os.execute('tput&nbsp;flash')</CODE>
+<BR>
+This function is not present in the Perl <em>
+<a href="http://search.cpan.org/perldoc?Term::Terminfo">Term::Terminfo</a>
+</em> module.
+<p>
+</p>
+<B><a name="getflag">bool = NP.getflag( capname [, term] )</a></B><BR>
+<B><a name="getnum">num = NP.getnum( capname [, term] )</a></B><BR>
+<B><a name="getstr">str = NP.getstr( capname [, term] )</a></B><BR>
+Return the value of the flag, number or string capability respectively,
+of the given <em>capname</em>.
+<p>
+</p>
+<B><a name="flag_by_varname">bool = NP.flag_by_varname( varname [, term] )</a></B><BR>
+<B><a name="num_by_varname">num = NP.num_by_varname( varname [, term] )</a></B><BR>
+<B><a name="str_by_varname">str = NP.str_by_varname( varname [, term] )</a></B><BR>
+Return the value of the flag, number or string capability respectively,
+of the given <em>varname</em>.
+<p>
+</p>
+<B><a name="flag_capnames">capnames = NP.flag_capnames( [term] )</a></B><BR>
+<B><a name="num_capnames">capnames = NP.num_capnames( [term] )</a></B><BR>
+<B><a name="str_capnames">capnames = NP.str_capnames( [term] )</a></B><BR>
+Return arrays of the <em>capnames</em> of the supported
+flags, numbers, and strings respectively.
+<p>
+</p>
+<B><a name="flag_varnames">varnames = NP.flag_varnames( [term] )</a></B><BR>
+<B><a name="num_varnames">varnames = NP.num_varnames( [term] )</a></B><BR>
+<B><a name="str_varnames">varnames = NP.str_varnames( [term] )</a></B><BR>
+Return arrays of the <em>varnames</em> of the supported
+flags, numbers, and strings respectively.
+<p>
+</p>
+<hr />
+<h3><a name="download">DOWNLOAD</a></h3>
+<p>This module is available as a LuaRock in
+<A HREF="http://luarocks.org/modules/peterbillam">
+luarocks.org/modules/peterbillam</A>
+so after you have built the <B>noise-c</B> library with <BR>
+<CODE> &nbsp; git clone https://github.com/rweather/noise-c<BR>
+ &nbsp; cd noise-c/<BR>
+ &nbsp; autoreconf -i
+ &nbsp; ./configure  --enable-shared
+ &nbsp; ./configure  B=dynamic
+ &nbsp; make
+ &nbsp; make check
+</CODE><BR>
+(see: <A HREF="https://rweather.github.io/noise-c/index.html#building">
+rweather.github.io/noise-c/index.html#building</A>),
+you should be able to install it with the command:</p>
+<pre>
+ $ su
+ Password:
+ # luarocks install noiseprotocol</pre>
+<p>or:</p>
+<pre>
+ # luarocks install <a href="http://www.pjb.com.au/comp/lua/noiseprotocol-0.01-0.rockspec">http://www.pjb.com.au/comp/lua/noiseprotocol-0.01-0.rockspec</a></pre>
+<p>
+</p><pre>
+  git clone https://github.com/rweather/noise-c
+ # aptitude install libncurses5-dev</pre>
+<p>
+See: <A HREF="https://rweather.github.io/noise-c/index.html#building">
+rweather.github.io/noise-c/index.html#building</A>
+</p>
+<hr />
+<h3><a name="changes">CHANGES</a></h3>
+<pre>
+ 20210228 first sketch
+</pre>
+<hr />
+<h3><a name="author">AUTHOR</a></h3>
+<p>Translated into Lua by Peter Billam
+(<a href="http://www.pjb.com.au/comp/contact.html">www.pjb.com.au/comp/contact.html</a>)
+</p>
+<hr />
+<h3><a name="see_also">SEE ALSO</a></h3>
+<pre>
+<A HREF="http://noiseprotocol.org/">noiseprotocol.org</A>
+<A HREF="https://rweather.github.io/noise-c/index.html">rweather.github.io/noise-c/index.html</A>
+<A HREF="https://rweather.github.io/noise-c/index.html#building">rweather.github.io/noise-c/index.html#building</A>
+<A HREF="https://rweather.github.io/noise-c/group__handshakestate.html">rweather.github.io/noise-c/group__handshakestate.html</A>
+<A HREF="https://rweather.github.io/noise-c/group__cipherstate.html">rweather.github.io/noise-c/group__cipherstate.html</A>
+<A HREF="https://rweather.github.io/noise-c/example_echo.html">rweather.github.io/noise-c/example_echo.html</A>
+ <A HREF="http://www.pjb.com.au">www.pjb.com.au</A>
+ <A HREF="http://www.pjb.com.au/comp/index.html#lua">www.pjb.com.au/comp/</A>
+ <A HREF="http://luarocks.org/modules/peterbillam">http://luarocks.org/modules/peterbillam</A>
+</pre>
+
+</DIV>
+</body>
+
+</html>
