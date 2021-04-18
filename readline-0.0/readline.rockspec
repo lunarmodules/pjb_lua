@@ -33,6 +33,8 @@ build = {
 	  ["readline"] = "readline.lua",
 	  ["C-readline"] = {
 		 sources   = { "C-readline.c" },
+         incdirs   = { "$(READLINE_INCDIR)" },   -- 20210418
+         libdirs   = { "$(READLINE_LIBDIR)" },   -- 20210418
 		 libraries = { "readline" },
 	  },
    },
