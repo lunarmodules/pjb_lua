@@ -385,10 +385,11 @@ If this results in an error message such as:<BR>
 then you need to find the appropriate directory with:<BR><CODE>
  &nbsp; find /usr/lib -name 'libreadline.*' -print</CODE><BR>
 and then invoke:<BR><CODE>
- &nbsp; luarocks install \<BR>
- &nbsp; https://www.pjb.com.au/comp/lua/readline-3.0-0.rockspec \<BR>
+ &nbsp; luarocks install readline\<BR>
  &nbsp; READLINE_INCDIR=/usr/local/Cellar/readline/8.1/include \<BR>
- &nbsp; READLINE_LIBDIR=/usr/local/Cellar/readline/8.1/lib # or wherever</CODE><BR>
+ &nbsp; READLINE_LIBDIR=/usr/local/Cellar/readline/8.1/lib \<BR>
+ &nbsp; HISTORY_INCDIR=/usr/local/Cellar/readline/8.1/include \<BR>
+ &nbsp; HISTORY_LIBDIR=/usr/local/Cellar/readline/8.1/lib # or wherever</CODE><BR>
 accordingly.
 </P><p>
 It depends on the <em>readline</em> library and its header-files;

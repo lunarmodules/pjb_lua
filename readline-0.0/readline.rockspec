@@ -25,6 +25,7 @@ external_dependencies = {  -- Duarn 20150216, 20150416
 	};
 	HISTORY = {
 		header  = "readline/history.h";
+		library = "history";
 	}
 }
 build = {
@@ -33,10 +34,11 @@ build = {
 	  ["readline"] = "readline.lua",
 	  ["C-readline"] = {
 		 sources   = { "C-readline.c" },
-         incdirs   = { "$(READLINE_INCDIR)" },   -- 20210418
-         libdirs   = { "$(READLINE_LIBDIR)" },   -- 20210418
-		 libraries = { "readline" },
+         incdirs   = { "$(READLINE_INCDIR)", "$(HISTORY_INCDIR)" }, --20210418
+         libdirs   = { "$(READLINE_LIBDIR)", "$(HISTORY_LIBDIR)" }, --20210418
+		 libraries = { "readline", "history" },
 	  },
    },
    copy_directories = { "doc", "test" },
 }
+
