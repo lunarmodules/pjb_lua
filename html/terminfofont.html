@@ -69,6 +69,17 @@ CONTENT="terminfofont, Lua, module, gaussian, randomget">
  TIF.<A HREF="#moveto">moveto(0, TIF.lines-1)</A>
  TIF.<A HREF="#sgr0">sgr0()</A>
  TIF.<A HREF="#cnorm">cnorm()</A>
+
+ -- for example, I run this when shutting down to
+ -- remind me to put out the garbage on Wednesday evenings:
+ local date_t = os.date('*t')
+ if date_t['wday'] == 4 and  date_t['hour'] &gt; 17 then   -- Wed after 6pm
+    local TIF = require 'terminfofont'
+    TIF.clear() ; TIF.setfontsize(7)
+    local dx,dy = TIF.show(0, 4, 'GARBAGE', 'red')
+    TIF.moveto(0, 12) ; TIF.sgr0()
+ end
+
 </pre>
 <p>
 </p>
