@@ -1,0 +1,153 @@
+<HTML><HEAD><TITLE>Golay Code
+</TITLE>
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=utf-8" />
+<SCRIPT LANGUAGE="JavaScript"> <!--
+// -->
+</SCRIPT>
+</HEAD><BODY BGCOLOR="#FFFFFF">
+<CENTER><H1><A NAME="top">Golay Code
+</A></H1>
+</CENTER>
+<P>
+M. J. E. Golay (1902-1989) was a Swiss physicist known for his work in
+infrared spectroscopy among other things. He was one of the founding
+fathers of coding theory, discovering GC24 in 1949 and GC12 in 1954.
+</P><P>
+<A HREF="https://en.wikipedia.org/wiki/Binary_Golay_code">
+en.wikipedia.org/wiki/Binary_Golay_code</A><BR>
+There are two closely related binary Golay codes. The extended binary
+Golay code, G24 (sometimes just called the "Golay code" in finite group
+theory) encodes 12 bits of data in a 24-bit word in such a way that any
+3-bit errors can be corrected or any 7-bit errors can be detected.
+</P><P>
+In the extended binary Golay code, all code words have Hamming weights
+  of 0, 8, 12, 16, or 24. Code words of weight 8 are called octads
+  and code words of weight 12 are called dodecads.<BR>
+The automorphism group of the perfect binary Golay code, G23, is the
+  Mathieu group M 23. The automorphism group of the extended binary Golay
+  code is the Mathieu group M 24 , of order 210 × 33 × 5 × 7 × 11 × 23.
+  M 24 is transitive on octads and on dodecads. The other Mathieu groups
+  occur as stabilizers of one or several elements of W.
+<A HREF="img/extended_binary_Golay_code.png">
+  <IMG WIDTH="40%" ALIGN="right" SRC="img/extended_binary_Golay_code.png">
+</A>
+</P><P>
+<A HREF="https://en.wikipedia.org/wiki/Generator_matrix">
+en.wikipedia.org/wiki/Generator_matrix</A><BR>
+If G is a matrix, it generates the codewords of a linear code C by
+&nbsp;<I> w&nbsp;=&nbsp;sG </I>&nbsp;
+where <I>w</I> is a codeword of the linear code C, and <I>s</I> is any input
+vector. Both <I>w</I> and <I>s</I> are assumed to be row vectors.
+<BR>
+A generator matrix for the binary Golay code is <B>I A</B>,
+  where <B>I</B> is the 12×12 identity matrix,
+  and <B>A</B> is the complement of the adjacency matrix of the icosahedron.
+
+</P><P>
+<A HREF="https://en.wikipedia.org/wiki/Hamming_distance">
+en.wikipedia.org/wiki/Hamming_distance</A><BR>
+In information theory, the Hamming distance between two strings of equal
+length is the number of positions at which the corresponding symbols are
+different. In other words, it measures the minimum number of substitutions
+required to change one string into the other, or the minimum number of
+errors that could have transformed one string into the other.
+</P><P>
+<A HREF="https://en.wikipedia.org/wiki/Hamming_weight">
+en.wikipedia.org/wiki/Hamming_weight</A><BR>
+This is equivalent to the Hamming distance from the all-zero string
+of the same length.<BR>
+In the binary case, it is also called the population count,
+popcount, sideways sum, or bit summation<BR>
+Intel Core processors introduced a POPCNT instruction with
+  the SSE4.2 instruction set extension, first available in a
+  Nehalem-based Core i7 processor, released in November 2008.<BR>
+The ARM architecture introduced the VCNT instruction
+  as part of the Advanced SIMD (NEON) extensions.<BR>
+The RISC-V architecture introduced the PCNT instruction
+  as part of the Bit Manipulation (B) extension.[34]
+<P></P>
+How does the right half of the
+generator matrix
+represent the "adjacency matrix of the icosahedron" as a 12x12,
+when &nbsp; 1) the icosahedron has 20 faces
+(presumably because it has 12 vertices forming the faces of a dodecahedron,
+which is confirmed in
+<A HREF="https://giam.southernct.edu/DecodingGolay/encoding.html">
+giam.southernct.edu/DecodingGolay/encoding.html</A> :-)),
+and &nbsp; 2) how can you number the faces of a dodecahedron
+so that 1 is adjacent to 2,3,9,10,11  etc ? &nbsp;
+The face-numbering would seem to be arbitrary,
+so there are 12! possibilities.  Is there a standard ?<BR>
+<A HREF="https://giam.southernct.edu/DecodingGolay/example.html">
+giam.southernct.edu/DecodingGolay/example.html</A>
+offers a reasonable numbering system, but it does not fit
+with this matrix ...<BR>
+<A HREF="https://mathworld.wolfram.com/IcosahedralGraph.html">
+mathworld.wolfram.com/IcosahedralGraph.html</A>
+does display a 12x12 adjacency matrix, but it's not much like
+this one ...<BR>
+See: <A HREF="https://duckduckgo.com/?q=adjacency+matrix+of+the+icosahedron&atb=v224-1&ia=web">
+duckduckgo.com</A>
+</P><P>
+The "Parity" mentioned in
+<A HREF="https://giam.southernct.edu/DecodingGolay/example.html">
+giam.southernct.edu/DecodingGolay/example.html</A>
+is described in
+<A HREF="https://giam.southernct.edu/DecodingGolay/encoding.html">
+giam.southernct.edu/DecodingGolay/encoding.html</A>
+as the sum mod-2 of all the non-adjacent faces.
+The "mask" it mentions consists of the adjacent faces.
+Bits 1-12 then 13-24 double-cover the 12 faces.
+
+</P><A NAME="see_also"></A>
+<H3>SEE ALSO</H3><P>
+<A HREF="pdf/golay.pdf">golay.pdf</A> &nbsp;
+<A HREF="https://www.sfu.ca/~mdevos/notes/comb_struct/golay.pdf">
+www.sfu.ca/~mdevos/notes/comb_struct/golay.pdf</A><BR>
+<A HREF="https://ieeexplore.ieee.org/document/1057197">Pless (1986)</A><BR>
+<A HREF="https://epubs.siam.org/doi/10.1137/S0895480102404367">
+Kim, Mellinger, Pless (2003)</A><BR>
+<A HREF="https://mathworld.wolfram.com/IcosahedralGraph.html">
+mathworld.wolfram.com/IcosahedralGraph.html</A>
+<A HREF="https://zbmath.org/0608.94009">zbmath.org/0608.94009</A><BR>
+<A HREF="pdf/decoding_golay_blaum_bruce_1990.pdf">
+decoding_golay_blaum_bruce_1990.pdf</A><BR>
+<A HREF="pdf/decoding_golay_ping_yeung_1999.pdf">
+decoding_golay_ping_yeung_1999.pdf</A> &nbsp;
+<A HREF="https://www.ee.cityu.edu.hk/~liping/Research/Journal/101\ Symbol-by-symbol\ APP\ decoding\ of\ the\ Golay\ code\ and\ iterative\ decoding\ of\ concatenated\ Golay\ codes.pdf">
+and at ee.cityu.edu.hk/~liping/</A><BR>
+<A HREF="https://link.springer.com/article/10.1007/s10623-007-9081-6">
+link.springer.com/article/10.1007/s10623-007-9081-6</A>
+<A HREF="https://www.mdpi.com/2227-7390/8/1/15/htm">
+www.mdpi.com/2227-7390/8/1/15/htm</A><BR>
+<A HREF="https://demonstrations.wolfram.com/GolayCode/">
+demonstrations.wolfram.com/GolayCode/</A><BR>
+<A HREF="https://yetanothermathblog.com/page/3/">
+yetanothermathblog.com/page/3/</A><BR>
+# https://www.kkms.org/kkms/vol10_1/10113.pdf<BR>
+403 https://web.stanford.edu/class/ee387/handouts/notes11.pdf<BR>
+<A HREF="https://giam.southernct.edu/DecodingGolay/introduction.html">
+giam.southernct.edu/DecodingGolay/introduction.html</A><BR>
+<A HREF="https://giam.southernct.edu/DecodingGolay/encoding.html">
+giam.southernct.edu/DecodingGolay/encoding.html</A><BR>
+<A HREF="https://giam.southernct.edu/DecodingGolay/decoding.html">
+giam.southernct.edu/DecodingGolay/decoding.html</A><BR>
+<A HREF="https://giam.southernct.edu/DecodingGolay/example.html">
+giam.southernct.edu/DecodingGolay/example.html</A><BR>
+<A HREF="https://giam.southernct.edu/DecodingGolay/generalizations.html">
+giam.southernct.edu/DecodingGolay/generalizations.html</A><BR>
+<A HREF="https://giam.southernct.edu/DecodingGolay/conclusions.html">
+giam.southernct.edu/DecodingGolay/conclusions.html</A><BR>
+<A HREF="https://giam.southernct.edu/DecodingGolay/references.html">
+giam.southernct.edu/DecodingGolay/references.html</A><BR>
+V. Pless, Introduction to the Theory of Error-Correcting Codes,
+  second edition, Wiley, New York, 1989.<BR>
+V. Pless, Decoding the Golay codes,
+  IEEE Trans. Info. Theory 32 (1986), 561-567.
+</P><P>
+<A HREF="pdf/satish.pdf">satish.pdf</A> &nbsp;
+<A HREF="https://cs.indstate.edu/~sbuddha/satish.pdf">
+cs.indstate.edu/~sbuddha/satish.pdf</A><BR>
+<A HREF="https://github.com/lakehanne/Savitzky-Golay">
+github.com/lakehanne/Savitzky-Golay</A>
+</P></BODY></HTML>
