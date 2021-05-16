@@ -81,10 +81,15 @@ DecodingMatrix = {
 }
 --NonAdjacentFaces = { {1,4,5,6,7,8,12}, {2,5,6,7,8,9,11},
 --	{3,6,7,8,9,10,12}, -- etc }
-NonAdjacentFaces = {   -- for the parity in giam.southernct.edu's example ?
+NonAdjacentFaces = {   -- for giam.southernct.edu's decoding-check
 	0x8009F1, 0x4004FA, 0x20027D, 0x10093E,
 	0x80C9D,   0x40E4E,  0x20F25,  0x10F92,
 	0x87C9,     0x43E6,   0x2557,   0x1AAB,
+}
+AdjacentFaces = {
+	(~0x9F1)&0xFFF, (~0x4FA)&0xFFF, (~0x27D)&0xFFF, (~0x93E)&0xFFF,
+	(~0xC9D)&0xFFF, (~0xE4E)&0xFFF, (~0xF25)&0xFFF, (~0xF92)&0xFFF,
+	(~0x7C9)&0xFFF, (~0x3E6)&0xFFF, (~0x557)&0xFFF, (~0xAAB)&0xFFF,
 }
 --for i,v in ipairs(EncodingMatrix) do
 --	printf('EncodingMatrix[%2d] = %s', i, bin12_2str(EncodingMatrix[i]))
@@ -92,8 +97,7 @@ NonAdjacentFaces = {   -- for the parity in giam.southernct.edu's example ?
 --for i,v in ipairs(DecodingMatrix) do
 --	printf('DecodingMatrix[%2d] = %s', i, bin24_2str(DecodingMatrix[i]))
 --end
-
--- seems the Matrixes are good, not suffering from LE-scrambling :-)
+OppositeFaces = {6,7,8,9,10,1,2,3,4,5,12,11}
 
 function hamming_weight_24 (u)
 	return ((u>>23) & 1) + ((u>>22) & 1) + ((u>>21) & 1) + ((u>>20) & 1)
@@ -127,7 +131,6 @@ end
 --for j = 1,12 do
 --	printf('are_adjacent(1,%2d) = %s', j, tostring(are_adjacent(1, j)))
 --end
---os.exit()
 
 function decoding_check (crypt24, i)
   -- A decoding check is made in very nearly the same way as a parity check.
@@ -138,23 +141,12 @@ function decoding_check (crypt24, i)
   -- and a single parity position) is even, the decoding check has passed,
   -- if odd, it has failed. Clearly, if no errors at all are introduced,
   -- all of the decoding checks will pass.
-  -- PJB: so what I had called a parity_check is in fact a decoding_check
 	local hw = hamming_weight_24(crypt24 & NonAdjacentFaces[i])
 	return hw%2
 end
 function golay_decode (crypt24)
   -- https://giam.southernct.edu/DecodingGolay/decoding.html
-  -- all code words have Hamming weights of 0, 8, 12, 16, or 24.
-  -- Our decoding process will consist of making 12 so-called decoding checks
-  -- one for each face of the dodecahedron. We will say a decoding check
-  -- fails if the result is 1, and that it passes if the result is 0.
-  -- We then consider the decoding checks as giving a partial dodecahedron,
-  -- a face will only be present if the corresponding decoding check failed.
-  -- Finally, we will have to look at this partial dodecahedron and
-  -- distinguish it as one of roughly 9 possibilities.
-  -- (It is at this point that we rely on human pattern recognition.)
-  --
-  --
+  -- valid code words have Hamming weights of 0, 8, 12, 16, or 24.
 	local hw = hamming_weight_24(crypt24)
 	local failed_checks = {}
 	local passed_checks = {}
@@ -170,24 +162,40 @@ function golay_decode (crypt24)
 	else
 		printf("failed decoding checks %s", table.concat(failed_checks, ","))
 	end
---	if hw~=0 and hw~=8 and hw~=12 and hw~=16 and hw~=24 then has errors ...
-	if #failed_checks == 7 then
-  -- Consider what will happen if a single error is made in transmission. If
-  -- that error is in a parity check symbol, it will only effect the decoding
-  -- checks one time, namely, when the mask is centered on the corresponding
-  -- face. Thus our partial dodecahedron will be very partial indeed,
-  -- consisting of just a single face! If the error happens to be in an
-  -- information symbol, the decoding checks will pass whenever the mask
-  -- is placed so that that face is covered -- i.e. when it is centered on
-  -- the faces adjacent to the error position. In that case, we will get the
-  -- complement of our mask as the partial dodecahedron, a figure I call the
-  -- "Parachute". The error actually has occurred where the "skydiver" sits.
+	-- https://giam.southernct.edu/DecodingGolay/decoding.html
+	if     #failed_checks == 7 then   -- Parachute
 		local adjacent = 0xFFFFFF
 		for tmp,i_passed in ipairs(passed_checks) do
 			adjacent = adjacent & (0xFFFFFF ~ NonAdjacentFaces[i_passed])
 		end
-		-- printf('adjacent = %s', bin12_2str(adjacent))
-		crypt24 = crypt24 ~ adjacent  -- amazing :-) it works !!
+		crypt24 = crypt24 ~ adjacent  -- it works !!
+	elseif #failed_checks == 10 then -- Tropics (information block)
+		if OppositeFaces[passed_checks[1]] == passed_checks[2] then
+			crypt24 = crypt24 ~
+			  (1<<(12-passed_checks[1]) | 1<<(12-passed_checks[2]))
+		else
+			printf('unsuported pair of passes %s :-)',
+			  table.concat(passed_checks, ","))
+		end
+	elseif #failed_checks == 9 then  -- Cage or Deep-Bowl (information block)
+		-- print('failed three')
+		if are_adjacent(passed_checks[1], passed_checks[2]) and
+		   are_adjacent(passed_checks[1], passed_checks[3]) and
+		   are_adjacent(passed_checks[2], passed_checks[3]) then  -- Deep-Bowl
+			-- print('Deep-Bowl')
+			local  a1 = AdjacentFaces[passed_checks[1]]
+			local  a2 = AdjacentFaces[passed_checks[2]]
+			local  a3 = AdjacentFaces[passed_checks[3]]
+			local na1 = NonAdjacentFaces[passed_checks[1]]
+			local na2 = NonAdjacentFaces[passed_checks[2]]
+			local na3 = NonAdjacentFaces[passed_checks[3]]
+			crypt24 = crypt24 ~ (a1 & na2 & na3)
+			crypt24 = crypt24 ~ (na1 & a2 & na3)
+			crypt24 = crypt24 ~ (na1 & na2 & a3)
+		end
+	elseif #failed_checks == 6 then  -- Diaper, Bent-Ring (information block)
+	elseif #failed_checks == 5 then  -- Cobra, Islands or Broken-Tripod
+		-- 3 errors, but all in information positions
 	end
 	
 	local plain12 = 0
@@ -207,39 +215,53 @@ local plain12 = golay_decode(crypt_n)
 if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
 printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
 
--- https://giam.southernct.edu/DecodingGolay/encoding.html
-n = str2bin('100000000000')
-printf('   n    = %s', bin12_2str(n))
-local crypt_n = golay_encode(n)
-printf('crypt_n = %s', bin24_2str(crypt_n))
--- print('should pass all decoding checks ...')
-local plain12 = golay_decode(crypt_n)
+print('One error in the information block:')
+corrupt = crypt_n ~ (2<<15)
+printf('corrupt = %s', bin24_2str(corrupt))
+local plain12 = golay_decode(corrupt)
 if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
 printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
 
+print('Two errors in the information block:')
+corrupt = crypt_n ~ (5<<13)
+printf('corrupt = %s', bin24_2str(corrupt))
+local plain12 = golay_decode(corrupt)
+if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
+printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+
+print('Three errors in the information block:')
+corrupt = crypt_n ~ (21<<13)
+printf('corrupt = %s', bin24_2str(corrupt))
+local plain12 = golay_decode(corrupt)
+if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
+printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+
+print('One error in the checksum block:')
 corrupt = crypt_n ~ (2<<5)
 printf('corrupt = %s', bin24_2str(corrupt))
 local plain12 = golay_decode(corrupt)
 if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
 printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
 
--- 2<<10 or less all fail but >10 all pass
-corrupt = crypt_n ~ (2<<11 | 2<<13 | 2<<19)
+-- What if 2 or 3 errors are introduced? We will first consider the
+-- possibility (mostly to dispose of it quickly!) that the errors are in
+-- parity check symbols. If that is the case we will simply have a partial
+-- dodecahedron consisting of 2 or 3 pentagons, and we will know that
+-- parity check symbol errors have occurred in those same positions.
+
+print('Two errors in the checksum block on opposite faces:')
+corrupt = crypt_n ~ (33<<4)
 printf('corrupt = %s', bin24_2str(corrupt))
 local plain12 = golay_decode(corrupt)
 if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
 printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
--- golay_decode(crypt_ABC)
 
--- https://giam.southernct.edu/DecodingGolay/example.html uses
--- 000000000001 100000101111 as an example code-word
-n = str2bin('000000000001')
-printf('   n    = %s', bin12_2str(n))
-corrupt = str2bin('000000000001 100000101111')
+print('Three errors in the checksum block in a Deep-Bowl:')
+corrupt = crypt_n ~ (1<<7 | 1<<3 | 1)  -- 5,9,12
 printf('corrupt = %s', bin24_2str(corrupt))
 local plain12 = golay_decode(corrupt)
 if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s', bin12_2str(plain12), errmsg)
+printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
 
 --[=[
 

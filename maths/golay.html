@@ -98,6 +98,27 @@ giam.southernct.edu/DecodingGolay/encoding.html</A>
 as the sum mod-2 of all the non-adjacent faces.
 The "mask" it mentions consists of the adjacent faces.
 Bits 1-12 then 13-24 double-cover the 12 faces.
+</P><P>
+The [24,12,8] extended binary Golay code is a well-known and remarkable
+combinatorial object. It consists of 4096 binary words of length 24.
+Besides the zero word and the word consisting of 24 ones, there are
+759 words of weight 8. (The weight, or more accurately, Hamming weight
+of a binary word is simply the number of ones in it.) There are also
+759 words of weight 16, and the remainder of the words (2576) are of
+weight 12. The weight 8 words are called octads and the weight 12 words
+are called dodecads.
+</P><P>
+The words of any fixed weight "hold" a 5-design. That is, we take the
+set (1,2, ... 24) as a set of points, and consider a word in the code
+as the indicator function of a subset of the points, these subsets are
+the blocks of our design. Thus, the octads form a 5-(24,8,1) design or
+(equivalently) a Steiner system S(5,8,24).
+</P><P>
+The automorphism group of the Golay code (the group of permutations of the
+coordinates that send codewords to codewords) is the famous Mathieu group
+M24 -- well known as one of the first examples of a sporadic simple group.
+</P><P>
+The Golay code can also be used to construct the Leech lattice. 
 
 </P><A NAME="see_also"></A>
 <H3>SEE ALSO</H3><P>
