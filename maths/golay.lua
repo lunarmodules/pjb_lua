@@ -132,6 +132,14 @@ end
 --	printf('are_adjacent(1,%2d) = %s', j, tostring(are_adjacent(1, j)))
 --end
 
+function faces2mask(array_of_faces)
+	local mask = 0
+	for i,facenum in ipairs(array_of_faces) do
+		mask = mask | (1 << (12-facenum))
+	end
+	return mask
+end
+
 function decoding_check (crypt24, i)
   -- A decoding check is made in very nearly the same way as a parity check.
   -- We place the mask over each face of the dodecahedron and count the
@@ -178,23 +186,67 @@ function golay_decode (crypt24)
 			  table.concat(passed_checks, ","))
 		end
 	elseif #failed_checks == 9 then  -- Cage or Deep-Bowl (information block)
-		-- print('failed three')
+		local  a1 = AdjacentFaces[passed_checks[1]]
+		local  a2 = AdjacentFaces[passed_checks[2]]
+		local  a3 = AdjacentFaces[passed_checks[3]]
+		local na1 = NonAdjacentFaces[passed_checks[1]]
+		local na2 = NonAdjacentFaces[passed_checks[2]]
+		local na3 = NonAdjacentFaces[passed_checks[3]]
 		if are_adjacent(passed_checks[1], passed_checks[2]) and
 		   are_adjacent(passed_checks[1], passed_checks[3]) and
 		   are_adjacent(passed_checks[2], passed_checks[3]) then  -- Deep-Bowl
-			-- print('Deep-Bowl')
-			local  a1 = AdjacentFaces[passed_checks[1]]
-			local  a2 = AdjacentFaces[passed_checks[2]]
-			local  a3 = AdjacentFaces[passed_checks[3]]
-			local na1 = NonAdjacentFaces[passed_checks[1]]
-			local na2 = NonAdjacentFaces[passed_checks[2]]
-			local na3 = NonAdjacentFaces[passed_checks[3]]
 			crypt24 = crypt24 ~ (a1 & na2 & na3)
 			crypt24 = crypt24 ~ (na1 & a2 & na3)
 			crypt24 = crypt24 ~ (na1 & na2 & a3)
+		elseif not are_adjacent(passed_checks[1], passed_checks[2]) and
+               not are_adjacent(passed_checks[1], passed_checks[3]) and
+               not are_adjacent(passed_checks[2], passed_checks[3]) then
+			crypt24 = crypt24 ~ (a1 & na2 & na3)   -- Cage, same calculation!
+			crypt24 = crypt24 ~ (na1 & a2 & na3)
+			crypt24 = crypt24 ~ (na1 & na2 & a3)
 		end
-	elseif #failed_checks == 6 then  -- Diaper, Bent-Ring (information block)
+	elseif #failed_checks == 6 then  -- Diaper, Bent-Ring
+		-- Diaper has 6 failed_checks, 4 with 2 neighbors, 2 with 3 neighbours
+		-- Bent-Ring has 6 failed_checks all holding hands in a ring
+		local failed = faces2mask(failed_checks)
+		local is_a_bent_ring = true
+		local with_2_adjacent = {}
+		local with_3_adjacent = {}
+		for i,v in ipairs(failed_checks) do
+--printf('failed            = %s', bin12_2str(failed))
+--printf('AdjacentFaces[%2d] = %s', v, bin12_2str(AdjacentFaces[v]))
+--printf('failed and adjac  = %s', bin12_2str(failed & AdjacentFaces[v]))
+--printf('hamming_weight = %d', hamming_weight_12(failed & AdjacentFaces[v]))
+			local neighbors =  hamming_weight_12(failed & AdjacentFaces[v])
+			if neighbors ~= 2 then is_a_bent_ring = false end
+			if neighbors == 2 then table.insert(with_2_adjacent, v)
+			elseif neighbors == 3 then table.insert(with_3_adjacent, v)
+			end
+		end
+		if #with_2_adjacent == 4 and #with_3_adjacent == 2 then
+			crypt24 = crypt24 ~ faces2mask(with_3_adjacent)
+		elseif is_a_bent_ring then
+			local passed = faces2mask(passed_checks)
+			-- 2 passed faces have 3 passed neighbors ;
+			-- their mutual neighbors are in error !
+			local two_passed_neighbors = {}
+			for i,v in ipairs(passed_checks) do
+				if hamming_weight_12(passed & AdjacentFaces[v]) == 2 then
+					table.insert(two_passed_neighbors, v)
+				end
+--printf('two_passed_neighbors = %s', table.concat(two_passed_neighbors,','))
+			end
+--printf("passed decoding checks %s", table.concat(passed_checks, ","))
+			crypt24 = crypt24 ~ faces2mask(two_passed_neighbors)
+		end
 	elseif #failed_checks == 5 then  -- Cobra, Islands or Broken-Tripod
+		local  a1 = AdjacentFaces[failed_checks[1]]
+		local  a2 = AdjacentFaces[failed_checks[2]]
+		local  a3 = AdjacentFaces[failed_checks[3]]
+		local na1 = NonAdjacentFaces[failed_checks[1]]
+		local na2 = NonAdjacentFaces[failed_checks[2]]
+		local na3 = NonAdjacentFaces[failed_checks[3]]
+		
 		-- 3 errors, but all in information positions
 	end
 	
@@ -236,7 +288,7 @@ local plain12 = golay_decode(corrupt)
 if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
 printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
 
-print('One error in the checksum block:')
+print('One error in the checksum block in a Parachute:')
 corrupt = crypt_n ~ (2<<5)
 printf('corrupt = %s', bin24_2str(corrupt))
 local plain12 = golay_decode(corrupt)
@@ -249,8 +301,24 @@ printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
 -- dodecahedron consisting of 2 or 3 pentagons, and we will know that
 -- parity check symbol errors have occurred in those same positions.
 
-print('Two errors in the checksum block on opposite faces:')
+print('Two errors in the checksum block on opposite faces in a Tropics:')
 corrupt = crypt_n ~ (33<<4)
+printf('corrupt = %s', bin24_2str(corrupt))
+local plain12 = golay_decode(corrupt)
+if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
+printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+
+print('Two errors in the checksum block in a Diaper:')
+corrupt = crypt_n ~ 12  -- 9,10
+printf('crypt_n = %s', bin24_2str(crypt_n))
+printf('corrupt = %s', bin24_2str(corrupt))
+local plain12 = golay_decode(corrupt)
+if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
+printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+
+print('Two errors in the checksum block in a Bent-Ring:')
+corrupt = crypt_n ~ 9  -- 9,12
+printf('crypt_n = %s', bin24_2str(crypt_n))
 printf('corrupt = %s', bin24_2str(corrupt))
 local plain12 = golay_decode(corrupt)
 if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
@@ -262,6 +330,14 @@ printf('corrupt = %s', bin24_2str(corrupt))
 local plain12 = golay_decode(corrupt)
 if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
 printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+
+print('Three errors in the checksum block in a Cage:')
+corrupt = crypt_n ~ 21  -- 8,10,12
+printf('corrupt = %s', bin24_2str(corrupt))
+local plain12 = golay_decode(corrupt)
+if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
+printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+
 
 --[=[
 
