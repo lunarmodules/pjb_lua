@@ -26,6 +26,7 @@ local iarg=1; while arg[iarg] ~= nil do
 	end
 	iarg = iarg+1
 end
+require 'DataDumper'
 
 local function printf (...) print(string.format(...)) end
 
@@ -115,7 +116,7 @@ end
 
 function golay_encode (array12)
 	-- https://giam.southernct.edu/DecodingGolay/encoding.html
-	-- but in a different numbering-order
+	-- but in a different numbering-order !!
 	local crypt24 = 0
 	for i,val in ipairs(EncodingMatrix) do
 		crypt24 = crypt24 | ((hamming_weight_12(val&array12)) % 2) << (24-i)
@@ -128,9 +129,6 @@ function are_adjacent(face1, face2)
 	local magic_bit = non_adjacency>>(12-face2) & 1
 	return magic_bit == 0
 end
---for j = 1,12 do
---	printf('are_adjacent(1,%2d) = %s', j, tostring(are_adjacent(1, j)))
---end
 
 function faces2mask(array_of_faces)
 	local mask = 0
@@ -155,145 +153,258 @@ end
 function golay_decode (crypt24)
   -- https://giam.southernct.edu/DecodingGolay/decoding.html
   -- valid code words have Hamming weights of 0, 8, 12, 16, or 24.
-	local hw = hamming_weight_24(crypt24)
-	local failed_checks = {}
-	local passed_checks = {}
+  -- local hw = hamming_weight_24(crypt24)
+	local failed_tab = {}
+	local passed_tab = {}
 	for i = 1, 12 do
-		if decoding_check(crypt24,i)==1 then
-			table.insert(failed_checks,i)
-		else
-			table.insert(passed_checks,i)
+		if decoding_check(crypt24,i)==1 then table.insert(failed_tab,i)
+		else table.insert(passed_tab,i)
 		end
 	end
-	if #failed_checks == 0 then
-		print('passed all decoding checks')
-	else
-		printf("failed decoding checks %s", table.concat(failed_checks, ","))
+	if #failed_tab == 0 then   -- speed
+		local plain12 = 0
+		for i,val in ipairs(DecodingMatrix) do
+			-- 20210512 not sure why this is hamming_weight_12 here ...
+			plain12 = plain12 | ((hamming_weight_12(val&crypt24))%2) << (12-i)
+		end
+		return plain12
 	end
+	local failed = faces2mask(failed_tab)
+	local passed = faces2mask(passed_tab)
+	local function adj (s, t)
+		local for_all ; local to_all
+		local adj_tab = { [0]={}, {}, {}, {}, {}, {} }
+		if type(s) == 'string' then
+			local b = { string.byte(s,1,-1) }
+			if b[1] == 0x50 then for_all = passed_tab
+			else for_all = failed_tab
+			end
+			if b[2] == 0x50 then  to_all = passed else  to_all = failed end
+			for i,v in ipairs(for_all) do
+				local n =  hamming_weight_12(to_all & AdjacentFaces[v])
+				table.insert(adj_tab[n], v)
+			end
+			if b[3] == 0x53 then   -- S
+				local n_adj = { #adj_tab[0], #adj_tab[1], #adj_tab[2],
+			   	#adj_tab[3], #adj_tab[4], #adj_tab[5] } 
+-- print(DataDumper(n_adj))
+				return table.concat(n_adj, ' ')
+			else
+				return adj_tab
+			end
+		else 
+			for_all = s
+printf('for_all = %s', DataDumper(for_all))
+printf(' to_all = %s', DataDumper(to_all))
+			if type(t) == 'table' then
+				to_all = faces2mask(t)
+			else
+				if t == 'P' then to_all = passed else  to_all = failed end
+			end
+printf('for_all = %s', DataDumper(for_all))
+printf(' to_all = %s', bin12_2str(to_all))
+			for i,v in pairs(for_all) do
+				local n =  hamming_weight_12(to_all & AdjacentFaces[v])
+				table.insert(adj_tab[n], v)
+			end
+			return adj_tab
+		end
+	end
+
 	-- https://giam.southernct.edu/DecodingGolay/decoding.html
-	if     #failed_checks == 7 then   -- Parachute
-		local adjacent = 0xFFFFFF
-		for tmp,i_passed in ipairs(passed_checks) do
-			adjacent = adjacent & (0xFFFFFF ~ NonAdjacentFaces[i_passed])
+	local ffs = adj('FFS') ; local pps = adj('PPS') ; local ffa = adj('FFA')
+printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
+	if     ffs == '1 0 0 5 0 1' then   -- Parachute
+		crypt24 = crypt24 ~ 1<<ffa[0][1]
+	elseif ffs == '0 0 0 5 0 1' then  -- + msg failure in skydiver
+		crypt24 = crypt24 ~ 1<<OppositeFaces[ffa[5][1]]  -- :-)
+	elseif ffs == '1 0 5 0 0 0' then  -- + msg failure in its opposite
+		crypt24 = crypt24 ~ 1<<(12+OppositeFaces[ffa[0][1]])
+		crypt24 = crypt24 ~ 1<<ffa[0][1]
+	elseif ffs == '0 1 0 4 2 1' then  -- + msg failure adjacent to skydiver
+		-- crypt24 = crypt24 ~ 1<<(12+OppositeFaces[ffa[0][1]])
+		crypt24 = crypt24 ~ 1<<ffa[1][1]
+	elseif ffs == '1 0 2 2 1 0' then  -- + msg failure in parachute fringe
+		crypt24 = crypt24 ~ 1<<ffa[0][1]
+	elseif ffs == '0 0 0 0 10 0' then -- Tropics
+		-- printf('  ffa = %s', DataDumper(ffa))
+		crypt24 = crypt24 ~ (1<<(12-passed_tab[1]) | 1<<(12-passed_tab[2]))
+	elseif ffs == '0 0 0 0 5 6' then -- + msg failure in one of the poles XXX
+		-- the face opposite the passed face is the error !
+		local opp = OppositeFaces[passed_tab[1]]
+		crypt24 = crypt24 ~ (1<<(12-passed_tab[1]) | 1<<(24-opp) | 1<<12-opp)
+	-- elseif #failed_tab == 9 then  -- Cage or Deep-Bowl
+	elseif ffs == '0 0 0 4 5 0' then
+--print('Tropics with a message failure on the equator')
+--printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
+		local pfa = adj('PFA') -- ; printf('  pfa = %s', DataDumper(pfa))
+		local ppa = adj('PPA') -- ; printf('  ppa = %s', DataDumper(ppa))
+		local opp = OppositeFaces[ppa[0][1]]
+		for i,v in pairs(pfa[4]) do
+			if v ~= opp then crypt24 = crypt24 ~ (1<<(24-v)) ; break ; end
 		end
-		crypt24 = crypt24 ~ adjacent  -- it works !!
-	elseif #failed_checks == 10 then -- Tropics (information block)
-		if OppositeFaces[passed_checks[1]] == passed_checks[2] then
-			crypt24 = crypt24 ~
-			  (1<<(12-passed_checks[1]) | 1<<(12-passed_checks[2]))
-		else
-			printf('unsuported pair of passes %s :-)',
-			  table.concat(passed_checks, ","))
+		crypt24 = crypt24 ~ (1<<(12-passed_tab[1]) | 1<<(12-passed_tab[2]))
+	elseif pps=='3 0 0 0 0 0' or pps=='0 0 3 0 0 0' then -- Deep-Bowl or Cage
+		local  a1 = AdjacentFaces[passed_tab[1]]
+		local  a2 = AdjacentFaces[passed_tab[2]]
+		local  a3 = AdjacentFaces[passed_tab[3]]
+		local na1 = NonAdjacentFaces[passed_tab[1]]
+		local na2 = NonAdjacentFaces[passed_tab[2]]
+		local na3 = NonAdjacentFaces[passed_tab[3]]
+		crypt24 = crypt24 ~ (a1 & na2 & na3)
+		crypt24 = crypt24 ~ (na1 & a2 & na3)
+		crypt24 = crypt24 ~ (na1 & na2 & a3)
+	elseif ffs == '0 0 4 2 0 0' then   -- Diaper
+		crypt24 = crypt24 ~ faces2mask(adj('FFA')[3])
+	elseif adj('FFS') == '0 1 3 1 0 0' then  -- Diaper with err in adj=2 face
+		local ppa = adj('PPA') --  printf('  ppa = %s', DataDumper(ppa))
+		-- 1) find the face (fna2) in ffa[2] not adjacent to the other two,
+		local fna2 = 1
+		if     are_adjacent(ffa[2][1], ffa[2][2]) then fna2 = 3
+		elseif are_adjacent(ffa[2][1], ffa[2][3]) then fna2 = 2
 		end
-	elseif #failed_checks == 9 then  -- Cage or Deep-Bowl (information block)
-		local  a1 = AdjacentFaces[passed_checks[1]]
-		local  a2 = AdjacentFaces[passed_checks[2]]
-		local  a3 = AdjacentFaces[passed_checks[3]]
-		local na1 = NonAdjacentFaces[passed_checks[1]]
-		local na2 = NonAdjacentFaces[passed_checks[2]]
-		local na3 = NonAdjacentFaces[passed_checks[3]]
-		if are_adjacent(passed_checks[1], passed_checks[2]) and
-		   are_adjacent(passed_checks[1], passed_checks[3]) and
-		   are_adjacent(passed_checks[2], passed_checks[3]) then  -- Deep-Bowl
-			crypt24 = crypt24 ~ (a1 & na2 & na3)
-			crypt24 = crypt24 ~ (na1 & a2 & na3)
-			crypt24 = crypt24 ~ (na1 & na2 & a3)
-		elseif not are_adjacent(passed_checks[1], passed_checks[2]) and
-               not are_adjacent(passed_checks[1], passed_checks[3]) and
-               not are_adjacent(passed_checks[2], passed_checks[3]) then
-			crypt24 = crypt24 ~ (a1 & na2 & na3)   -- Cage, same calculation!
-			crypt24 = crypt24 ~ (na1 & a2 & na3)
-			crypt24 = crypt24 ~ (na1 & na2 & a3)
-		end
-	elseif #failed_checks == 6 then  -- Diaper, Bent-Ring
-		-- Diaper has 6 failed_checks, 4 with 2 neighbors, 2 with 3 neighbours
-		-- Bent-Ring has 6 failed_checks all holding hands in a ring
-		local failed = faces2mask(failed_checks)
-		local is_a_bent_ring = true
-		local with_2_adjacent = {}
-		local with_3_adjacent = {}
-		for i,v in ipairs(failed_checks) do
---printf('failed            = %s', bin12_2str(failed))
---printf('AdjacentFaces[%2d] = %s', v, bin12_2str(AdjacentFaces[v]))
---printf('failed and adjac  = %s', bin12_2str(failed & AdjacentFaces[v]))
---printf('hamming_weight = %d', hamming_weight_12(failed & AdjacentFaces[v]))
-			local neighbors =  hamming_weight_12(failed & AdjacentFaces[v])
-			if neighbors ~= 2 then is_a_bent_ring = false end
-			if neighbors == 2 then table.insert(with_2_adjacent, v)
-			elseif neighbors == 3 then table.insert(with_3_adjacent, v)
+		fna2 = ffa[2][fna2]
+		-- 2) find the face in passed adjacent to that and to ffa[1][1]
+		local bad_face
+		for i = 1,3 do
+			if are_adjacent(ppa[3][i], fna2) then bad_face = ppa[3][i] ; break
 			end
 		end
-		if #with_2_adjacent == 4 and #with_3_adjacent == 2 then
-			crypt24 = crypt24 ~ faces2mask(with_3_adjacent)
-		elseif is_a_bent_ring then
-			local passed = faces2mask(passed_checks)
-			-- 2 passed faces have 3 passed neighbors ;
-			-- their mutual neighbors are in error !
-			local two_passed_neighbors = {}
-			for i,v in ipairs(passed_checks) do
-				if hamming_weight_12(passed & AdjacentFaces[v]) == 2 then
-					table.insert(two_passed_neighbors, v)
+		crypt24 = crypt24 ~ (1 << (24-bad_face))
+		return crypt24>>12 -- ER ... still need to fix the checksum block ?
+		-- crypt24 = golay_encode(crypt24>>12)   -- same problem
+	elseif ffs == '0 2 3 0 0 0' then  -- Diaper with err in adj=3 face
+		local ppa = adj('PPA') --  printf('  ppa = %s', DataDumper(ppa))
+		for i,v in ipairs(ppa[2]) do
+			if are_adjacent(v,ffa[1][1]) and are_adjacent(v,ffa[1][2]) then
+				crypt24 = crypt24 ~ (1 << (24-v)) ; return crypt24>>12
+			end
+		end
+	elseif ffs  == '0 0 2 2 3 0' then   -- Diaper with msg error in waistline
+		-- seek the face in ffa[4] adjacent to both faces in ffa[3]
+		for i,v in ipairs(ffa[4]) do
+			if are_adjacent(v, ffa[3][1]) and are_adjacent(v, ffa[3][2]) then
+				crypt24 = crypt24 ~ (1 << (24-v)) ; return crypt24>>12
+			end
+		end
+	elseif ffs == '0 0 3 4 0 0' then
+		local ffa2 = ffa[2] ; local i = 1
+		if  pps == '0 2 3 0 0 0' then
+			if     are_adjacent(ffa2[1], ffa2[2]) then i = 3
+			elseif are_adjacent(ffa2[1], ffa2[3]) then i = 2
+			end
+			crypt24 = crypt24 ~ (1 << (24-ffa2[i])) ; return crypt24>>12
+		elseif pps == '1 1 2 1 0 0' then
+			-- Diaper with a message failure in a elbow|knee face
+printf('  ffs = %s   ffa = %s', ffs, DataDumper(ffa))
+local ppa = adj('PPA')
+local fpa = adj('FPA') local pfa = adj('PFA')
+printf('  pps = %s   ppa = %s', pps, DataDumper(ppa))
+printf('  fpa = %s\n  pfa = %s', DataDumper(fpa), DataDumper(pfa))
+print('  seek the face in ffa[2] not adjacent to pfa[2][1]')
+printf('  ffa[2]=%s   pfa[2]=%s', DataDumper(ffa[2]), DataDumper(pfa[2]))
+			for i,v in ipairs(ffa[2]) do
+				if not are_adjacent(v, pfa[2][1]) then
+					crypt24 = crypt24 ~ (1 << (24-v)) ; return crypt24>>12
 				end
---printf('two_passed_neighbors = %s', table.concat(two_passed_neighbors,','))
 			end
---printf("passed decoding checks %s", table.concat(passed_checks, ","))
-			crypt24 = crypt24 ~ faces2mask(two_passed_neighbors)
 		end
-	elseif #failed_checks == 5 then  -- Cobra, Islands or Broken-Tripod
-		local  a1 = AdjacentFaces[failed_checks[1]]
-		local  a2 = AdjacentFaces[failed_checks[2]]
-		local  a3 = AdjacentFaces[failed_checks[3]]
-		local na1 = NonAdjacentFaces[failed_checks[1]]
-		local na2 = NonAdjacentFaces[failed_checks[2]]
-		local na3 = NonAdjacentFaces[failed_checks[3]]
+
+	elseif ffs  == '0 0 6 0 0 0' then   -- Bent-Ring
+		local ppa = adj('PPA') -- 6 failed_tab holding hands in a ring
+		crypt24 = crypt24 ~ (1<<(12-ppa[2][1]) | 1<<(12-ppa[2][2]))
+	elseif #failed_tab == 5 then -- Cobra Islands or Broken-Tripod 3 errors
+		if ffs == '0 1 1 3 0 0' then   -- Cobra
+			-- & its 2 passed neighbors that neighbor a ffa[3] face
+			local neighbors_2 = passed & AdjacentFaces[ffa[2][1]]
+			mask = 0
+			for i,v in ipairs(ffa[3]) do mask = mask | AdjacentFaces[v] end
+			crypt24 = crypt24 ~ (neighbors_2 & (passed & mask))
+			crypt24 = crypt24 ~ (1 << (12 - ffa[2][1]))
+		elseif ffs  == '0 4 1 0 0 0' then   -- print('Islands')
+			local neighbors_2 = failed & AdjacentFaces[ffa[2][1]]
+			crypt24 = crypt24 ~ (1 << (12 - ffa[2][1]))
+			-- and the passed faces adjacent to 2 failed faces
+			for i,v in ipairs(passed_tab) do
+				local neighbors =
+				  hamming_weight_12(failed & AdjacentFaces[v])
+				if neighbors == 2 then crypt24 = crypt24 ~ (1<<(12-v)) end
+			end
+		elseif ffs == '0 2 1 2 0 0' then   -- print('Broken-Tripod')
+			crypt24 = crypt24 ~ (1 << (12 - ffa[2][1]))
+			for i,v in ipairs(passed_tab) do
+				local neighbors =
+				  hamming_weight_12(failed & AdjacentFaces[v])
+				if neighbors == 2 or neighbors == 4 then
+					crypt24 = crypt24 ~ (1<<(12-v))
+				end
+			end
+		end
 		
-		-- 3 errors, but all in information positions
 	end
 	
 	local plain12 = 0
 	for i,val in ipairs(DecodingMatrix) do
-		-- 20210512 confused about why this is hamming_weight_12 here ...
+		-- 20210512 not sure why this is hamming_weight_12 here ...
 		plain12 = plain12 | ((hamming_weight_12(val&crypt24)) % 2) << (12-i)
 	end
 	return plain12
 end
 
+-----------------------------------------
+local Test = 12 ; local i_test = 0; local Failed = 0;
+function ok(b,s)
+    i_test = i_test + 1
+    if b then
+        io.write('ok '..i_test..' - '..s.."\n")
+        return true
+    else
+        io.write('not ok '..i_test..' - '..s.."\n")
+        Failed = Failed + 1
+        return false
+    end
+end
+
 n = str2bin('101010110110')
-printf('   n    = %s', bin12_2str(n))
+-- printf('   n    = %s', bin12_2str(n))
 local crypt_n = golay_encode(n)
-printf('crypt_n = %s', bin24_2str(crypt_n))
--- print('should pass all decoding checks ...')
 local plain12 = golay_decode(crypt_n)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+ok(plain12 == n, 'golay_encode and golay_decode')
 
-print('One error in the information block:')
 corrupt = crypt_n ~ (2<<15)
-printf('corrupt = %s', bin24_2str(corrupt))
-local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'one error in the message block')
 
-print('Two errors in the information block:')
 corrupt = crypt_n ~ (5<<13)
-printf('corrupt = %s', bin24_2str(corrupt))
-local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'two errors in the message block')
 
-print('Three errors in the information block:')
 corrupt = crypt_n ~ (21<<13)
-printf('corrupt = %s', bin24_2str(corrupt))
-local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'three errors in the message block')
 
-print('One error in the checksum block in a Parachute:')
 corrupt = crypt_n ~ (2<<5)
-printf('corrupt = %s', bin24_2str(corrupt))
-local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'one error in the checksum block in a Parachute')
+
+corrupt = crypt_n ~ (2<<5 | 2<<17)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute with message failure in the skydiver face')
+
+corrupt = crypt_n ~ (2<<5 | 2<<22)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n,
+  'Parachute with message failure in face opposite the skydiver')
+
+corrupt = crypt_n ~ (2<<5 | 2<<23)   -- or 15,16,18,19,23
+plain12 = golay_decode(corrupt)
+ok(plain12 == n,
+  'Parachute with message failure in face adjacent to skydiver')
+
+corrupt = crypt_n ~ (2<<5 | 2<<21)   -- or 15,16,18,19,23
+plain12 = golay_decode(corrupt)
+ok(plain12 == n,
+  'Parachute with message failure in face in the parachute fringe')
 
 -- What if 2 or 3 errors are introduced? We will first consider the
 -- possibility (mostly to dispose of it quickly!) that the errors are in
@@ -301,43 +412,71 @@ printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
 -- dodecahedron consisting of 2 or 3 pentagons, and we will know that
 -- parity check symbol errors have occurred in those same positions.
 
-print('Two errors in the checksum block on opposite faces in a Tropics:')
 corrupt = crypt_n ~ (33<<4)
-printf('corrupt = %s', bin24_2str(corrupt))
-local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n,
+  'two errors in the checksum block on opposite faces in a Tropics')
 
-print('Two errors in the checksum block in a Diaper:')
-corrupt = crypt_n ~ 12  -- 9,10
-printf('crypt_n = %s', bin24_2str(crypt_n))
-printf('corrupt = %s', bin24_2str(corrupt))
-local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+corrupt = crypt_n ~ (33<<4 | 1<<16)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n,
+  'Tropics with a message failure in one of the poles')
 
-print('Two errors in the checksum block in a Bent-Ring:')
+corrupt = crypt_n ~ (33<<4 | 1<<13)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Tropics with a message failure on the equator')
+
+corrupt = crypt_n ~ (1<<3 | 1<<2)  -- 12  -- 9,10
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'two errors in the checksum block in a Diaper')
+
+corrupt = crypt_n ~ (1<<17 | 1<<3 | 1<<2)  -- + 7, 9,10
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Diaper with a message failure in an adj=2 face')
+
+corrupt = crypt_n ~ (1<<14 | 1<<3 | 1<<2)  -- + 10, 9,10
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Diaper with a message failure in an adj=3 face')
+
+corrupt = crypt_n ~ (1<<16 | 1<<3 | 1<<2)  -- + 8, 9,10
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Diaper with a message failure in a waistline face')
+
+corrupt = crypt_n ~ (1<<20 | 1<<3 | 1<<2)  -- + 4, 9,10
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Diaper with a message failure in a head|foot face')
+
+corrupt = crypt_n ~ (1<<18 | 1<<3 | 1<<2)  -- + 6, 9,10
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Diaper with a message failure in a elbow|knee face')
+
 corrupt = crypt_n ~ 9  -- 9,12
-printf('crypt_n = %s', bin24_2str(crypt_n))
-printf('corrupt = %s', bin24_2str(corrupt))
-local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'two errors in the checksum block in a Bent-Ring')
 
-print('Three errors in the checksum block in a Deep-Bowl:')
-corrupt = crypt_n ~ (1<<7 | 1<<3 | 1)  -- 5,9,12
-printf('corrupt = %s', bin24_2str(corrupt))
-local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+os.exit()
 
-print('Three errors in the checksum block in a Cage:')
 corrupt = crypt_n ~ 21  -- 8,10,12
-printf('corrupt = %s', bin24_2str(corrupt))
 local plain12 = golay_decode(corrupt)
-if plain12 == n then errmsg = '' else errmsg = 'WRONG!' end
-printf('plain12 = %s %s\n', bin12_2str(plain12), errmsg)
+ok(plain12 == n, 'three errors in the checksum block in a Cage')
 
+corrupt = crypt_n ~ (1<<9 | 1<<8 | 1<<1)  -- 3,4,11
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'three errors in the checksum block in a Cobra')
+
+corrupt = crypt_n ~ (1<<9 | 1<<6 | 1<<1)  -- 3,6,11
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'three errors in the checksum block in a Islands')
+
+corrupt = crypt_n ~ (1<<10 | 1<<1 | 1)  -- 2,11,12
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'three errors in the checksum block in a Broken-Tripod')
+
+corrupt = crypt_n ~ (1<<7 | 1<<3 | 1)  -- 5,9,12
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'three errors in the checksum block in a Deep-Bowl')
+
+if Failed > 1 then printf('%d tests failed', Failed) end
 
 --[=[
 
@@ -358,7 +497,7 @@ using the Generator Matrix given in
 https://en.wikipedia.org/wiki/Binary_Golay_code
 
 So far (20210514)
-it will detect and correct up to 3 errors in the information block,
+it will detect and correct up to 3 errors in the message block,
 or 1 error in the checksum block.
 
 When fully implemented, any
