@@ -187,15 +187,12 @@ function golay_decode (crypt24)
 			if b[3] == 0x53 then   -- S
 				local n_adj = { #adj_tab[0], #adj_tab[1], #adj_tab[2],
 			   	#adj_tab[3], #adj_tab[4], #adj_tab[5] } 
--- print(DataDumper(n_adj))
 				return table.concat(n_adj, ' ')
 			else
 				return adj_tab
 			end
 		else 
 			for_all = s
-printf('for_all = %s', DataDumper(for_all))
-printf(' to_all = %s', DataDumper(to_all))
 			if type(t) == 'table' then
 				to_all = faces2mask(t)
 			else
@@ -212,7 +209,8 @@ printf(' to_all = %s', bin12_2str(to_all))
 	end
 
 	-- https://giam.southernct.edu/DecodingGolay/decoding.html
-	local ffs = adj('FFS') ; local pps = adj('PPS') ; local ffa = adj('FFA')
+	local ffs = adj('FFS') ; local pps = adj('PPS')
+	local ffa = adj('FFA') ; local ppa = adj('PPA')
 printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
 	if     ffs == '1 0 0 5 0 1' then   -- Parachute
 		crypt24 = crypt24 ~ 1<<ffa[0][1]
@@ -227,18 +225,15 @@ printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
 	elseif ffs == '1 0 2 2 1 0' then  -- + msg failure in parachute fringe
 		crypt24 = crypt24 ~ 1<<ffa[0][1]
 	elseif ffs == '0 0 0 0 10 0' then -- Tropics
-		-- printf('  ffa = %s', DataDumper(ffa))
 		crypt24 = crypt24 ~ (1<<(12-passed_tab[1]) | 1<<(12-passed_tab[2]))
-	elseif ffs == '0 0 0 0 5 6' then -- + msg failure in one of the poles XXX
+	elseif ffs == '0 0 0 0 5 6' then -- + msg failure in one of the poles
 		-- the face opposite the passed face is the error !
 		local opp = OppositeFaces[passed_tab[1]]
 		crypt24 = crypt24 ~ (1<<(12-passed_tab[1]) | 1<<(24-opp) | 1<<12-opp)
 	-- elseif #failed_tab == 9 then  -- Cage or Deep-Bowl
 	elseif ffs == '0 0 0 4 5 0' then
---print('Tropics with a message failure on the equator')
---printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
-		local pfa = adj('PFA') -- ; printf('  pfa = %s', DataDumper(pfa))
-		local ppa = adj('PPA') -- ; printf('  ppa = %s', DataDumper(ppa))
+		-- Tropics with a message failure on the equator
+		local pfa = adj('PFA')
 		local opp = OppositeFaces[ppa[0][1]]
 		for i,v in pairs(pfa[4]) do
 			if v ~= opp then crypt24 = crypt24 ~ (1<<(24-v)) ; break ; end
@@ -257,7 +252,6 @@ printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
 	elseif ffs == '0 0 4 2 0 0' then   -- Diaper
 		crypt24 = crypt24 ~ faces2mask(adj('FFA')[3])
 	elseif adj('FFS') == '0 1 3 1 0 0' then  -- Diaper with err in adj=2 face
-		local ppa = adj('PPA') --  printf('  ppa = %s', DataDumper(ppa))
 		-- 1) find the face (fna2) in ffa[2] not adjacent to the other two,
 		local fna2 = 1
 		if     are_adjacent(ffa[2][1], ffa[2][2]) then fna2 = 3
@@ -271,10 +265,8 @@ printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
 			end
 		end
 		crypt24 = crypt24 ~ (1 << (24-bad_face))
-		return crypt24>>12 -- ER ... still need to fix the checksum block ?
-		-- crypt24 = golay_encode(crypt24>>12)   -- same problem
+		return crypt24>>12
 	elseif ffs == '0 2 3 0 0 0' then  -- Diaper with err in adj=3 face
-		local ppa = adj('PPA') --  printf('  ppa = %s', DataDumper(ppa))
 		for i,v in ipairs(ppa[2]) do
 			if are_adjacent(v,ffa[1][1]) and are_adjacent(v,ffa[1][2]) then
 				crypt24 = crypt24 ~ (1 << (24-v)) ; return crypt24>>12
@@ -290,29 +282,59 @@ printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
 	elseif ffs == '0 0 3 4 0 0' then
 		local ffa2 = ffa[2] ; local i = 1
 		if  pps == '0 2 3 0 0 0' then
-			if     are_adjacent(ffa2[1], ffa2[2]) then i = 3
-			elseif are_adjacent(ffa2[1], ffa2[3]) then i = 2
+			if not are_adjacent(ppa[1][1], ppa[1][2]) then
+				if     are_adjacent(ffa2[1], ffa2[2]) then i = 3
+				elseif are_adjacent(ffa2[1], ffa2[3]) then i = 2
+				end
+			else
+				-- Bent-Ring + msg-error in a checksum-error face
+				--seek the face in ffa[3] not adjacent to either in ppa[1]
+				local ffa3 = ffa[3]
+				for i,v in ipairs(ffa3) do
+					if not are_adjacent(v, ppa[1][1]) and
+					   not are_adjacent(v, ppa[1][2]) then
+						crypt24 = crypt24 ~ (1<<(24-v)) ; return crypt24>>12
+					end
+				end
 			end
 			crypt24 = crypt24 ~ (1 << (24-ffa2[i])) ; return crypt24>>12
 		elseif pps == '1 1 2 1 0 0' then
 			-- Diaper with a message failure in a elbow|knee face
-printf('  ffs = %s   ffa = %s', ffs, DataDumper(ffa))
-local ppa = adj('PPA')
-local fpa = adj('FPA') local pfa = adj('PFA')
-printf('  pps = %s   ppa = %s', pps, DataDumper(ppa))
-printf('  fpa = %s\n  pfa = %s', DataDumper(fpa), DataDumper(pfa))
-print('  seek the face in ffa[2] not adjacent to pfa[2][1]')
-printf('  ffa[2]=%s   pfa[2]=%s', DataDumper(ffa[2]), DataDumper(pfa[2]))
+			local pfa = adj('PFA')
 			for i,v in ipairs(ffa[2]) do
 				if not are_adjacent(v, pfa[2][1]) then
 					crypt24 = crypt24 ~ (1 << (24-v)) ; return crypt24>>12
 				end
 			end
 		end
-
+	elseif ffs == '0 0 5 2 0 0' then
+		-- Bent-Ring with a message failure in a shoulder face (10)
+--XXXX
+local pfs = adj('PFS') ; local fps = adj('FPS')
+local pfa = adj('PFA') ; local fpa = adj('FPA')
+printf('  ffs = %s  ffa = %s', ffs, DataDumper(ffa))
+printf('  fps = %s  fpa = %s', fps, DataDumper(fpa))
+printf('  pps = %s  ppa = %s', pps, DataDumper(ppa))
+printf('  pfs = %s  pfa = %s', pfs, DataDumper(pfa))
+print('  seek the face in ffa[2] adjacent to both in fpa[2]')
+--printf('adj(ffa[3],ffa[3]) = %s', DataDumper(adj(ffa[3],ffa[3])))
+		for i,v in ipairs(ffa[2]) do
+			if are_adjacent(v, fpa[2][1]) and are_adjacent(v, fpa[2][2]) then
+				crypt24 = crypt24 ~ (1 << (24-v)) ; return crypt24>>12
+			end
+		end
 	elseif ffs  == '0 0 6 0 0 0' then   -- Bent-Ring
-		local ppa = adj('PPA') -- 6 failed_tab holding hands in a ring
 		crypt24 = crypt24 ~ (1<<(12-ppa[2][1]) | 1<<(12-ppa[2][2]))
+	elseif ffs  == '0 0 2 4 1 0' then
+		-- Bent-Ring with a message failure in an inside-face
+--printf('  ffs = %s   ffa = %s', ffs, DataDumper(ffa))
+--local fpa = adj('FPA') -- local pfa = adj('PFA')
+--printf('  pps = %s   ppa = %s', pps, DataDumper(ppa))
+--printf('  fpa = %s\n  pfa = %s', DataDumper(fpa), DataDumper(pfa))
+--print('  seek the face in ffa[2] adjacent to both in fpa[2]')
+--printf('  ffa[2]=%s   pfa[2]=%s', DataDumper(ffa[2]), DataDumper(pfa[2]))
+--print('  crypt24 = %s', bin24_2str(crypt24))
+		crypt24 = crypt24 ~ (1<<(24-ffa[4][1])) ; return crypt24>>12
 	elseif #failed_tab == 5 then -- Cobra Islands or Broken-Tripod 3 errors
 		if ffs == '0 1 1 3 0 0' then   -- Cobra
 			-- & its 2 passed neighbors that neighbor a ffa[3] face
@@ -454,6 +476,19 @@ corrupt = crypt_n ~ 9  -- 9,12
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'two errors in the checksum block in a Bent-Ring')
 
+corrupt = crypt_n ~ (9 | 1<<19)  -- + 5, 9,12
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Bent-Ring with a message failure in an inside face')
+
+corrupt = crypt_n ~ (9 | 1<<15)  -- + 9, 9,12
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Bent-Ring with a message failure in a checksum-error face')
+
+-- XXXX
+corrupt = crypt_n ~ (9 | 1<<14)  -- + 10, 9,12
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Bent-Ring with a message failure in a shoulder face')
+
 os.exit()
 
 corrupt = crypt_n ~ 21  -- 8,10,12
@@ -479,6 +514,7 @@ ok(plain12 == n, 'three errors in the checksum block in a Deep-Bowl')
 if Failed > 1 then printf('%d tests failed', Failed) end
 
 --[=[
+
 
 =pod
 
@@ -537,6 +573,7 @@ Peter J Billam, https://pjb.com.au/comp/contact.html
    second edition, Wiley, New York, 1989.
  V. Pless, Decoding the Golay codes,
    IEEE Trans. Info. Theory 32 (1986), 561-567. 
+ https://gcc.gnu.org/onlinedocs/gcc/Using-Assembly-Language-with-C.html
  https://pjb.com.au/
 
 =cut
