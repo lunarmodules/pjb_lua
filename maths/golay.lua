@@ -211,7 +211,7 @@ printf(' to_all = %s', bin12_2str(to_all))
 	-- https://giam.southernct.edu/DecodingGolay/decoding.html
 	local ffs = adj('FFS') ; local pps = adj('PPS')
 	local ffa = adj('FFA') ; local ppa = adj('PPA')
-printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
+-- printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
 	if     ffs == '1 0 0 5 0 1' then   -- Parachute
 		crypt24 = crypt24 ~ 1<<ffa[0][1]
 	elseif ffs == '0 0 0 5 0 1' then  -- + msg failure in skydiver
@@ -267,9 +267,30 @@ printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
 		crypt24 = crypt24 ~ (1 << (24-bad_face))
 		return crypt24>>12
 	elseif ffs == '0 2 3 0 0 0' then  -- Diaper with err in adj=3 face
+--XXXX
+--local pfs = adj('PFS') ; local fps = adj('FPS')
+--local pfa = adj('PFA') ; local fpa = adj('FPA')
+--printf('  ffs = %s  ffa = %s', ffs, DataDumper(ffa))
+--printf('  fps = %s  fpa = %s', fps, DataDumper(fpa))
+--printf('  pps = %s  ppa = %s', pps, DataDumper(ppa))
+--printf('  pfs = %s  pfa = %s', pfs, DataDumper(pfa))
 		for i,v in ipairs(ppa[2]) do
 			if are_adjacent(v,ffa[1][1]) and are_adjacent(v,ffa[1][2]) then
 				crypt24 = crypt24 ~ (1 << (24-v)) ; return crypt24>>12
+			end
+		end
+		-- or Bent-Ring with a message failure in a points_in face
+		-- seek 11 the face in ppa[3] adjacent to both in ffa[1]
+		-- then choose the one adjacent to two in ppa[2]
+		for i,v in ipairs(ppa[3]) do
+			if are_adjacent(v,ffa[1][1]) and are_adjacent(v,ffa[1][2]) then
+				local n = 0
+				for j,w in ipairs(ppa[2]) do
+					if are_adjacent(v,w) then n = n + 1 end
+					if n == 2 then
+						crypt24 = crypt24 ~ (1<<(24-v)) ; return crypt24>>12
+					end
+				end
 			end
 		end
 	elseif ffs  == '0 0 2 2 3 0' then   -- Diaper with msg error in waistline
@@ -309,15 +330,7 @@ printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
 		end
 	elseif ffs == '0 0 5 2 0 0' then
 		-- Bent-Ring with a message failure in a shoulder face (10)
---XXXX
-local pfs = adj('PFS') ; local fps = adj('FPS')
-local pfa = adj('PFA') ; local fpa = adj('FPA')
-printf('  ffs = %s  ffa = %s', ffs, DataDumper(ffa))
-printf('  fps = %s  fpa = %s', fps, DataDumper(fpa))
-printf('  pps = %s  ppa = %s', pps, DataDumper(ppa))
-printf('  pfs = %s  pfa = %s', pfs, DataDumper(pfa))
-print('  seek the face in ffa[2] adjacent to both in fpa[2]')
---printf('adj(ffa[3],ffa[3]) = %s', DataDumper(adj(ffa[3],ffa[3])))
+		local fpa = adj('FPA')
 		for i,v in ipairs(ffa[2]) do
 			if are_adjacent(v, fpa[2][1]) and are_adjacent(v, fpa[2][2]) then
 				crypt24 = crypt24 ~ (1 << (24-v)) ; return crypt24>>12
@@ -327,16 +340,10 @@ print('  seek the face in ffa[2] adjacent to both in fpa[2]')
 		crypt24 = crypt24 ~ (1<<(12-ppa[2][1]) | 1<<(12-ppa[2][2]))
 	elseif ffs  == '0 0 2 4 1 0' then
 		-- Bent-Ring with a message failure in an inside-face
---printf('  ffs = %s   ffa = %s', ffs, DataDumper(ffa))
---local fpa = adj('FPA') -- local pfa = adj('PFA')
---printf('  pps = %s   ppa = %s', pps, DataDumper(ppa))
---printf('  fpa = %s\n  pfa = %s', DataDumper(fpa), DataDumper(pfa))
---print('  seek the face in ffa[2] adjacent to both in fpa[2]')
---printf('  ffa[2]=%s   pfa[2]=%s', DataDumper(ffa[2]), DataDumper(pfa[2]))
---print('  crypt24 = %s', bin24_2str(crypt24))
 		crypt24 = crypt24 ~ (1<<(24-ffa[4][1])) ; return crypt24>>12
 	elseif #failed_tab == 5 then -- Cobra Islands or Broken-Tripod 3 errors
 		if ffs == '0 1 1 3 0 0' then   -- Cobra
+			-- seek the face in ffa[2] adjacent to both in fpa[2]')
 			-- & its 2 passed neighbors that neighbor a ffa[3] face
 			local neighbors_2 = passed & AdjacentFaces[ffa[2][1]]
 			mask = 0
@@ -484,12 +491,18 @@ corrupt = crypt_n ~ (9 | 1<<15)  -- + 9, 9,12
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'Bent-Ring with a message failure in a checksum-error face')
 
--- XXXX
 corrupt = crypt_n ~ (9 | 1<<14)  -- + 10, 9,12
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'Bent-Ring with a message failure in a shoulder face')
 
-os.exit()
+-- XXXX
+corrupt = crypt_n ~ (9 | 1<<13)  -- + 11, 9,12
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Bent-Ring with a message failure in a points_in face')
+
+corrupt = crypt_n ~ (9 | 1<<16)  -- + 8, 9,12
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Bent-Ring with a message failure in a points-out face')
 
 corrupt = crypt_n ~ 21  -- 8,10,12
 local plain12 = golay_decode(corrupt)
@@ -511,7 +524,10 @@ corrupt = crypt_n ~ (1<<7 | 1<<3 | 1)  -- 5,9,12
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'three errors in the checksum block in a Deep-Bowl')
 
-if Failed > 1 then printf('%d tests failed', Failed) end
+if Failed > 1 then printf('%d tests failed', Failed) ; os.exit(1)
+else print('passed all tests') ; os.exit(0)
+end
+
 
 --[=[
 
