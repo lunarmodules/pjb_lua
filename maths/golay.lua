@@ -211,7 +211,7 @@ printf(' to_all = %s', bin12_2str(to_all))
 	-- https://giam.southernct.edu/DecodingGolay/decoding.html
 	local ffs = adj('FFS') ; local pps = adj('PPS')
 	local ffa = adj('FFA') ; local ppa = adj('PPA')
--- printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24))
+printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24)) -- XXXX
 	if     ffs == '1 0 0 5 0 1' then   -- Parachute
 		crypt24 = crypt24 ~ 1<<ffa[0][1]
 	elseif ffs == '0 0 0 5 0 1' then  -- + msg failure in skydiver
@@ -224,6 +224,39 @@ printf(' to_all = %s', bin12_2str(to_all))
 		crypt24 = crypt24 ~ 1<<ffa[1][1]
 	elseif ffs == '1 0 2 2 1 0' then  -- + msg failure in parachute fringe
 		crypt24 = crypt24 ~ 1<<ffa[0][1]
+	elseif ffs == '0 0 5 0 0 0' then
+		-- Parachute + 2 message failures in the skydiver and top
+		local pfa = adj('PFA')
+		crypt24 = crypt24 ~ (1<<(24-ppa[0][1]) | 1<<(24-pfa[0][1]))
+		return crypt24 >> 12
+
+	elseif ffs == '0 0 2 2 1 0' then
+		-- Parachute + 2 message failures in the skydiver and fringe
+		local pfa = adj('PFA')
+		crypt24 = crypt24 ~ (1<<(24-pfa[0][1]) | 1<<(24-pfa[3][1]))
+		return crypt24 >> 12
+	elseif ffs == '0 0 1 3 2 1' then
+		-- Parachute + 2 message failures in the skydiver and open
+		local pfa = adj('PFA')
+		for i,v in ipairs(ffa[3]) do
+			if are_adjacent(v, ppa[2][1]) or are_adjacent(v, ppa[2][2]) then
+				-- crypt24 = crypt24 ~ (1<<(24-ppa[4][1])|1<<(24-v)|1<<(24-v))
+				crypt24 = crypt24 ~ (1<<(24-pfa[1][1]) | 1<<(24-ffa[2][1]))
+        		return crypt24 >> 12
+			end
+		end
+	elseif ffs == '1 2 2 0 0 0' then -- top and fringe  1,10
+-- XXXX
+print('  top and fringe  1,10')
+local pfs = adj('PFS') ; local fps = adj('FPS')
+local pfa = adj('PFA') ; local fpa = adj('FPA')
+printf('  ffs = %s  ffa = %s', ffs, DataDumper(ffa))
+printf('  fps = %s  fpa = %s', fps, DataDumper(fpa))
+printf('  pps = %s  ppa = %s', pps, DataDumper(ppa))
+printf('  pfs = %s  pfa = %s', pfs, DataDumper(pfa))
+--printf('  ffa[2] = %s  pfa[1] = %s', DataDumper(ffa[2]), DataDumper(pfa[1]))
+print('  seek ppa[1][1] and the one in ppa[3] adjacent to it')
+-- printf('crypt24 = %s', bin24_2str(crypt24))
 	elseif ffs == '0 0 0 0 10 0' then -- Tropics
 		crypt24 = crypt24 ~ (1<<(12-passed_tab[1]) | 1<<(12-passed_tab[2]))
 	elseif ffs == '0 0 0 0 5 6' then -- + msg failure in one of the poles
@@ -267,7 +300,6 @@ printf(' to_all = %s', bin12_2str(to_all))
 		crypt24 = crypt24 ~ (1 << (24-bad_face))
 		return crypt24>>12
 	elseif ffs == '0 2 3 0 0 0' then  -- Diaper with err in adj=3 face
---XXXX
 --local pfs = adj('PFS') ; local fps = adj('FPS')
 --local pfa = adj('PFA') ; local fpa = adj('FPA')
 --printf('  ffs = %s  ffa = %s', ffs, DataDumper(ffa))
@@ -435,11 +467,28 @@ plain12 = golay_decode(corrupt)
 ok(plain12 == n,
   'Parachute with message failure in face in the parachute fringe')
 
--- What if 2 or 3 errors are introduced? We will first consider the
--- possibility (mostly to dispose of it quickly!) that the errors are in
--- parity check symbols. If that is the case we will simply have a partial
--- dodecahedron consisting of 2 or 3 pentagons, and we will know that
--- parity check symbol errors have occurred in those same positions.
+corrupt = crypt_n ~ (2<<5 | 1<<18 | 1<<23 )
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute + 2 message failures in the skydiver and top')
+
+corrupt = crypt_n ~ (2<<5 | 1<<18 | 1<<22 )
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute + 2 message failures in the skydiver and fringe')
+
+corrupt = crypt_n ~ (2<<5 | 1<<18 | 1<<17 )
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute + 2 message failures in the skydiver and open')
+
+corrupt = crypt_n ~ (2<<5 | 1<<23 | 1<<14 )
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute + 2 message failures in top and fringe')
+
+corrupt = crypt_n ~ (2<<5 | 1<<23 | 1<<16 )
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute + 2 message failures in top and open')
+
+-- XXXX
+os.exit()
 
 corrupt = crypt_n ~ (33<<4)
 plain12 = golay_decode(corrupt)
