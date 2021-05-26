@@ -154,6 +154,14 @@ function golay_decode (crypt24)
   -- https://giam.southernct.edu/DecodingGolay/decoding.html
   -- valid code words have Hamming weights of 0, 8, 12, 16, or 24.
   -- local hw = hamming_weight_24(crypt24)
+	local function decode(crypt24)
+		local plain12 = 0
+		for i,val in ipairs(DecodingMatrix) do
+			-- 20210512 not sure why this is hamming_weight_12 here ...
+			plain12 = plain12 | ((hamming_weight_12(val&crypt24))%2) << (12-i)
+		end
+		return plain12
+	end
 	local failed_tab = {}
 	local passed_tab = {}
 	for i = 1, 12 do
@@ -161,7 +169,7 @@ function golay_decode (crypt24)
 		else table.insert(passed_tab,i)
 		end
 	end
-	if #failed_tab == 0 then   -- speed
+	if #failed_tab <= 2 then   -- speed
 		local plain12 = 0
 		for i,val in ipairs(DecodingMatrix) do
 			-- 20210512 not sure why this is hamming_weight_12 here ...
@@ -208,28 +216,40 @@ printf(' to_all = %s', bin12_2str(to_all))
 		end
 	end
 
-	-- https://giam.southernct.edu/DecodingGolay/decoding.html
 	local ffs = adj('FFS') ; local pps = adj('PPS')
 	local ffa = adj('FFA') ; local ppa = adj('PPA')
-printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24)) -- XXXX
+	local function diagnostic()
+		local pfs = adj('PFS') ; local fps = adj('FPS') -- XXXX
+		local pfa = adj('PFA') ; local fpa = adj('FPA')
+		printf('  ffs = %s  ffa = %s', ffs, DataDumper(ffa))
+		printf('  fps = %s  fpa = %s', fps, DataDumper(fpa))
+		printf('  pps = %s  ppa = %s', pps, DataDumper(ppa))
+		printf('  pfs = %s  pfa = %s', pfs, DataDumper(pfa))
+		-- printf('  ffa[2] = %s', DataDumper(ffa[2]))
+		-- print('  seek pfa[5][1] and the one in ffa[3] adjacent to ffa[1][1]')
+	end
+
+	-- https://giam.southernct.edu/DecodingGolay/decoding.html
+-- printf('  ffs = %s  ffa = %s', ffs, DataDumper(ffa))   -- XXXX
 	if     ffs == '1 0 0 5 0 1' then   -- Parachute
-		crypt24 = crypt24 ~ 1<<ffa[0][1]
+		crypt24 = crypt24 ~ 1<<(12-ffa[0][1])
 	elseif ffs == '0 0 0 5 0 1' then  -- + msg failure in skydiver
-		crypt24 = crypt24 ~ 1<<OppositeFaces[ffa[5][1]]  -- :-)
+		-- crypt24 = crypt24 ~ 1<<OppositeFaces[ffa[5][1]]  -- :-)
+		crypt24 = crypt24 ~ (1<<(24-ppa[5][1]) | 1<<(12-ppa[5][1]))  -- :-)
 	elseif ffs == '1 0 5 0 0 0' then  -- + msg failure in its opposite
-		crypt24 = crypt24 ~ 1<<(12+OppositeFaces[ffa[0][1]])
-		crypt24 = crypt24 ~ 1<<ffa[0][1]
+-- diagnostic() -- XXXX
+		-- crypt24 = crypt24 ~ 1<<(12+OppositeFaces[ffa[0][1]])
+		crypt24 = crypt24 ~ (1<<(12-ffa[0][1]))
 	elseif ffs == '0 1 0 4 2 1' then  -- + msg failure adjacent to skydiver
 		-- crypt24 = crypt24 ~ 1<<(12+OppositeFaces[ffa[0][1]])
-		crypt24 = crypt24 ~ 1<<ffa[1][1]
+		crypt24 = crypt24 ~ (1<<(12-ffa[1][1]))
 	elseif ffs == '1 0 2 2 1 0' then  -- + msg failure in parachute fringe
-		crypt24 = crypt24 ~ 1<<ffa[0][1]
+		crypt24 = crypt24 ~ (1<<12-ffa[0][1])
 	elseif ffs == '0 0 5 0 0 0' then
 		-- Parachute + 2 message failures in the skydiver and top
 		local pfa = adj('PFA')
 		crypt24 = crypt24 ~ (1<<(24-ppa[0][1]) | 1<<(24-pfa[0][1]))
 		return crypt24 >> 12
-
 	elseif ffs == '0 0 2 2 1 0' then
 		-- Parachute + 2 message failures in the skydiver and fringe
 		local pfa = adj('PFA')
@@ -246,17 +266,21 @@ printf('  ffs = %s\n  crypt24 = %s', ffs, bin24_2str(crypt24)) -- XXXX
 			end
 		end
 	elseif ffs == '1 2 2 0 0 0' then -- top and fringe  1,10
--- XXXX
-print('  top and fringe  1,10')
-local pfs = adj('PFS') ; local fps = adj('FPS')
-local pfa = adj('PFA') ; local fpa = adj('FPA')
-printf('  ffs = %s  ffa = %s', ffs, DataDumper(ffa))
-printf('  fps = %s  fpa = %s', fps, DataDumper(fpa))
-printf('  pps = %s  ppa = %s', pps, DataDumper(ppa))
-printf('  pfs = %s  pfa = %s', pfs, DataDumper(pfa))
---printf('  ffa[2] = %s  pfa[1] = %s', DataDumper(ffa[2]), DataDumper(pfa[1]))
-print('  seek ppa[1][1] and the one in ppa[3] adjacent to it')
--- printf('crypt24 = %s', bin24_2str(crypt24))
+		for i,v in ipairs(ppa[3]) do
+			if are_adjacent(v, ppa[1][1]) then
+				crypt24 = crypt24 ~ (1<<(24-ppa[1][1]) | 1<<(24-v))
+				return crypt24 >> 12
+			end
+		end
+	elseif ffs == '0 1 3 3 0 0' then -- top and open  1,8
+
+		local pfa = adj('PFA')
+		for i,v in ipairs(ffa[3]) do
+			if are_adjacent(v, ffa[1][1]) then
+				crypt24 = crypt24 ~ (1<<(24-pfa[5][1]) | 1<<(24-v))
+				return crypt24 >> 12
+			end
+		end
 	elseif ffs == '0 0 0 0 10 0' then -- Tropics
 		crypt24 = crypt24 ~ (1<<(12-passed_tab[1]) | 1<<(12-passed_tab[2]))
 	elseif ffs == '0 0 0 0 5 6' then -- + msg failure in one of the poles
@@ -403,17 +427,13 @@ print('  seek ppa[1][1] and the one in ppa[3] adjacent to it')
 		end
 		
 	end
+	return decode(crypt24)
 	
-	local plain12 = 0
-	for i,val in ipairs(DecodingMatrix) do
-		-- 20210512 not sure why this is hamming_weight_12 here ...
-		plain12 = plain12 | ((hamming_weight_12(val&crypt24)) % 2) << (12-i)
-	end
-	return plain12
+
 end
 
 -----------------------------------------
-local Test = 12 ; local i_test = 0; local Failed = 0;
+local i_test = 0;  local Failed = 0
 function ok(b,s)
     i_test = i_test + 1
     if b then
@@ -425,7 +445,15 @@ function ok(b,s)
         return false
     end
 end
+function finish()
+	if     Failed == 0 then print('passed all tests') ; os.exit(0)
+	elseif Failed == 1 then print('1 test failed') ; os.exit(1)
+	elseif Failed  > 1 then printf('%d tests failed', Failed) ; os.exit(1)
+	else print('Failed =', Failed)
+	end
+end
 
+-- TESTS
 n = str2bin('101010110110')
 -- printf('   n    = %s', bin12_2str(n))
 local crypt_n = golay_encode(n)
@@ -444,9 +472,21 @@ corrupt = crypt_n ~ (21<<13)
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'three errors in the message block')
 
-corrupt = crypt_n ~ (2<<5)
+corrupt = crypt_n ~ (1<<(12-6))
 plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'one error in the checksum block in a Parachute')
+ok(plain12 == n, 'one error in the skydiver checksum in a Parachute')
+
+corrupt = crypt_n ~ (1<<(12-7))
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'one checksum error in the open in a Parachute')
+
+corrupt = crypt_n ~ (1<<(12-11))
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'one checksum error in the fringe in a Parachute')
+
+corrupt = crypt_n ~ (1<<(12-1))
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'one checksum error in the top in a Parachute')
 
 corrupt = crypt_n ~ (2<<5 | 2<<17)
 plain12 = golay_decode(corrupt)
@@ -455,17 +495,17 @@ ok(plain12 == n, 'Parachute with message failure in the skydiver face')
 corrupt = crypt_n ~ (2<<5 | 2<<22)
 plain12 = golay_decode(corrupt)
 ok(plain12 == n,
-  'Parachute with message failure in face opposite the skydiver')
+  'Parachute with message failure in the face opposite the skydiver')
 
 corrupt = crypt_n ~ (2<<5 | 2<<23)   -- or 15,16,18,19,23
 plain12 = golay_decode(corrupt)
 ok(plain12 == n,
-  'Parachute with message failure in face adjacent to skydiver')
+  'Parachute with message failure in a face adjacent to skydiver')
 
 corrupt = crypt_n ~ (2<<5 | 2<<21)   -- or 15,16,18,19,23
 plain12 = golay_decode(corrupt)
 ok(plain12 == n,
-  'Parachute with message failure in face in the parachute fringe')
+  'Parachute with message failure in a face in the parachute fringe')
 
 corrupt = crypt_n ~ (2<<5 | 1<<18 | 1<<23 )
 plain12 = golay_decode(corrupt)
@@ -487,8 +527,16 @@ corrupt = crypt_n ~ (2<<5 | 1<<23 | 1<<16 )
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'Parachute + 2 message failures in top and open')
 
--- XXXX
-os.exit()
+-- these two-failures-in-open-and-fringe case all seem to just pass !? :-)
+corrupt = crypt_n ~ (1<<23 | 2<<16 | 1<<14 )
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute + 2 neighbouring failures in open and fringe')
+corrupt = crypt_n ~ (1<<23 | 2<<16 | 1<<22 )
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute + 2 non-neighbour failures in open and fringe')
+corrupt = crypt_n ~ (1<<23 | 2<<16 | 1<<21 )
+plain12 = golay_decode(corrupt)
+ok(plain12 == n, 'Parachute + 2 opposite failures in open and fringe')
 
 corrupt = crypt_n ~ (33<<4)
 plain12 = golay_decode(corrupt)
@@ -544,7 +592,6 @@ corrupt = crypt_n ~ (9 | 1<<14)  -- + 10, 9,12
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'Bent-Ring with a message failure in a shoulder face')
 
--- XXXX
 corrupt = crypt_n ~ (9 | 1<<13)  -- + 11, 9,12
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'Bent-Ring with a message failure in a points_in face')
@@ -573,9 +620,69 @@ corrupt = crypt_n ~ (1<<7 | 1<<3 | 1)  -- 5,9,12
 plain12 = golay_decode(corrupt)
 ok(plain12 == n, 'three errors in the checksum block in a Deep-Bowl')
 
-if Failed > 1 then printf('%d tests failed', Failed) ; os.exit(1)
-else print('passed all tests') ; os.exit(0)
+function enc_dec_all_possible_plaintexts()
+	for p = 0,4095 do
+		local c = golay_encode(p)
+		if golay_decode(c) ~= p then return false end
+	end
+	return true
 end
+ok(enc_dec_all_possible_plaintexts(),
+  'encode and decode all possible plaintexts')
+
+function all_one_bit_errors()
+	for i = 1, 24 do
+		local corrupt = crypt_n ~ (1<<(24-i))
+		local plain12 = golay_decode(corrupt)
+		if plain12 ~= n then
+			printf('i = %d   corrupt = %s   plain12 = %s',
+			  i, bin24_2str(corrupt), bin12_2str(plain12))
+			return false
+		end
+	end
+	return true
+end
+ok(all_one_bit_errors(), 'all possible single-bit errors')
+
+function all_two()
+	for i = 1, 23 do
+		local corrupt1 = crypt_n ~ (1<<(24-i))
+		for j = i+1, 24 do 
+			local corrupt2= corrupt1 ~ (1<<(24-j))
+			local plain12 = golay_decode(corrupt2)
+			if plain12 ~= n then
+				printf('  i=%d j=%d  corrupt2 = %s   plain12 = %s',
+				  i, j, bin24_2str(corrupt2), bin12_2str(plain12))
+				return false
+			end
+		end
+	end
+	return true
+end
+ok(all_two(), 'all possible two-bit errors')
+
+function all_three()
+	for i = 1, 23 do
+		local corrupt1 = crypt_n ~ (1<<(24-i))
+		for j = i+1, 24 do 
+			local corrupt2= corrupt1 ~ (1<<(24-j))
+			for k = j+1, 24 do 
+				local corrupt3= corrupt2 ~ (1<<(24-k))
+				local plain12 = golay_decode(corrupt2)
+				if plain12 ~= n then
+					printf('  i=%d j=%d k=%d   corrupt3=%s   plain12=%s',
+				  	i, j, k, bin24_2str(corrupt3), bin12_2str(plain12))
+					return false
+				end
+			end
+		end
+	end
+	return true
+end
+ok(all_three(), 'all possible three-bit errors')
+-- XXXX
+
+finish()
 
 
 --[=[
