@@ -1,48 +1,35 @@
-#!/usr/bin/env lua
 ---------------------------------------------------------------------
---     This Lua5 script is Copyright (c) 2021, Peter J Billam      --
+--     This Lua5 module is Copyright (c) 2021, Peter J Billam      --
 --                         pjb.com.au                              --
---  This script is free software; you can redistribute it and/or   --
+--  This module is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
-local Version = '1.0  for Lua5'
-local VersionDate  = '9may2021'
-local Synopsis = [[
-golay [options] [filenames]
-]]
-local iarg=1; while arg[iarg] ~= nil do
-	if not string.find(arg[iarg], '^-[a-z]') then break end
-	local first_letter = string.sub(arg[iarg],2,2)
-	if first_letter == 'v' then
-		local n = string.gsub(arg[0],"^.*/","",1)
-		print(n.." version "..Version.."  "..VersionDate)
-		os.exit(0)
-	elseif first_letter == 'c' then
-		whatever()
-	else
-		local n = string.gsub(arg[0],"^.*/","",1)
-		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
-		os.exit(0)
-	end
-	iarg = iarg+1
+-- Example usage:
+-- local MM = require 'mymodule'
+-- MM.foo()
+
+local M = {} -- public interface
+M.Version = '1.0'
+M.VersionDate = '28may2021'
+
+------------------------------ private ------------------------------
+function warn(...)
+    local a = {}
+    for k,v in pairs{...} do table.insert(a, tostring(v)) end
+    io.stderr:write(table.concat(a),'\n') ; io.stderr:flush()
 end
-require 'DataDumper'
+function die(...) warn(...);  os.exit(1) end
+function qw(s)  -- t = qw[[ foo  bar  baz ]]
+    local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
+end
+
+
+-- require 'DataDumper'
 
 local function printf (...) print(string.format(...)) end
 
-function str2bin (str)
-	local arr = { string.byte(str,1,-1) }   -- PiL p.34
-	local num = 0
-	for i,v in ipairs(arr) do
-		if v == 48 then
-			num = (num<<1)
-		elseif v == 49 then
-			num = (num<<1) | 1
-		end -- ignore unless 0 or 1
-	end
-	return num
-end
-function bin24_2str (num)
+
+local function bin24_2str (num)
 	return string.char(
 		((num>>23)&1)+48, ((num>>22)&1)+48, ((num>>21)&1)+48,
 		((num>>20)&1)+48, ((num>>19)&1)+48, ((num>>18)&1)+48,
@@ -54,7 +41,7 @@ function bin24_2str (num)
 		((num>> 2)&1)+48, ((num>> 1)&1)+48, (num&1)+48
 	)
 end
-function bin12_2str (num)
+local function bin12_2str (num)
 	return string.char(
 		((num>>11)&1)+48, ((num>>10)&1)+48, ((num>> 9)&1)+48,
 		((num>> 8)&1)+48, ((num>> 7)&1)+48, ((num>> 6)&1)+48,
@@ -64,7 +51,7 @@ function bin12_2str (num)
 end
 
 -- img/extended_binary_Golay_code.png
-EncodingMatrix = {
+local EncodingMatrix = {
 	0x800, 0x400, 0x200, 0x100,
 	0x080, 0x040, 0x020, 0x010,
 	0x008, 0x004, 0x002, 0x001,
@@ -72,24 +59,24 @@ EncodingMatrix = {
 	0xC9D, 0xE4E, 0xF25, 0xF92,
 	0x7C9, 0x3E6, 0x557, 0xAAB,
 }
-DecodingMatrix = {
+local DecodingMatrix = {
 	0x8009F1, 0x4004FA, 0x20027D, 0x10093E,
 	0x080C9D, 0x040E4E, 0x020F25, 0x010F92,
 	0x0087C9, 0x0043E6, 0x002557, 0x001AAB,
 }
-NonAdjacentFaces = {   -- for giam.southernct.edu's decoding-check
+local NonAdjacentFaces = {   -- for giam.southernct.edu's decoding-check
 	0x8009F1, 0x4004FA, 0x20027D, 0x10093E,
 	0x80C9D,   0x40E4E,  0x20F25,  0x10F92,
 	0x87C9,     0x43E6,   0x2557,   0x1AAB,
 }
-AdjacentFaces = {
+local AdjacentFaces = {
 	(~0x9F1)&0xFFF, (~0x4FA)&0xFFF, (~0x27D)&0xFFF, (~0x93E)&0xFFF,
 	(~0xC9D)&0xFFF, (~0xE4E)&0xFFF, (~0xF25)&0xFFF, (~0xF92)&0xFFF,
 	(~0x7C9)&0xFFF, (~0x3E6)&0xFFF, (~0x557)&0xFFF, (~0xAAB)&0xFFF,
 }
-OppositeFaces = {6,7,8,9,10,1,2,3,4,5,12,11}
+local OppositeFaces = {6,7,8,9,10,1,2,3,4,5,12,11}
 
-function hamming_weight_24 (u)
+local function hamming_weight_24 (u)
 	return ((u>>23) & 1) + ((u>>22) & 1) + ((u>>21) & 1) + ((u>>20) & 1)
 		 + ((u>>19) & 1) + ((u>>18) & 1) + ((u>>17) & 1) + ((u>>16) & 1)
 		 + ((u>>15) & 1) + ((u>>14) & 1) + ((u>>13) & 1) + ((u>>12) & 1)
@@ -103,13 +90,45 @@ function hamming_weight_24 (u)
 	--   P = require 'posix.sys.utsname' ; print(P.uname().machine)
 	-- BEST: GCC >=3.4 includes a builtin function __builtin_popcount
 end
-function hamming_weight_12 (u)
+local function hamming_weight_12 (u)
 	return ((u>>11) & 1) + ((u>>10) & 1) + ((u>>9) & 1) + ((u>>8) & 1)
 	     + ((u>>7) & 1) + ((u>>6) & 1) + ((u>>5) & 1) + ((u>>4) & 1)
 	     + ((u>>3) & 1) + ((u>>2) & 1) + ((u>>1) & 1) + (u & 1)
 end
 
-function golay_encode (array12)
+local function are_adjacent(face1, face2)
+	local non_adjacency = NonAdjacentFaces[face1]
+	local magic_bit = non_adjacency>>(12-face2) & 1
+	return magic_bit == 0
+end
+
+local function faces2mask(faces)
+	local mask = 0
+	for i,facenum in ipairs(faces) do mask = mask | (1 << (12-facenum)) end
+	return mask
+end
+
+------------------------------ public ------------------------------
+M.Version = '1.0  for Lua5'
+M.VersionDate  = '9may2021'
+M.Synopsis = [[
+golay [options] [filenames]
+]]
+
+function M.str2bin (str)
+	local arr = { string.byte(str,1,-1) }   -- PiL p.34
+	local num = 0
+	for i,v in ipairs(arr) do
+		if v == 48 then
+			num = (num<<1)
+		elseif v == 49 then
+			num = (num<<1) | 1
+		end -- ignore unless 0 or 1
+	end
+	return num
+end
+
+function M.golay_encode (array12)
 	-- https://giam.southernct.edu/DecodingGolay/encoding.html
 	-- but in a different numbering-order !!
 	local crypt24 = 0
@@ -119,21 +138,7 @@ function golay_encode (array12)
 	return crypt24
 end
 
-
-function are_adjacent(face1, face2)
-	local non_adjacency = NonAdjacentFaces[face1]
-	local magic_bit = non_adjacency>>(12-face2) & 1
-	return magic_bit == 0
-end
-
-function faces2mask(faces)
-	local mask = 0
-	for i,facenum in ipairs(faces) do mask = mask | (1 << (12-facenum)) end
-	return mask
-end
-
-
-function golay_decode (crypt24)
+function M.golay_decode (crypt24)
   -- https://giam.southernct.edu/DecodingGolay/decoding.html
   -- valid code words have Hamming weights of 0, 8, 12, 16, or 24.
   -- local hw = hamming_weight_24(crypt24)
@@ -395,7 +400,7 @@ printf(' to_all = %s', bin12_2str(to_all))
 	return decode(crypt24)
 end
 
-function str2_12bit_msgblocks (s)
+function M.str2msgblocks (s)
 	local msgblocks = {}
 	local i = 1
 	while true do
@@ -408,21 +413,21 @@ function str2_12bit_msgblocks (s)
 	end
 	return msgblocks
 end
-function msgblocks2golayblocks(msgblocks)
+function M.msgblocks2golayblocks(msgblocks)
 	local golayblocks = {}
 	for i,v in ipairs(msgblocks) do
-		table.insert(golayblocks, golay_encode(v))
+		table.insert(golayblocks, M.golay_encode(v))
 	end
 	return golayblocks
 end
-function golayblocks2msgblocks(golayblocks)
+function M.golayblocks2msgblocks(golayblocks)
 	local msgblocks = {}
 	for i,v in ipairs(golayblocks) do
-		table.insert(msgblocks, golay_decode(v))
+		table.insert(msgblocks, M.golay_decode(v))
 	end
 	return msgblocks
 end
-function msgblocks2str(msgblocks)
+function M.msgblocks2str(msgblocks)
 	local s_arr = {}
 	local i = 1
 	while true do
@@ -436,269 +441,11 @@ function msgblocks2str(msgblocks)
 	end
 	return table.concat(s_arr)
 end
-local s1 = 'ABCXYZ'
-local b1 = str2_12bit_msgblocks(s1)
-local co = msgblocks2golayblocks(b1)
-local b2 = golayblocks2msgblocks(co)
-local s2 = msgblocks2str(b2)
--- print(s2)
--- os.exit()
 
------------------------------------------
-local i_test = 0;  local Failed = 0
-function ok(b,s)
-    i_test = i_test + 1
-    if b then
-        io.write('ok '..i_test..' - '..s.."\n")
-        return true
-    else
-        io.write('not ok '..i_test..' - '..s.."\n")
-        Failed = Failed + 1
-        return false
-    end
-end
-function finish()
-	if     Failed == 0 then print('passed all tests') ; os.exit(0)
-	elseif Failed == 1 then print('1 test failed') ; os.exit(1)
-	elseif Failed  > 1 then printf('%d tests failed', Failed) ; os.exit(1)
-	else print('Failed =', Failed)
-	end
-end
-
--- TESTS
-n = str2bin('101010110110')
--- printf('   n    = %s', bin12_2str(n))
-local crypt_n = golay_encode(n)
-local plain12 = golay_decode(crypt_n)
-ok(plain12 == n, 'golay_encode and golay_decode')
-
-corrupt = crypt_n ~ (2<<15)
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'one error in the message block')
-
-corrupt = crypt_n ~ (5<<13)
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'two errors in the message block')
-
-corrupt = crypt_n ~ (21<<13)
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'three errors in the message block')
-
-corrupt = crypt_n ~ (1<<(12-6))
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'one error in the skydiver checksum in a Parachute')
-
-corrupt = crypt_n ~ (1<<(12-7))
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'one checksum error in the open in a Parachute')
-
-corrupt = crypt_n ~ (1<<(12-11))
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'one checksum error in the fringe in a Parachute')
-
-corrupt = crypt_n ~ (1<<(12-1))
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'one checksum error in the top in a Parachute')
-
-corrupt = crypt_n ~ (2<<5 | 2<<17)
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute with message failure in the skydiver face')
-
-corrupt = crypt_n ~ (2<<5 | 2<<22)
-plain12 = golay_decode(corrupt)
-ok(plain12 == n,
-  'Parachute with message failure in the face opposite the skydiver')
-
-corrupt = crypt_n ~ (2<<5 | 2<<23)   -- or 15,16,18,19,23
-plain12 = golay_decode(corrupt)
-ok(plain12 == n,
-  'Parachute with message failure in a face adjacent to skydiver')
-
-corrupt = crypt_n ~ (2<<5 | 2<<21)   -- or 15,16,18,19,23
-plain12 = golay_decode(corrupt)
-ok(plain12 == n,
-  'Parachute with message failure in a face in the parachute fringe')
-
-corrupt = crypt_n ~ (2<<5 | 1<<18 | 1<<23 )
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute + 2 message failures in the skydiver and top')
-
-corrupt = crypt_n ~ (2<<5 | 1<<18 | 1<<22 )
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute + 2 message failures in the skydiver and fringe')
-
-corrupt = crypt_n ~ (2<<5 | 1<<18 | 1<<17 )
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute + 2 message failures in the skydiver and open')
-
-corrupt = crypt_n ~ (2<<5 | 1<<23 | 1<<14 )
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute + 2 message failures in top and fringe')
-
-corrupt = crypt_n ~ (2<<5 | 1<<23 | 1<<16 )
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute + 2 message failures in top and open')
-
--- these two-failures-in-open-and-fringe case all seem to just pass !? :-)
-corrupt = crypt_n ~ (1<<23 | 2<<16 | 1<<14 )
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute + 2 neighbouring failures in open and fringe')
-corrupt = crypt_n ~ (1<<23 | 2<<16 | 1<<22 )
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute + 2 non-neighbour failures in open and fringe')
-corrupt = crypt_n ~ (1<<23 | 2<<16 | 1<<21 )
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Parachute + 2 opposite failures in open and fringe')
-
-corrupt = crypt_n ~ (33<<4)
-plain12 = golay_decode(corrupt)
-ok(plain12 == n,
-  'two errors in the checksum block on opposite faces in a Tropics')
-
-corrupt = crypt_n ~ (33<<4 | 1<<16)
-plain12 = golay_decode(corrupt)
-ok(plain12 == n,
-  'Tropics with a message failure in one of the poles')
-
-corrupt = crypt_n ~ (33<<4 | 1<<13)
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Tropics with a message failure on the equator')
-
-corrupt = crypt_n ~ (1<<3 | 1<<2)  -- 12  -- 9,10
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'two errors in the checksum block in a Diaper')
-
-corrupt = crypt_n ~ (1<<17 | 1<<3 | 1<<2)  -- + 7, 9,10
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Diaper with a message failure in an adj=2 face')
-
-corrupt = crypt_n ~ (1<<14 | 1<<3 | 1<<2)  -- + 10, 9,10
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Diaper with a message failure in an adj=3 face')
-
-corrupt = crypt_n ~ (1<<16 | 1<<3 | 1<<2)  -- + 8, 9,10
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Diaper with a message failure in a waistline face')
-
-corrupt = crypt_n ~ (1<<20 | 1<<3 | 1<<2)  -- + 4, 9,10
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Diaper with a message failure in a head|foot face')
-
-corrupt = crypt_n ~ (1<<18 | 1<<3 | 1<<2)  -- + 6, 9,10
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Diaper with a message failure in a elbow|knee face')
-
-corrupt = crypt_n ~ 9  -- 9,12
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'two errors in the checksum block in a Bent-Ring')
-
-corrupt = crypt_n ~ (9 | 1<<19)  -- + 5, 9,12
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Bent-Ring with a message failure in an inside face')
-
-corrupt = crypt_n ~ (9 | 1<<15)  -- + 9, 9,12
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Bent-Ring with a message failure in a checksum-error face')
-
-corrupt = crypt_n ~ (9 | 1<<14)  -- + 10, 9,12
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Bent-Ring with a message failure in a shoulder face')
-
-corrupt = crypt_n ~ (9 | 1<<13)  -- + 11, 9,12
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Bent-Ring with a message failure in a points_in face')
-
-corrupt = crypt_n ~ (9 | 1<<16)  -- + 8, 9,12
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'Bent-Ring with a message failure in a points-out face')
-
-corrupt = crypt_n ~ 21  -- 8,10,12
-local plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'three errors in the checksum block in a Cage')
-
-corrupt = crypt_n ~ (1<<9 | 1<<8 | 1<<1)  -- 3,4,11
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'three errors in the checksum block in a Cobra')
-
-corrupt = crypt_n ~ (1<<9 | 1<<6 | 1<<1)  -- 3,6,11
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'three errors in the checksum block in a Islands')
-
-corrupt = crypt_n ~ (1<<10 | 1<<1 | 1)  -- 2,11,12
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'three errors in the checksum block in a Broken-Tripod')
-
-corrupt = crypt_n ~ (1<<7 | 1<<3 | 1)  -- 5,9,12
-plain12 = golay_decode(corrupt)
-ok(plain12 == n, 'three errors in the checksum block in a Deep-Bowl')
-
-function enc_dec_all_possible_plaintexts()
-	for p = 0,4095 do
-		local c = golay_encode(p)
-		if golay_decode(c) ~= p then return false end
-	end
-	return true
-end
-ok(enc_dec_all_possible_plaintexts(),
-  'encode and decode all possible plaintexts')
-
-function all_one_bit_errors()
-	for i = 1, 24 do
-		local corrupt = crypt_n ~ (1<<(24-i))
-		local plain12 = golay_decode(corrupt)
-		if plain12 ~= n then
-			printf('i = %d   corrupt = %s   plain12 = %s',
-			  i, bin24_2str(corrupt), bin12_2str(plain12))
-			return false
-		end
-	end
-	return true
-end
-ok(all_one_bit_errors(), 'all possible single-bit errors')
-
-function all_two()
-	for i = 1, 23 do
-		local corrupt1 = crypt_n ~ (1<<(24-i))
-		for j = i+1, 24 do 
-			local corrupt2= corrupt1 ~ (1<<(24-j))
-			local plain12 = golay_decode(corrupt2)
-			if plain12 ~= n then
-				printf('  i=%d j=%d  corrupt2 = %s   plain12 = %s',
-				  i, j, bin24_2str(corrupt2), bin12_2str(plain12))
-				return false
-			end
-		end
-	end
-	return true
-end
-ok(all_two(), 'all possible two-bit errors')
-
-function all_three()
-	for i = 1, 23 do
-		local corrupt1 = crypt_n ~ (1<<(24-i))
-		for j = i+1, 24 do 
-			local corrupt2= corrupt1 ~ (1<<(24-j))
-			for k = j+1, 24 do 
-				local corrupt3= corrupt2 ~ (1<<(24-k))
-				local plain12 = golay_decode(corrupt2)
-				if plain12 ~= n then
-					printf('  i=%d j=%d k=%d   corrupt3=%s   plain12=%s',
-				  	i, j, k, bin24_2str(corrupt3), bin12_2str(plain12))
-					return false
-				end
-			end
-		end
-	end
-	return true
-end
-ok(all_three(), 'all possible three-bit errors')
--- XXXX
-
-finish()
+return M
 
 
 --[=[
-
 
 =pod
 
@@ -708,7 +455,7 @@ finish()
 
 =head1 SYNOPSIS
 
- golay.lua
+ local G = require 'golay'
 
 =head1 DESCRIPTION
 
@@ -717,13 +464,12 @@ using the Generator Matrix given in
 https://en.wikipedia.org/wiki/Binary_Golay_code
 
 So far (20210514)
-it will detect and correct up to 3 errors in the message block,
-or 1 error in the checksum block.
+any 3-bit errors can be corrected or
 
-When fully implemented, any
-3-bit errors can be corrected or any 7-bit errors can be detected.
+When fully implemented,
+any 7-bit errors can be detected.
 
-=head1 ARGUMENTS
+=head1 FUNCIONS
 
 =over 3
 
@@ -732,6 +478,10 @@ When fully implemented, any
 Print the Version
 
 =back
+
+=head1 VARIABLES
+
+=over 3
 
 =head1 DOWNLOAD
 
