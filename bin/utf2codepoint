@@ -14,7 +14,8 @@ local Synopsis = [[
   utf2codepoint -P [filename]   # output in Perl syntax
   utf2codepoint -p [filename]   # output in Python syntax
   utf2codepoint -u [filename]   # output in Unicode codepoint syntax
-  utf2codepoint -v               # print the version
+  utf2codepoint -v              # print the version
+  perldoc utf2codepoint         # read the manual
 ]]
 local function printf (...) io.stdout:write(string.format(...)) end
 Mode = 'HTML'
