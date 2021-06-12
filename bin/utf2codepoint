@@ -1,0 +1,124 @@
+#!/usr/bin/env lua
+---------------------------------------------------------------------
+--     This Lua5 script is Copyright (c) 2021, Peter J Billam      --
+--                         pjb.com.au                              --
+--  This script is free software; you can redistribute it and/or   --
+--         modify it under the same terms as Lua5 itself.          --
+---------------------------------------------------------------------
+local Version = '1.0  for Lua5'
+local VersionDate  = '12jun2021'
+local Synopsis = [[
+  utf2codepoint  [filename]
+  utf2codepoint -h [filename]   # output in HTML syntax
+  utf2codepoint -l [filename]   # output in Lua syntax
+  utf2codepoint -P [filename]   # output in Perl syntax
+  utf2codepoint -p [filename]   # output in Python syntax
+  utf2codepoint -u [filename]   # output in Unicode codepoint syntax
+  utf2codepoint -v               # print the version
+]]
+local function printf (...) io.stdout:write(string.format(...)) end
+Mode = 'HTML'
+local iarg=1; while arg[iarg] ~= nil do
+	if not string.find(arg[iarg], '^-[a-zA-Z]') then break end
+	local first_letter = string.sub(arg[iarg],2,2)
+	if first_letter == 'v' then
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate)
+		os.exit(0)
+	elseif first_letter == 'h' then Mode = 'HTML'
+	elseif first_letter == 'l' then Mode = 'lua'
+	elseif first_letter == 'P' then Mode = 'perl'
+	elseif first_letter == 'p' then Mode = 'python'
+	elseif first_letter == 'u' then Mode = 'Unicode'
+	else
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
+		os.exit(0)
+	end
+	iarg = iarg+1
+end
+if arg[iarg] then F = assert(io.open(arg[iarg], 'r')) else F = io.stdin end
+c = {utf8.codepoint(F:read('a'),1,-1)}
+if Mode == 'HTML' then
+	for i,v in ipairs(c) do printf('&#x%04X;', v) end
+elseif Mode == 'lua' then
+	for i,v in ipairs(c) do printf('\\u{%04X}', v) end
+elseif Mode == 'perl' then
+	for i,v in ipairs(c) do printf('\\x{%04X}', v) end
+elseif Mode == 'python' then
+	for i,v in ipairs(c) do printf('\\u%04X', v) end
+elseif Mode == 'Unicode' then
+	for i,v in ipairs(c) do printf('U+%04X ', v) end
+end
+io.stdout:write("\n")
+
+
+--[=[
+
+=pod
+
+=head1 NAME
+
+utf2codepoint - converts utf8 to Unicode-codepoint in various formats
+
+=head1 SYNOPSIS
+
+  utf2codepoint infile > outfile
+  utf2codepoint [filename]      # the default is stdin
+  utf2codepoint -h [filename]   # output in HTML syntax
+  utf2codepoint -l [filename]   # output in Lua syntax
+  utf2codepoint -P [filename]   # output in Perl syntax
+  utf2codepoint -p [filename]   # output in Python syntax
+  utf2codepoint -u [filename]   # output in Unicode codepoint syntax
+  utf2codepoint -v               # print the version
+
+=head1 DESCRIPTION
+
+This script converts utf8 to Unicode-codepoint in various formats.
+
+=head1 ARGUMENTS
+
+=over 3
+
+=item I<-h>
+
+Prints the output in HTML syntax; this is the default.
+
+=item I<-l>
+
+Print the output in Lua syntax
+
+=item I<-P>
+
+Prints the output in Perl syntax
+
+=item I<-p>
+
+Prints the output in Python syntax
+
+=item I<-v>
+
+Print the Version
+
+=item I<-v>
+
+Print the Version
+
+=back
+
+=head1 DOWNLOAD
+
+This script is available at https:/pjb.com.au/comp/free/utf2codepoint
+or at https://gitlab.com/peterbillam/pjb_lua/-/tree/master/bin/
+
+=head1 AUTHOR
+
+Peter J Billam, https://pjb.com.au/comp/contact.html
+
+=head1 SEE ALSO
+
+ https://pjb.com.au/
+
+=cut
+
+]=]
