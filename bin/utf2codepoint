@@ -7,6 +7,7 @@
 ---------------------------------------------------------------------
 local Version = '1.0  for Lua5'
 local VersionDate  = '12jun2021'
+-- 1.1 a "-a" option to let the ascii range through unscathed ?
 local Synopsis = [[
   utf2codepoint  [filename]
   utf2codepoint -h [filename]   # output in HTML syntax
@@ -14,11 +15,13 @@ local Synopsis = [[
   utf2codepoint -P [filename]   # output in Perl syntax
   utf2codepoint -p [filename]   # output in Python syntax
   utf2codepoint -u [filename]   # output in Unicode codepoint syntax
+  utf2codepoint -n [other args] # supress any final newline
   utf2codepoint -v              # print the version
   perldoc utf2codepoint         # read the manual
 ]]
 local function printf (...) io.stdout:write(string.format(...)) end
-Mode = 'HTML'
+Mode = 'html'
+SuppressNewline = false
 local iarg=1; while arg[iarg] ~= nil do
 	if not string.find(arg[iarg], '^-[a-zA-Z]') then break end
 	local first_letter = string.sub(arg[iarg],2,2)
@@ -26,11 +29,12 @@ local iarg=1; while arg[iarg] ~= nil do
 		local n = string.gsub(arg[0],"^.*/","",1)
 		print(n.." version "..Version.."  "..VersionDate)
 		os.exit(0)
-	elseif first_letter == 'h' then Mode = 'HTML'
+	elseif first_letter == 'h' then Mode = 'html'
 	elseif first_letter == 'l' then Mode = 'lua'
 	elseif first_letter == 'P' then Mode = 'perl'
 	elseif first_letter == 'p' then Mode = 'python'
-	elseif first_letter == 'u' then Mode = 'Unicode'
+	elseif first_letter == 'u' then Mode = 'unicode'
+	elseif first_letter == 'n' then SuppressNewline = true
 	else
 		local n = string.gsub(arg[0],"^.*/","",1)
 		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
@@ -40,7 +44,8 @@ local iarg=1; while arg[iarg] ~= nil do
 end
 if arg[iarg] then F = assert(io.open(arg[iarg], 'r')) else F = io.stdin end
 c = {utf8.codepoint(F:read('a'),1,-1)}
-if Mode == 'HTML' then
+if SuppressNewline and (c[#c] == 0x000A) then c[#c] = nil end
+if Mode == 'html' then
 	for i,v in ipairs(c) do printf('&#x%04X;', v) end
 elseif Mode == 'lua' then
 	for i,v in ipairs(c) do printf('\\u{%04X}', v) end
@@ -48,7 +53,7 @@ elseif Mode == 'perl' then
 	for i,v in ipairs(c) do printf('\\x{%04X}', v) end
 elseif Mode == 'python' then
 	for i,v in ipairs(c) do printf('\\u%04X', v) end
-elseif Mode == 'Unicode' then
+elseif Mode == 'unicode' then
 	for i,v in ipairs(c) do printf('U+%04X ', v) end
 end
 io.stdout:write("\n")
@@ -71,6 +76,7 @@ utf2codepoint - converts utf8 to Unicode-codepoint in various formats
   utf2codepoint -P [filename]   # output in Perl syntax
   utf2codepoint -p [filename]   # output in Python syntax
   utf2codepoint -u [filename]   # output in Unicode codepoint syntax
+  utf2codepoint -n [other args] # supress any final newline
   utf2codepoint -v              # print the version
   perldoc utf2codepoint         # read the manual
 
@@ -98,9 +104,15 @@ Prints the output in Perl syntax
 
 Prints the output in Python syntax
 
-=item I<-v>
+=item I<-u>
 
-Print the Version
+Prints the output in Unicode codepoint syntax, eg U+0F43
+
+=item I<-n>
+
+Strips a final newline off the input, if there is one.
+This is useful when invoking C<utf2codepoint> from within C<vim>
+with a C<!!utf2codepoint -n> command.
 
 =item I<-v>
 
@@ -119,6 +131,7 @@ Peter J Billam, https://pjb.com.au/comp/contact.html
 
 =head1 SEE ALSO
 
+ https://en.wikipedia.org/wiki/UTF-8#Examples
  https://pjb.com.au/
 
 =cut
