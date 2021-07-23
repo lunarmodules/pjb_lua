@@ -23,5 +23,11 @@ qp = str2quoted_printable(s)
 print(qp)
 print(quoted_printable2str(qp))
 
+-- https://en.wikipedia.org/wiki/Base64
 -- see also https://github.com/iskolbin/lbase64/blob/master/base64.lua
 -- luarocks install base64
+-- https://github.com/iskolbin/lbase64
+-- local base64 = require 'base64'
+-- local encoded = base64.encode( str )
+-- local decoded = base64.decode( b64str )
+-- assert( str == decoded )
