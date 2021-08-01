@@ -1,0 +1,168 @@
+#!/usr/bin/env lua
+---------------------------------------------------------------------
+--     This Lua5 script is Copyright (c) 2021, Peter J Billam      --
+--                         pjb.com.au                              --
+--  This script is free software; you can redistribute it and/or   --
+--         modify it under the same terms as Lua5 itself.          --
+---------------------------------------------------------------------
+local Version = '1.0  for Lua5'
+local VersionDate  = '26jul2021'
+local Synopsis = [[
+  dvdregion [options]
+  dvdregion -d /dev/some_other_dvd_device  # default is /dev/dvd
+  dvdregion -D    # debug mode
+  dvdregion -v    # print the version
+]]
+local function printf (...) io.stdout:write(string.format(...)) end
+
+Debug  = false
+Device = '/dev/dvd'
+TmpMnt = '/tmp/dvdregion'
+local iarg=1; while arg[iarg] ~= nil do
+	if not string.find(arg[iarg], '^-[a-zA-Z]') then break end
+	local first_letter = string.sub(arg[iarg],2,2)
+	if first_letter == 'v' then
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate)
+		os.exit(0)
+	elseif first_letter == 'd' then iarg = iarg+1; Device = arg[iarg]
+	elseif first_letter == 'D' then Debug = true
+	else
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
+		os.exit(0)
+	end
+	iarg = iarg+1
+end
+
+local function printf (...) print(string.format(...)) end
+
+-- mount /dev/dvd /mnt
+os.execute("mkdir "..TmpMnt)
+assert(os.execute("mount -o ro "..Device.." "..TmpMnt))
+-- open /mnt/VIDEO_TS/VIDEO_TS.IFO
+IFO = assert(io.open(TmpMnt.."/VIDEO_TS/VIDEO_TS.IFO", 'r'))
+-- read a block into a lua string
+contents = IFO:read(128)
+IFO:close()
+assert(os.execute("umount "..TmpMnt))
+os.remove(TmpMnt)  -- os.remove works on empty directories !
+region_mask = string.byte(contents, 36) -- look at byte at offset x0022 = 34
+if Debug then printf("0x%X", region_mask) end
+if (region_mask & 1) == 0 then
+	print("1: United States, Canada, Bermuda")
+end 
+if (region_mask & 2) == 0 then
+	print("2: Europe, Greenland, Turkey, Middle East, Egypt, South Africa, Japan")
+end 
+if (region_mask & 4) == 0 then
+	print("3: Southeast Asia, South Korea, Taiwan, Hong Kong, Macau")
+end 
+if (region_mask & 8) == 0 then
+	print("4: Latin America, Caribbean, Australia, New Zealand")
+end 
+if (region_mask & 16) == 0 then
+	print("5: Africa, Russia, Belarus, Ukraine, Central and South Asia, North Korea")
+end 
+if (region_mask & 32) == 0 then
+	print("6: Mainland China")
+end 
+if (region_mask & 64) == 0 then
+	print('7: MPAA-related DVDs and "media copies" of pre-releases in Asia')
+end 
+if (region_mask & 128) == 0 then
+	print("8: International venues such as aircraft, cruise ships, spacecraft")
+end 
+
+
+
+--[=[
+
+20210727  But even with ~/.dvdcss/WATCH* moved aside,
+my ASUS drive set to region 2 
+  root@box8:~# regionset
+  regionset version 0.1 -- reads/sets region code on DVD drives
+  Current Region Code settings:
+  RPC Phase: II
+  type: SET
+  vendor resets available: 4
+  user controlled changes resets available: 3
+  drive plays discs from region(s): 2, mask=0xFD
+plays without problem my region-4-only Watchment DVD ??!?
+  root@box8:~# /home/pbin/dvdregion
+  4: Latin America, Caribbean, Australia, New Zealand
+
+
+=pod
+
+=head1 NAME
+
+dvdregion - what it does
+
+=head1 SYNOPSIS
+
+ dvdregion infile > outfile
+
+=head1 DESCRIPTION
+
+This script
+
+0   Global
+1   United States (incl. Puerto Rico), Canada and Bermuda
+2   Europe (without Belarus, Ukraine and Russia), Greenland, Overseas
+     France, Turkey, Middle East, Egypt, Eswatini, Lesotho, South Africa
+     and Japan
+3   Southeast Asia, South Korea, Taiwan, Hong Kong and Macau
+4   Latin America (except French Guiana and Puerto Rico), Caribbean
+     (except French West Indies), and Oceania (except French Polynesia,
+     New Caledonia, Wallis and Futuna and Hawaii)
+5   Africa (except Egypt, Lesotho, Eswatini, South Africa, Mayotte and
+     Réunion), Russia, Belarus, Ukraine, Central Asia, South Asia, Mongolia,
+     and North Korea
+6   Mainland China
+7   MPAA-related DVDs and "media copies" of pre-releases in Asia
+8   International venues such as aircraft, cruise ships and spacecraft
+ALL These region discs have all 1 through 8 flags set, allowing the
+     disc to be played in any location, on any player
+
+In common region-locked DVDs (but not in RCE-DVDs), the region code is
+stored in the file "VIDEO_TS.IFO" (table "VMGM_MAT"), byte offsets 34 and 35.
+The eight regions each correspond to a value which is a power of 2:
+Region 1 corresponds to 1 (20), Region 2 to 2 (21), Region 3 to 4 (22),
+and so on through Region 8, which corresponds to 128 (27).
+The values of each region that the disc is not encoded for are
+added together to give the value in the file. For example, a disc
+that is encoded for Region 1 but not Regions 2-8 will have the value
+2+4+8+16+32+64+128=254. A disc encoded for Regions 1, 2 and 4 will have
+the value 4+16+32+64+128=244. A region-free or RCE-protected DVD will
+carry the value zero, since no regions are excluded.
+
+=head1 ARGUMENTS
+
+=over 3
+
+=item I<-v>
+
+Print the Version
+
+=back
+
+=head1 DOWNLOAD
+
+This at is available at
+
+=head1 AUTHOR
+
+Peter J Billam, https://pjb.com.au/comp/contact.html
+
+=head1 SEE ALSO
+
+ https://dvd.sourceforge.net/dvdinfo/ifo.html
+ https://en.wikipedia.org/wiki/DVD_region_code
+ apt install regionset
+ /usr/share/doc/regionset/README
+ https://pjb.com.au/
+
+=cut
+
+]=]
