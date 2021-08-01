@@ -1,1 +1,1167 @@
-audio_stuff.lua
+#! /usr/bin/env lua
+-------------------------------------------------------------------------
+--        This Lua script is Copyright (c) 2013, Peter J Billam
+--               c/o P J B Computing, www.pjb.com.au
+--     This script is free software; you can redistribute it and/or
+--            modify it under the same terms as Lua itself.
+-------------------------------------------------------------------------
+
+local P = require 'posix'
+local C = require 'CommandLineUI'
+-- require 'DataDumper'
+local BigTmp = os.getenv('BIGTMP') or '/tmp'
+
+----------------------- general infrastructure -----------------
+
+local function _debug(s)
+    local DEBUG = io.open('/tmp/debug', 'a')
+    DEBUG:write(s.."\n")
+    DEBUG:close()
+end
+
+local function output_of(cmd)
+	local F,msg = io.popen(cmd, 'r')
+	if not F then
+		io.stderr:write("can't run "..cmd..": "..msg.."\n") ; return nil
+	end
+	local txt = F:read('*all')
+	F:close()
+	return txt
+end
+
+local function perlglob (pat)
+	-- splits its argument on whitespace and treats each segment as a glob
+	-- perlglob("*.c *.h") matches all files with a .c or .h extension
+	-- perlglob(".* *")    matches all files in the current directory
+	local f = {}
+	for subpattern in string.gmatch(pat, '[^ \t]+') do
+		local g = P.glob(subpattern)
+		if g then
+			for k,v in ipairs(P.glob(subpattern)) do f[#f+1] = v end
+		end
+	end
+	table.sort(f)
+	return f
+end
+
+local function qw(s)  -- t = qw[[ foo  bar  baz ]]
+	local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
+end
+
+local function sleep(t)
+	local sec = math.floor(t)
+	local ns = (1000000000 * (t-sec))
+	P.nanosleep(sec,ns)
+end
+
+local function sorted_keys(t, f)
+	local a = {}
+	for k,v in pairs(t) do a[#a+1] = k end
+	table.sort(a, f)
+	return  a
+end
+
+local function split(s, pattern, maxNb) -- http://lua-users.org/wiki/SplitJoin
+	if not s or string.len(s)<2 then return {s} end
+	if not pattern then return {s} end
+	if maxNb and maxNb <2 then return {s} end
+	local result = { }
+	local theStart = 1
+	local theSplitStart,theSplitEnd = string.find(s,pattern,theStart)
+	local nb = 1
+	while theSplitStart do
+		table.insert( result, string.sub(s,theStart,theSplitStart-1) )
+		theStart = theSplitEnd + 1
+		theSplitStart,theSplitEnd = string.find(s,pattern,theStart)
+		nb = nb + 1
+		if maxNb and nb >= maxNb then break end
+	end
+	table.insert( result, string.sub(s,theStart,-1) )
+	return result
+end
+
+local function tilde_expand(fn)    -- 20200514
+	if string.match(fn, '^~') then
+		local user = string.match(fn, '^~(%a+)')
+		local home
+		if user then home = P.getpasswd(user, 'dir')
+		else home = P.getpwuid(P.getuid())['pw_dir'] or os.getenv('HOME')
+		end
+		fn = string.gsub(fn, '^~(%a+)', home)
+	end
+	return P.realpath(fn) or fn
+end
+
+local function which(s)
+	local f
+	for i,d in ipairs(split(os.getenv('PATH'), ':')) do
+		f=d..'/'..s; if P.access(f, 'x') then return f end
+	end
+end
+
+-------------------------- find what we need --------------------
+
+local MidiOutPort  = {}
+local aconnect     = which('aconnect')
+local alsamixer    = which('alsamixer')
+local aplaymidi    = which('aplaymidi')
+local arecordmidi  = which('arecordmidi')
+local avconv       = which('avconv')
+local icedax       = which('icedax')
+local cdda2wav     = which('cdda2wav')
+local cdrecord     = which('cdrskin') or which('cdrecord') or which('wodim')
+local dvdbackup    = which('dvdbackup')
+local ecasound     = which('ecasound')
+local eject        = which('eject')
+local festival     = which('festival')
+local ffmpeg       = which('ffmpeg')
+local growisofs    = which('growisofs')
+local lame         = which('lame')
+local man          = which('man')
+local mkisofs      = which('mkisofs') or which ('genisoimage')
+local mediainfo    = which('dvd+rw-mediainfo')
+local mpg123       = which('mpg123')
+local mplayer      = which('mplayer')
+local normalize    = which('normalize') or which ('normalize-audio')
+local play         = which('play')   -- comes with sox
+local rec          = which('rec')    -- comes with sox
+local sox          = which('sox')
+local sndfile_play = which('sndfile-play')
+local su           = which('su')
+local timidity     = which('timidity')
+local toolame      = which('toolame') or which('twolame')
+local mp3_player   = mplayer or mpg123 or sndfile_play
+local wav_player   = mplayer or play or sndfile_play
+local xine         = which('xine')
+
+if not eject then
+	print(
+	"Warning: 'eject' no found: you may need to install the 'eject' package.")
+end
+
+------------------------ specific infrastructure -----------------
+local function eject_cd()
+	local rc, msg = os.execute(eject)  -- ..' -T')
+	-- I'm getting lots of "Inappropriate ioctl for device", especially
+	-- after icedax. Sometimes a bare "eject" works, sometimes a press
+	-- on the physical button works, sometimes a press on the button
+	-- doesn't itself work but then a subsequent "eject -T" works...
+	-- if not rc then os.execute(eject) end
+end
+
+local function timiditycfg()
+	if not timidity then return nil end
+	for k,f in ipairs{
+		  os.getenv('PWD')..'/timidity.cfg',
+		  '/usr/local/share/timidity/timidity.cfg',
+		  '/etc/timidity.cfg',
+		} do
+		if P.access(f, 'r') then return f end
+	end
+	local F = assert(io.popen('strings '..timidity, 'r'))
+	while true do
+		local li = F:read('*line')
+		if not li then io.close(F); return nil end
+		local f = string.match(li, '^Please check (%S+.cfg)')
+		if f then io.close(F) ;  return f end
+	end
+	io.close(F); return nil
+end
+
+local function midi_port(str)
+	local F
+	local question = ' from which device ?'
+	if str == 'output' then
+		if not aplaymidi then
+			C.sorry("you need to install aplaymidi."); return nil
+		end
+		question = ' to which device ?'
+		F = assert(io.popen(aplaymidi..' -l', 'r'))
+	elseif str == 'input' then
+		if not arecordmidi then
+			C.sorry("you need to install arecordmidi."); return nil
+		end
+		F = assert(io.popen(arecordmidi..' -l', 'r'))
+	else
+		C.sorry('midi_port('..str..') is a wierd argument'); return nil
+	end
+	local device2port = {}
+	local port2device = {}
+	local major = 0
+	while true do
+		local li = F:read('*line')
+		if not li then io.close(F); break end
+		local port, device = string.match(li, '^%s*(%d+:%d)%s+(.*)$')
+		if device then
+			device = string.gsub(string.sub(device,1,32), '%s*$', '')
+			port2device[port] = device
+			device2port[port..' '..device] = port
+		end
+	end
+	local devices = sorted_keys(device2port)
+	local port
+	if not devices then
+		C.sorry(" can't see any midi "..str.." devices."); return nil
+	elseif #devices == 1 then
+		C.inform(" using midi device "..devices[1])
+		port = device2port[devices[1]]
+	else
+		local device = C.choose(question, devices)
+		if not device then return nil end
+		port = device2port[device]
+	end
+	return port
+end
+
+local function set_cdda_device()
+	if os.getenv('CDDA_DEVICE') then return 1; end
+	C.inform(" you should set the CDDA_DEVICE environment variable!");
+	if P.stat('/dev/cdrom') then
+		P.setenv('CDDA_DEVICE', '/dev/cdrom:@')
+		C.inform(' using '..os.getenv('CDDA_DEVICE')..' ...')
+		return true
+	elseif P.stat('/dev/sr0') and P.getpid('euid')==0 then
+		P.link('/dev/sr0', '/dev/cdrom', true)  -- symlink
+	end
+	os.execute(eject); os.execute(eject..' -t'); sleep(3)
+	if P.getpid('euid') > 0 then
+		C.inform(" you need to be root to run  cdrecord -scanbus")
+		P.setenv('CDDA_DEVICE', '0,0,0')
+		C.inform(" trying CDDA_DEVICE='0,0,0'\n")
+	else
+		local F,msg = io.popen(cdrecord..' -scanbus', 'r')
+		if not F then
+			C.sorry("can't run cdrecord -scanbus: "..msg); return false
+		end
+		local devices = {}
+		while true do
+			local li = F:read('*line')
+			if not li then break end
+			li = string.gsub(string.gsub(li, '\t','  '), '  +','  ')
+			if li:match('^%s+%d.*[^*]$') then devices[#devices+1] = li end
+		end
+		io.close(F)
+		local device = C.choose(" which device ?", devices);
+		device = string.gsub(string.gsub(device, '^%s+',''), '%s.*$','')
+		P.setenv('CDDA_DEVICE', device)
+	end
+	if not os.getenv('CDDA_DEVICE') then
+		P.setenv('CDDA_DEVICE', C.ask('CDDA_DEVICE ?'))
+	end
+	if os.getenv('CDDA_DEVICE') then return true else return false end
+end
+
+local function tasks()
+	local tasks = {
+		'burn files->DataCD', 'burn ISO image', 'burn WAV->AudioCD',
+		'change Directory', 'connect MIDIports',
+		'convert MIDI->MP3', 'convert MIDI->WAV',
+		'copy audio CD', 'copy video DVD', 'decode MP3->WAV', 'eject',
+		'encode WAV->MP2', 'encode WAV->MP3', 'play AudioCD', 'play DVD',
+		'play MIDI,WAV,MP3',
+		'rip AudioCD->WAV', 'rip MP3CD->MP3', 'rip DVD->mp4',
+		'record AudioIn->WAV', 'record Keyboard->MIDI', 'run alsamixer',
+	}
+	tasks[#tasks+1] = 'consult Manual'
+	return tasks
+end
+
+local function choose_files(pat)
+	local dh = P.dir('.')
+	if not dh then C.sorry("can't open "..P.getcwd()) ; return nil end
+	local wavs = {}
+	for k,v in ipairs(dh) do
+	if string.match(v, '%.'..pat..'$') then wavs[#wavs+1] = v end
+	end
+	if #wavs==0 then
+		C.sorry('no .'..pat..' files in '..P.getcwd()) ; return nil
+	end
+	return C.choose(' convert which files ?', wavs, {multichoice=true})
+end
+
+------------------------- functionality ------------------------
+
+local function run_alsamixer()
+	if not alsamixer then C.sorry("you need to install alsamixer."); return end
+	os.execute(alsamixer)
+end
+
+local function burn_wav()
+	if not cdrecord then
+		C.sorry(" you need to install cdrskin, cdrecord or wodim."); return
+	end
+	if not set_cdda_device() then return false end
+	local files_a = C.choose(' which files ?',
+	  perlglob('*.wav *.WAV'), {multichoice=true})
+	if not files_a or #files_a==0 then return false end
+	local files = table.concat(files_a, "' '")
+	C.ask(" insert the C D into the drive, and press Return")
+	os.execute(cdrecord.." dev=0,0 -v -dao -pad -speed=12 -copy '"..files.."'")
+	C.inform(" finished burning the C D")
+	if eject then os.execute(eject) end
+end
+
+local function burn_files()
+	if not mkisofs  then
+		C.sorry(" you need to install mkisofs or genisoimage.");  return false
+	end
+	if not cdrecord then
+	  C.sorry(" you need to install cdrskin, cdrecord or wodim."); return false
+	end
+	if not P.stat('/dev/cdrom') then
+		C.sorry(" can't find /dev/cdrom"); return flase
+	end
+	local pid = P.getpid('pid')
+	local tmpfile = BigTmp..'/cd_'..pid;
+	local tmp_dir = BigTmp..'/mnt_'..pid;
+	local rc, msg = P.mkdir(tmp_dir)
+	if not rc then
+		C.sorry(" can't mkdir "..tmp_dir..": "..msg)
+		return false
+	end
+	local  max_mb_str = C.choose(' what size media are you using ?',
+	  {'700Mb', '4.7Gb', '8.5Gb'} )
+	local  max_mb = 700
+	if     max_mb_str == '4.7Gb' then max_mb = 4700
+	elseif max_mb_str == '8.5Gb' then max_mb = 8500
+	end
+	while true do  -- choose_files repeatedly to within the size limit
+		local mb_so_far = output_of('du -ms '..tmp_dir)
+		if not mb_so_far then return false end
+		mb_so_far = tonumber(string.match(mb_so_far, '%s*(%d+)'))
+		local remaining = max_mb - mb_so_far
+		if remaining > 1 then
+			C.inform(tostring(remaining)..' Mb remaining:')
+			local f = C.ask(" add which file ?")
+			if f == '' then break end
+			f = tilde_expand(f)
+			if P.stat(f,'type') == 'directory' then
+				os.execute("cp -R '"..f.."' "..tmp_dir.."/")
+			else os.execute("cp '"..f.."' "..tmp_dir.."/")
+			end
+		elseif remaining < 0 then
+			local cwd = P.getcwd()
+			P.chdir(tmp_dir)
+			local f = C.ask(tostring(remaining)
+			  ..' Mb remaining: Delete which file ?')
+			if f == '' then break
+			else os.execute("rm -rf "..tmp_dir..'/'..f)
+			end
+			-- if f is an iso image, should promote it to tmpfile,
+			-- skip the mkisofs step, and burn it immediately....
+			-- or perhaps better to offer a separate "burn ISO" choice ?
+			P.chdir(cwd)
+		else
+			break   -- 20181229  avoid infinite loop if remaining == 1 or 0
+		end
+	end
+	-- should check if it's an iso image, and if so, skip the mkisofs bit
+	os.execute("ls -lR "..tmp_dir.."/*")
+	os.execute(mkisofs.." -gui -r -J -T -allow-limited-size -V DataCD -o "
+	  ..tmpfile..' '..tmp_dir.." 2>&1 | perl -pe 's/$/\\e[K\\e[A/'")
+	C.inform("")
+	os.execute("rm -rf "..tmp_dir)
+	-- could mount -o loop $tmpfile and check it's OK ...
+	if eject then os.execute(eject) end
+	while true do
+		C.ask(" insert blank media into drive and press Return...");
+		-- suppress line-feeds in the progress-bar (on stderr) ...
+		-- should sleep, try, sleep, retry up to about 15 sec ...
+		os.execute(cdrecord..' dev=/dev/cdrom -v -dao '..tmpfile)
+		if eject then os.execute(eject) end
+		if not C.confirm(" do you want to write that to another ?") then
+			break
+		end
+	end
+	if not P.unlink(tmpfile) then io.stderr("can't unlink "..tmpfile) end
+end
+
+local function burn_iso()
+	if not mkisofs  then
+		C.sorry(" you need to install mkisofs or genisoimage.");  return false
+	end
+	if not cdrecord then
+	  C.sorry(" you need to install cdrskin, cdrecord or wodim."); return false
+	end
+	if not P.stat('/dev/cdrom') then
+		C.sorry(" can't find /dev/cdrom"); return flase
+	end
+--	local  max_mb_str = C.choose(' what size media are you using ?',
+--	  {'700Mb', '4.7Gb', '8.5Gb'} )
+--	local  max_mb = 700
+----	if     max_mb_str == '4.7Gb' then max_mb = 4700
+--	elseif max_mb_str == '8.5Gb' then max_mb = 8500
+--	end
+	local isofile = C.ask(" add which iso file ?")
+	if isofile == '' then return nil end
+	isofile = tilde_expand(isofile)
+	if not string.match(isofile, '%.iso$') then
+		C.sorry(isofile.." does not end in .iso")
+		return nil
+	end
+	local fd,msg = io.open(isofile, 'r')
+	if fd then
+		io.close(fd)  -- :-)
+	else
+		C.sorry("can't open "..msg)
+		return nil
+	end
+	local sys_stat = require "posix.sys.stat"
+	local size = sys_stat.lstat(isofile)['st_size']
+	size = math.floor(size / (1024*1024))  -- in Mb
+	max_mb_str = '8.5Gb'
+	if size < 700 then
+		max_mb_str = '700Mb CD'
+		max_mb     =  700
+	elseif size < 4700 then
+		max_mb_str = '4.7Gb DVD'
+		max_mb     =  4700
+	elseif size < 8500 then
+		max_mb_str = '8.5Gb DVD'
+		max_mb     =  8500
+	else
+		C.sorry(isofile.." won't fit on an 8.5Gb DVD")
+		return nil
+	end
+	
+	local mb_so_far = output_of('du -ms '..isofile)
+	if not mb_so_far then return false end
+	mb_so_far = tonumber(string.match(mb_so_far, '%s*(%d+)'))
+	if max_mb < mb_so_far then
+		C.sorry(isofile.." won't fit in "..tostring(max_mb)..' Mb')
+		return nil
+	end
+	if not isofile then return nil end
+	while true do
+		C.ask(" insert blank "..max_mb_str.." into drive and press Return...")
+		-- suppress line-feeds in the progress-bar (on stderr) ...
+		-- should sleep, try, sleep, retry up to about 15 sec ...
+		os.execute(cdrecord..' dev=/dev/cdrom -v -dao '..isofile)
+		if eject then os.execute(eject) end
+		if not C.confirm(" do you want to write that to another ?") then
+			break
+		end
+	end
+end
+
+local function changedir()
+	local newdir = C.ask(' to which directory ?')
+	if not newdir or newdir=='' then return nil end
+	newdir = tilde_expand(newdir)
+	if P.stat(newdir, 'type') ~= 'directory' then
+		C.sorry(newdir.." is not a directory"); return nil
+	end
+	local rc, msg = P.chdir(newdir)
+	if not rc then C.sorry("can't chdir to "..newdir..": "..msg); return end
+--[[
+	-- assertively rename *.WAV->*.wav, *.MID->*.mid, *.MP3->*.mp3
+	if not opendir (D, '.') then C.sorry("can't opendir $newdir: \!"); return; end
+	local @allfiles = grep { !/^\./ } readdir(D);
+	closedir D;
+	local oldname;
+	foreach oldname (grep { /\.WAV$/} @allfiles) do
+		local newname = oldname; newname =~ s/WAV$/wav/;
+		rename oldname, newname;
+	end
+	foreach oldname (grep { /\.MP3$/} @allfiles) do
+		local newname = oldname; newname =~ s/MP3$/mp3/;
+		rename oldname, newname;
+	end
+	foreach oldname (grep { /\.MID$/} @allfiles) do
+		local newname = oldname; newname =~ s/MID$/mid/;
+		rename oldname, newname;
+	end
+--]]
+end
+
+local function copy_cd()
+	local ok = true
+	local cdda2wav = cdda2wav or icedax
+	if not cdda2wav then
+		C.sorry("you need to install cdda2wav or icedax."); ok = false
+	end
+	if not cdrecord then
+		C.sorry("you need to install cdrecord or wodim.");  ok = false
+	end
+	if not P.stat('/dev/cdrom') then
+		C.sorry("can't find /dev/cdrom"); ok  = false
+	elseif not P.access('/dev/cdrom', 'w') then
+		C.sorry("can't write to /dev/cdrom"); ok = false
+	end
+	local tmpdir = BigTmp..'/audio_stuff_'..P.getpid('pid')
+	local rc,msg = P.mkdir(tmpdir)
+	if not rc then C.sorry("can't mkdir "..tmpdir..': '..msg); ok = false end
+	local olddir = P.getcwd()
+	rc,msg = P.chdir(tmpdir)
+	if not rc then C.sorry("can't chdir "..tmpdir..': '..msg); ok = false end
+	if not ok then   -- try to fix 20200121 (see below)
+		if rc then os.execute("rm -rf "..tmpdir) end
+		return
+	end
+	C.ask("insert the C D into the drive, and press Return")
+	os.execute(cdda2wav.." -Q dev=/dev/cdrom -vall cddb=0 -B -Owav")
+	-- the USB CDdrive is Very Slow  -S 0  ?
+	if eject then os.execute(eject) end
+	while (1) do
+		C.ask("insert blank C D into drive and press Return...")
+		if P.getpid('euid') == 0 and not P.stat('/dev/cdrom') then
+			P.link('/dev/sr0', '/dev/cdrom', true)  -- CURSE icedax!
+		end
+		os.execute(
+		  cdrecord.." dev=/dev/cdrom -v -dao -useinfo -text -force *.wav")
+		if eject then os.execute(eject) end
+		if not C.confirm("do you want to write that to another C D ?") then
+			break
+		end
+	end
+	P.chdir(olddir)
+	os.execute("rm -rf "..tmpdir)   -- 20200121 this didn't seem to have
+	-- worked when trying to copy a second CD from the same process ...
+end
+
+local function copy_dvd()
+	local ok = true
+	if not dvdbackup then
+		C.sorry("you need to install dvdbackup.");  ok = false
+	end
+	if not mkisofs then
+		C.sorry("you need to install mkisofs or genisoimage.");  ok = false
+	end
+	if not growisofs then
+		C.sorry("you need to install growisofs.");  ok = false
+	end
+	if not P.stat('/dev/cdrom') then
+		C.sorry("can't find /dev/cdrom"); ok = false
+	elseif not P.access('/dev/cdrom', 'w') then
+		C.sorry("can't write to /dev/cdrom"); ok = false
+	end
+	local tmpfile = BigTmp..'/dvd_'..P.getpid('pid')..'.iso'
+	local tmp_mnt = BigTmp..'/mnt_'..P.getpid('pid')
+	local  rc, msg = P.mkdir(tmp_mnt)
+	if not rc then
+		C.sorry("can't mkdir "..tmp_mnt..': '..msg); ok=false
+	end
+	if not ok then return nil end
+	C.ask("insert the DVD into drive, and press Return...");
+	--# The old non-dvdcss-capable method using  mount ...
+	-- system "mount -t iso9660 -o ro,map=off /dev/cdrom $tmp_mnt";
+	--local $return_code;
+	--foreach (1..5) do  # sleep, try, sleep, retry up to about 15 sec ...
+	--	sleep 2;
+	--	$return_code = system "mount -t udf -o ro /dev/cdrom $tmp_mnt";
+	--	last unless $return_code;
+	--	sleep 2;
+	--end
+	--if ($return_code) then C.sorry("couldn't mount the DVD"); return 0; end
+	--if not -d "$tmp_mnt/VIDEO_TS" and not  -d "$tmp_mnt/video_ts") do
+	--	C.sorry("not a video DVD; can't see a /VIDEO_TS directory");
+	--	system "ls -lR $tmp_mnt ; umount $tmp_mnt";
+	--	if not rmdir $tmp_mnt) then warn "can't rmdir $tmp_mnt: $!\n"; end
+	--	return 0;
+	--end
+	C.inform(dvdbackup.." -v -M -o "..tmp_mnt.." -i /dev/dvd")
+	os.execute(dvdbackup.." -v -M -o "..tmp_mnt.." -i /dev/dvd")
+	-- discover the DVD's title
+	local dh = P.dir(tmp_mnt)
+	if not dh then C.sorry("can't open "..tmp_mnt) ; return nil end
+	local ds = {}
+	for k,v in ipairs(dh) do
+		if not string.match(v,'^%.') and
+		  P.stat(tmp_mnt..'/'..v,'type')=='directory' then
+			ds[#ds+1] = v
+		end
+	end
+	if not ds then C.sorry("no directories in "..tmp_mnt) ; return nil end
+	local title = ds[1]
+	if #ds > 1 then
+		C.inform(tostring(#ds).." directories found on dvd; using "..title)
+	end
+	local audio_ts = tmp_mnt..'/'..title..'/AUDIO_TS'
+	if not P.stat(audio_ts) then
+		local rc,msg = P.mkdir(audio_ts)
+		if not rc then C.inform(" can't mkdir "..audio_ts..': '..msg) end
+	end
+	do   --make the copy region-agnostic
+		local ifo = tmp_mnt..'/'..title..'/VIDEO_TS/VIDEO_TS.IFO'
+		local F = io.open(ifo, 'r'); txt = F:read('a'); F:close()
+		local head = string.sub(txt, 1, 35); tail = string.sub(txt, 37, -1)
+		local newtxt = head..string.char(0x40)..tail
+		F = io.open(ifo, 'w')
+		if F then F:write(newtxt); F:close() end
+	end
+	-- suppress line-feeds in the progress-bar (on stderr) ...
+	os.execute(mkisofs..' -gui -r -J -T -dvd-video -allow-limited-size'
+	 ..' -V Video_DVD -o '..tmpfile..' '..tmp_mnt.."/'"..title
+	 .."' 2>&1 | perl -pe 's/$/\\e[K\\e[A/'")
+	-- quotes 20130611, but should use the list form of system
+	--system "umount $tmp_mnt";
+	C.inform(" ")
+	if eject then os.execute(eject) end
+	-- if not rmdir tmp_mnt) then warn "can't rmdir $tmp_mnt: $!\n"; end
+	os.execute('rm -rf '..tmp_mnt)
+	os.execute('ls -l '..tmpfile)
+	-- to be fussy, could  mount -o loop $tmpfile  and check it's OK ...
+	if P.stat(tmpfile, 'size') == 0 then
+		C.inform(' the iso fs was empty :-('); return
+	end
+	while true do
+		C.ask("insert blank DVD into drive, "
+		 .. "wait for light to go out, then press Return...")
+		-- suppress line-feeds in the progress-bar (on stderr) ...
+		-- should sleep, try, sleep, retry up to about 15 sec ...
+		os.execute("growisofs -dvd-compat -Z /dev/dvd="..tmpfile
+		 .. "  2>&1 | perl -pe 's/$/\\e[K\\e[A/'")
+		C.inform(" ")
+--		if eject then os.execute(eject) end -- why does this re-inject itself?
+		os.execute('sleep 2') ; os.execute(eject)
+		if not C.confirm("do you want to write that to another DVD ?") then
+			break
+		end
+	end
+	assert(P.unlink(tmpfile))
+end
+
+local function rip_dvd()
+	if not dvdbackup then
+		C.sorry("you need to install dvdbackup.");  return false
+	end
+	if not P.stat('/dev/cdrom') then
+		C.sorry("can't find /dev/cdrom"); return false
+	end
+	local tmp_mnt = BigTmp..'/mnt_'..P.getpid('pid')
+	local  rc, msg = P.mkdir(tmp_mnt)
+	if not rc then
+		C.sorry("can't mkdir "..tmp_mnt..': '..msg); return false
+	end
+	C.ask("insert the DVD into drive, and press Return...");
+	C.inform(dvdbackup.." -v -M -o "..tmp_mnt.." -i /dev/cdrom")
+	os.execute(dvdbackup.." -v -M -o "..tmp_mnt.." -i /dev/cdrom")
+	-- discover the DVD's title
+	local dh = P.dir(tmp_mnt)
+	if not dh then C.sorry("can't open "..tmp_mnt) ; return nil end
+	local ds = {}
+	for k,v in ipairs(dh) do
+		if not string.match(v,'^%.') and
+		  P.stat(tmp_mnt..'/'..v,'type')=='directory' then
+			ds[#ds+1] = v
+		end
+	end
+	if not ds then C.sorry("no directories in "..tmp_mnt) ; return nil end
+	local title = ds[1]
+	if #ds > 1 then
+		C.inform(tostring(#ds).." directories found on dvd; using "..title)
+	end
+	C.inform(" ")
+	if eject then os.execute(eject) end
+	-- if not rmdir tmp_mnt) then warn "can't rmdir $tmp_mnt: $!\n"; end
+	-- os.execute('rm -rf '..tmp_mnt)
+	print("  # Now you need to work at the command line:")
+	print("    cd "..tmp_mnt.."/*/VIDEO_TS")
+	--  # check out scale, in_w, in_h    -s   Set frame size.
+	--  # -s wxh     The format is wxh (default - same as source).  Hmm....
+	local ffmp
+	if ffmpeg then ffmp='ffmpeg' else ffmp='avonv' end
+	print([[
+
+  # then find out which streams you wish to copy, so  ls -lh  then eg:
+    F=02   # or whichever
+    cat VTS_${F}_*.VOB | ffmpeg -i - -map list 2>&1 | grep Stream
+  # then 'map' them accordingly ...
+    cat VTS_${F}*.VOB | ffmpeg -i - -map 0:0 -map 0:2 \
+    -c:v h264 -b:v 800k -g 300 -bf 2 \
+    -c:a libmp3lame -b:a 128k /tmp/vts_$F.mp4
+
+  # you may need :
+    ffmpeg -encoders | grep ^S    # lists the subtitle encoders
+    ffmpeg ... -c:s dvdsub ...    # sets the dvdsub codec on the subtitles
+
+  # then use mplayer (with the 'o' keystroke) to measure what start (-ss)
+  # and end times you want to take; subtract to get the duration (-t),
+  # measure the aspect-ratio (eg 16:9) and then:
+    cd /tmp/
+    mplayer vts_$F.mp4
+    ffmpeg -ss 4934 -i vts_$F.mp4 -t 382 -codec copy -aspect 16:9 \
+     outputfile.mp4
+]])
+	os.exit()
+end
+
+local function dvd_size()
+	if not mediainfo then
+		-- could try some other program ?
+		C.sorry('you should install dvd+rw-mediainfo'); return false
+	end
+	local size = nil
+	for i = 1,5 do
+		P.sleep(1)
+		local F,msg = io.popen(mediainfo..' /dev/cdrom 2>&1', 'r')
+		if not F then
+			C.sorry("can't run "..mediainfo..' /dev/cdrom: '..msg)
+			return false
+		end
+		local devices = {}
+		while true do
+			local li = F:read('*line')
+			if not li then break end
+			li = string.gsub(string.gsub(li, '\t','  '), '  +','  ')
+			local s = li:match('Legacy lead-out.+=(%d+)$')
+			if s then size = s end
+		end
+		io.close(F)
+		P.sleep(1)
+		if size then return size end
+	end
+	C.sorry("no dvd media present in /dev/cdrom")
+	return false
+end
+
+local function which_tracks(do_what)
+	-- cdda2wav produces its output on stderr ARRGghhh :-(
+	-- 20131211 could rename this to which_tracks() and use {multichoice=true}
+	local cdplayer = cdda2wav or icedax
+	local F,msg = io.popen(cdplayer.." -Q -H -g -v toc -J 2>&1", 'r')
+	if not F then C.sorry("can't run "..cdplayer..': '..msg); return nil end
+	local tracks = {}
+	while true do
+		local li = F:read('*line')
+		if not li then break end
+		if string.match(li, "^T%d") then
+			li = string.gsub(li, 'audio%s+', '')
+			li = string.gsub(li, 'linear%s+', '')
+			li = string.gsub(li, 'stereo%s+', '')
+			li = string.gsub(li, 'title%s+', '')
+			li = string.gsub(li, ' from .*$', '')
+			tracks[#tracks+1] = li
+		elseif string.match(li, "Album title: (.+)") then
+			C.inform(li)
+		end
+	end
+	io.close(F)
+	local chosen_tracks = C.choose(' '..do_what..' which tracks ?',
+	  tracks, {multichoice=true})
+	if not chosen_tracks then return nil end
+	for i,track in ipairs(chosen_tracks) do
+		chosen_tracks[i] = string.match(track, '^T(%d+)')
+	end
+	return chosen_tracks
+end
+
+local function play_cd()
+	-- could do track-range, pick first and last;
+	local cdplayer = cdda2wav or icedax
+	print (cdplayer)
+	if not cdplayer then
+		C.sorry("you need to install cdda2wav or icedax.") ; return
+	end
+	if not set_cdda_device() then return nil end
+	local task = C.choose('play', {'All tracks', 'Just some tracks'})
+	if not task then return end
+	if task == 'All tracks' then
+		os.execute(cdplayer.." -Q cddb=0 -H -B -e -N"); return
+	end
+	local chosen_tracks = which_tracks('Play');
+	if track then return nil end
+	for i,track in ipairs(chosen_tracks) do
+		C.inform(' track '..track)
+		os.execute(cdplayer..' -H -q -Q -x -e -N -t '..track..'+'..track)
+		-- 20210411 icedax skips perhaps .2 sec every second or two :-(
+		-- but rip_wav seems to work fine ... 
+	end
+end
+
+local function play_dvd()
+	if mplayer then
+		-- mplayer has no dvdnav :-(  aptitude show mplayer2 | grep nav
+	---	local tracknum = C.choose("  play which dvd track ?", {'1','2',
+	---	  '3','4','5','6','7','8','9','10','11','12','13','14','15','16'})
+	---	if tracknum then os.execute(mplayer..' --fs dvd://'..tracknum) end
+			-- os.execute(mplayer..' --loop=no --fs dvd://')
+			os.execute(mplayer..' -loop 1 -fs dvd://')  -- 20200424
+		return
+	end
+	if xine then
+		-- on devuan xine refuses to work with hand-compiled libdvdcss
+		os.execute(xine..' -f dvd://') ; return
+	end
+	C.sorry("you need to install mplayer or xine.") ; return
+end
+
+local function rip_wav()
+	if not cdda2wav and not icedax then
+		C.sorry("you need to install cdda2wav or icedax.") ; return
+	end
+	if not set_cdda_device() then return nil end
+	local d = C.choose(' cwd='..P.getcwd(), {'OK', 'Change directory'})
+	if d == 'Change directory' then changedir() end
+	local task = C.choose('extract', {'All tracks', 'Just some tracks'})
+	if not task then return end
+	if task == 'All tracks' then
+		if icedax then
+			os.execute(icedax .. ' -Q cddb=0 -H -B -O wav'); return
+		else
+			os.execute(cdda2wav..' -Q cddb=0 -H -B -Owav'); return
+		end
+	end
+	local chosen_tracks = which_tracks('Extract');
+	if not chosen_tracks then return nil end
+	for k,v in ipairs(chosen_tracks) do
+		if icedax then
+			os.execute(icedax .. ' -Q -H -x -O wav -t '..v..'+'..v
+			  ..' '..v..'_track.wav')
+		else
+			os.execute(cdda2wav..' -Q -H -x -Owav -t '..v..'+'..v
+			  ..' '..v..'_track.wav')
+		end
+	end
+end
+
+local function rip_mp3()
+	C.sorry('not implemented yet')
+end
+
+local function wav2mp3()
+	if not lame then C.sorry("you need to install lame."); return nil end
+	local files = choose_files('wav')
+	if not files then return nil end
+	for k,i in ipairs(files) do
+		local o = string.gsub(i, 'wav$', 'mp3')
+		if not P.stat(o) or C.confirm('OK to overwrite '..o..' ?') then
+			os.execute(lame..' -h '..i..' '..o)
+		end
+	end
+end
+
+local function wav2mp2()
+	if not toolame then C.sorry("you need to install toolame"); return nil end
+	local files = choose_files('wav')
+	if not files then return nil end
+	for k,i in ipairs(files) do
+		local o = string.gsub(i, 'wav$', 'mp2')
+		if not P.stat(o) or C.confirm('OK to overwrite '..o..' ?') then
+			os.execute(toolame.." '"..i.."'")
+		end
+	end
+end
+
+local function mp32wav()
+	if not lame then C.sorry("you need to install lame."); return nil end
+	if not normalize then
+		C.sorry("you need to install normalize-audio or normalize"); return nil
+	end
+	local files = choose_files('mp3')
+	if not files then return nil end
+	for k,i in ipairs(files) do
+		local o = string.gsub(i, 'mp3$', 'wav')
+		if not P.stat(o) or C.confirm('OK to overwrite '..o..' ?') then
+			os.execute(lame..' --mp3input --decode '..i..' '..o)
+			os.execute(normalize.." '"..o.."'")
+		end
+	end
+end
+
+local function mid2wav()
+	if not timidity then
+		C.sorry("you need to install timidity.") ; return nil
+	end
+	if not normalize then
+		C.sorry("you need to install normalize-audio or normalize"); return nil
+	end
+	local files = choose_files('mid')
+	if not files then return nil end
+	local config = timiditycfg();
+	if not config then
+		C.sorry("can't find any timidity.cfg file"); return nil
+	end
+	C.inform(' config file = '..config)
+	local wavs = {}
+	for k,i in ipairs(files) do
+		local o = string.gsub(i, 'mid$', 'wav')
+		if not P.stat(o) or C.confirm('OK to overwrite '..o..' ?') then
+			os.execute(timidity..' -Ow -c '..config.." -o '"..o.."' '"..i.."'")
+			wavs[#wavs+1] = o
+		end
+	end
+	os.execute(normalize.." '"..table.concat(wavs,"' '").."'")
+end
+
+local function mid2mp3()
+	if not timidity then
+		C.sorry("you need to install timidity."); return nil
+	end
+	if not normalize then
+		C.sorry("you need to install normalize-audio or normalize"); return nil
+	end
+	if not lame then C.sorry("you need to install lame."); return nil end
+	local files = choose_files('mid')
+	if not files then return nil end
+	local config = timiditycfg();
+	if not config then
+		C.sorry("can't find any timidity.cfg file"); return nil
+	end
+	C.inform(' config file = '..config)
+	local wavs = {}
+	for k,i in ipairs(files) do
+		local o = string.gsub(i, 'mid$', 'wav')
+		if not P.stat(o) or C.confirm('OK to overwrite '..o..' ?') then
+			os.execute(timidity..' -Ow -c '..config.." -o '"..o.."' '"..i.."'")
+			wavs[#wavs+1] = o
+		end
+	end 
+	os.execute(normalize.." '"..table.concat(wavs,"' '").."'")
+	for k,o in ipairs(wavs) do
+		local oo = string.gsub(o, 'wav$', 'mp3')
+		if not P.stat(oo) or C.confirm('OK to overwrite '..oo..' ?') then
+			os.execute(lame.." -h '"..o.."' '"..oo.."'")
+		end
+		P.unlink(o)
+	end
+end
+
+local function play()
+	local pat = '*.wav *.mp3 *.mid'
+	local files = perlglob(pat)
+	if not files or #files==0 then
+		C.sorry('no .'..pat..' files in '..P.getcwd()) ; return nil
+	end
+	local file = C.choose(' play which file ?', files)
+	if not file then return end
+	if string.match(file, '%.mp3$') then
+		if mpg123 then C.inform(
+			's=stop/start  b=beginning  ,=rewind  .=fast-forward  q=quit')
+			os.execute(mpg123..' -C '..file)
+			os.execute("stty sane")
+			return
+		end
+		if not mp3_player then C.sorry(
+			"you need to install mpg123 or mplayer or sndfile-play.")
+			return nil
+		end
+		os.execute("$mp3_player $file")
+		return;
+	elseif string.match(file, '%.wav$') then
+		if not wav_player then
+		C.sorry("you need to install sox (play) or sndfile-play or mplayer.")
+			return nil
+		end
+		os.execute(wav_player..' '..file)
+		return;
+	end
+	if not aplaymidi then
+		C.sorry("you need to install aplaymidi."); return nil
+	end
+
+	local outport = midi_port('output')
+	if not outport then return nil end
+	os.execute(aplaymidi..' -p '..outport.." '"..file.."'")
+end
+
+local function audio2wav()
+	if not rec then
+		C.sorry("you need to install rec (comes with sox)."); return nil
+	end
+	local d = C.choose(' cwd='..P.getcwd(), {'OK', 'Change directory'})
+	if d == 'Change directory' then changedir() end
+	local file = C.ask("To what .wav file ?")
+	if not file or file=='' then return nil end
+	if string.match(file, '%.WAV$') then
+		file = string.gsub(file, '%.WAV$', '%.wav')
+	elseif not string.match(file, '%.wav$') then
+		file = file..'.wav'
+	end
+	-- could offer options, like gain, compand, autostart on signal...
+	-- os.execute(rec..' -c 2 '..file..' rate 44100')
+	-- 20190706 Doesn't work. :-(
+	-- Mean    norm:          0.999969
+	-- Mean    amplitude:     0.999969    and this doesn't work either:
+	-- os.execute(rec..' -e signed -b 16 -c 2 '..file..' rate 44100')
+	os.execute(rec..' --no-dither -c 2 '..file..' rate 44100')
+end
+
+local function connect_midi_ports()
+	local inport = midi_port('input')
+	if not inport then return nil end
+	local outport = midi_port('output')
+	if not outport then return nil end
+	MidiOutPort = outport
+	os.execute(aconnect..' '..inport..' '..outport)
+end
+
+local function kbd2mid()
+	local inport  = midi_port('input')
+	if not inport then return nil end
+	local file = C.ask(" to what midifile ?");
+	if not life then return nil end
+	if not string.match(file, '%.mid$') then file = file..'.mid' end
+	local ok = C.ask(" <Return> to start recording, <Ctrl-C> to stop ...");
+	os.execute(arecordmidi..' -p '..inport.." -b60 -t1000 '"..file.."'")
+	return true
+end
+
+
+local function consult_man()
+	local topics = {
+	 'aconnect', 'alsamixer', 'aplaymidi', 'arecordmidi', 'atacontrol',
+	 'audio_stuff', 'avconv', 'bristol', 'burncd', 'cdcontrol',
+	 'cdda2wav', 'cdrecord', 'cdrskin', 'dvd+rw-mediainfo', 'ffmpeg',
+	 'genisoimage', 'icedax', 'lame', 'mkisofs', 'mplayer', 'normalize',
+	 'normalize-audio', 'pciconf', 'sndfile-play',
+	 'sox', 'soxexam', 'soxeffect', 'timidity', 'timidity.cfg',
+	 'toolame', 'wodim', 'xine',
+	}
+	local topic = C.choose(' which topic ?', topics)
+	if not topic then return nil end
+	if topic == 'audio_stuff' then os.execute('perldoc '..arg[0])
+	else os.execute(man..' '..topic)
+	end
+end
+
+------------------- the main loop -------------------------
+
+while true do
+	local task = C.choose('Do what ?', tasks());
+	if not task then os.exit(0) end
+	if task == 'Extract and Burn' then
+		warn "You'll need to be superuser ...\n";
+		os.execute(su..' root -c '..arg[0]); os.exit(0)
+	elseif task == 'burn files->DataCD' then burn_files()
+	elseif task == 'burn ISO image'     then burn_iso()
+	elseif task == 'burn WAV->AudioCD'  then burn_wav()
+	elseif task == 'change Directory'   then changedir()
+	elseif task == 'connect MIDIports'  then connect_midi_ports()
+	elseif task == 'consult Manual'     then consult_man()
+	elseif task == 'convert MIDI->WAV'  then mid2wav()
+	elseif task == 'convert MIDI->MP3'  then mid2mp3()
+	elseif task == 'copy audio CD'      then copy_cd()
+	elseif task == 'copy video DVD'     then copy_dvd()
+	elseif task == 'decode MP3->WAV'    then mp32wav()
+	elseif task == 'eject'              then eject_cd()
+	elseif task == 'encode WAV->MP2'    then wav2mp2()
+	elseif task == 'encode WAV->MP3'    then wav2mp3()
+	elseif task == 'play AudioCD'       then play_cd()
+	elseif task == 'play DVD'           then play_dvd()
+	elseif task == 'play MIDI,WAV,MP3'  then play()
+	elseif task == 'record AudioIn->WAV' then audio2wav()
+	elseif task == 'record Keyboard->MIDI' then kbd2mid()
+	elseif task == 'rip AudioCD->WAV'   then rip_wav()
+	elseif task == 'rip MP3CD->MP3'     then rip_mp3()
+	elseif task == 'rip DVD->mp4'       then rip_dvd()
+	elseif task == 'run alsamixer'      then run_alsamixer()
+	end
+end
+os.exit(0)
+
+--[[
+
+=pod
+
+=head1 NAME
+
+audio_stuff - wrapper for aplaymidi, cdda2wav, cdrecord, lame, timidity etc.
+
+
+=head1 SYNOPSIS
+
+$ audio_stuff.lua
+
+=head1 DESCRIPTION
+
+This script, written as an example for the lua I<CommandLineUI> module,
+integrates
+various open-source programs for handling
+Midi, WAV, MP3, CDDA and DVD files
+into one ArrowKey-and-Return user-interface.
+
+=head1 FEATURES
+
+  burn files->DataCD    burn ISO image        burn WAV->AudioCD
+  change Directory      connect MIDIports     convert MIDI->MP3
+  convert MIDI->WAV     copy audio CD         copy video DVD
+  decode MP3->WAV       eject                 encode WAV->MP2
+  encode WAV->MP3       play AudioCD          play DVD
+  play MIDI,WAV,MP3     record AudioIn->WAV   record Keyboard->MIDI
+  rip AudioCD->WAV      rip MP3CD->MP3        rip DVD->mp4
+  run alsamixer         consult Manual
+
+=over 3
+
+=item I<rip AudioCD-E<gt>WAV> and I<burn WAV-E<gt>AudioCD>
+
+These features use I<cdda2wav> or I<icedax>
+and I<cdrecord> and I<wodim> to get files
+off AudioCDs into I<.wav> format, or vice-versa.
+
+=item I<copy video DVD>
+
+This feature uses I<mkisofs> or I<genisoimage> to get files off
+a Video DVD and I<growisofs> to burn them onto an empty one.
+
+=item I<rip MP3CD-E<gt>MP3> and I<burn MP3-E<gt>MP3CD>
+
+These features use I<cp> and I<cdrecord> or I<wodim> to get files
+off MP3-CDs onto local hard-disk, or vice-versa.
+
+=item I<encode WAV-E<gt>MP3> and I<decode MP3-E<gt>WAV>
+
+These features use I<lame> to get files
+from I<.wav> format into I<.mp3> format or vice-versa.
+
+=item I<play WAV,MP3,MID>
+
+Depending on which file you select, this feature
+either uses I<mplayer> or I<mpg123> to play a I<.mp3> file,
+or I<play> or I<sndfile-play> to play a I<.wav> file to the headphones,
+or I<aplaymidi> to send a I<.mid> file to a Synthesiser.
+
+=back
+
+=head1 ENVIRONMENT
+
+When copying DVDs some big temporary files are created;
+if your I</tmp> is too small you can create a B<BIGTMP>
+environment variable to use somewhere else, e.g.:
+
+ export BIGTMP=/home/tmp
+ audio_stuff
+
+=head1 AUTHOR
+
+Peter J Billam  www.pjb.com.au/comp/contact.html
+
+=head1 CREDITS
+
+Based on I<CommandLineUI>, I<luaposix>,
+alsamixer, aplaymidi, arecordmidi, cdrecord or wodim,
+cdda2wav or icedax, lame, mkisofs or genisoimage, mpg123,
+normalize-audio, sox, sndfile_play, timidity, xine.
+
+=head1 SEE ALSO
+
+ http://www.pjb.com.au/
+ http://www.pjb.com.au/comp/index.html#lua
+ http://www.pjb.com.au/comp/lua/commandlineui.html
+ http://luarocks.org/repositories/rocks/index.html#commandlineui
+ alsamixer(1)
+ aplaymidi(1)
+ arecordmidi(1)
+ cdrecord(1)
+ cdda2wav(1)
+ festival(1)
+ genisoimage(1)
+ growisofs(1)
+ icedax(1)
+ lame(1)
+ mpg123(1)
+ mkisofs(1)
+ normalize(1)
+ normalize-audio(1)
+ sndfile_play(1)
+ sox(1)
+ soxexam(7)
+ soxeffect(7)
+ timidity(1)
+ wodim(1)
+ xine(1)
+
+=cut
+
+--]]
