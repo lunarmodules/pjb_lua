@@ -48,7 +48,7 @@ IFO:close()
 assert(os.execute("umount "..TmpMnt))
 os.remove(TmpMnt)  -- os.remove works on empty directories !
 region_mask = string.byte(contents, 36) -- look at byte at offset x0022 = 34
-if Debug then printf("0x%X", region_mask) end
+if Debug then printf("0x%02X", region_mask) end
 if (region_mask & 1) == 0 then
 	print("1: United States, Canada, Bermuda")
 end 
