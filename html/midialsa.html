@@ -565,6 +565,12 @@ then <CODE>parse_address("TiM")</CODE> will return 128,0
 and <CODE>parse_address("TiMi:1")</CODE> will return 128,1
 because it finds the first client with a start-of-string
 case-sensitive match to the given name.<BR>
+But it seems to be a feature of underlying C library that clients
+with a name that looks like a number (for example <CODE>2600</CODE>
+is the client-name of the <I>Behringer 2600</I> synthesiser)
+can not be parsed - you should consult <CODE>aconnect -oil</CODE>
+and connect to them by address, eg: <CODE>24:0</CODE>
+<BR>
 <I>parse_address</I>() is called automatically by
 <CODE><A HREF="#connectto">connectto()</A></CODE>,
 <CODE><A HREF="#connectfrom">connectfrom()</A></CODE>,
