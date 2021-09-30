@@ -70,7 +70,7 @@ a Lua interface to the <I>fluidsynth</I> library</p>
  ALSA.connectfrom( 0, 'Keystation' )
  local soundfonts = <A HREF="#read_config_file">FS.read_config_file('/unusual/config_file')</A>
  local synth2 = <A HREF="#new_synth">FS.new_synth( {
-   ['audio.driver']      = 'alsa',
+   ['audio.driver']      = 'pulseaudio',
    ['audio.periods']     = 2,   -- min, for low latency
    ['audio.period-size'] = 64,  -- min, for low latency
  } )</A>
@@ -156,7 +156,7 @@ patch <B>99</B>, which happens to be a percussion set,
 as you typically want on channel 9.<BR>
 This is the format:
 </P><PRE>
- set audio.driver alsa
+ set audio.driver pulseaudio
  set synth.polyphony 1024
  load /home/soundfonts/Chaos4m.sf2
  load /home/soundfonts/MyGM.sf2
