@@ -45,6 +45,7 @@ IFO = assert(io.open(TmpMnt.."/VIDEO_TS/VIDEO_TS.IFO", 'r'))
 -- read a block into a lua string
 contents = IFO:read(128)
 IFO:close()
+os.execute("du -ms "..TmpMnt.."| sed -E 's/\\s+.*/ Mb/'")
 assert(os.execute("umount "..TmpMnt))
 os.remove(TmpMnt)  -- os.remove works on empty directories !
 region_mask = string.byte(contents, 36) -- look at byte at offset x0022 = 34
