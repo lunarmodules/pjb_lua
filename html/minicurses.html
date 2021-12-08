@@ -1,0 +1,168 @@
+<HTML><HEAD><TITLE>minicurses.lua</TITLE>
+<LINK rel=stylesheet type="text/css"
+href="../styles.css" title="PJB Computing Styles">
+<META HTTP-EQUIV="Keywords"
+CONTENT="MIDI, ALSA, Lua, module, luarock, score, opus">
+</HEAD>
+<BODY LINK="#000066" VLINK="#000066" ALINK="#000066">
+<DIV>
+<H1><IMG SRC="../logo.jpg" ALT=" " WIDTH=126 HEIGHT=52>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<FONT COLOR="#800000"><I>minicurses.lua</I></FONT>
+</H1>
+
+<!-- INDEX BEGIN -->
+
+<TABLE ALIGN="center" WIDTH="85%" BORDER=0 CELLSPACING=0>
+<TR><TD ALIGN="left">
+<ul>
+    <li><a href="#name">NAME</a></li>
+    <li><a href="#synopsis">SYNOPSIS</a></li>
+    <li><a href="#description">DESCRIPTION</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+    <li><a href="#functions">FUNCTIONS</a></li>
+    <li><a href="#constants">CONSTANTS</a></li>
+    <li><a href="#installation">INSTALLATION</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+    <li><a href="#changes">CHANGES</a></li>
+    <li><a href="#author">AUTHOR</a></li>
+    <li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+</TD></TR>
+</TABLE>
+
+<hr />
+<p></p>
+<!-- INDEX END -->
+
+<h3><a name="name">NAME</a></h3>
+<p>minicurses.lua - a stripped-down, easy-to-use access to the <CODE>ncurses</CODE> library</p>
+<p>
+</p>
+<hr />
+<h3><a name="synopsis">SYNOPSIS</a></h3>
+<pre>
+  local C = require 'minicurses'
+  C.initscr()
+  C.move(0,15); C.addstr('Welcome to minicurses :-)')
+  C.mvaddstr(2, 10, 'All those moments will be lost in time,')
+  C.mvaddstr(3, 16, 'like tears in the rain.  ')  
+  C.refresh()
+  C.echo(); c = C.getch(); C.noecho()
+  C.endwin()
+</pre>
+<p>
+</p>
+
+
+<hr />
+<h3><a name="description">DESCRIPTION</a></h3>
+<p>
+This module is a highly minimalised, stripped-down
+replacement for the abandoned <i>lcurses</i> module.<BR>
+It works under Lua 5.4
+</p><p>
+Be aware that, following <i>curses</i> tradition,
+the arguments of <i>move</i> and <i> mvaddstr</I>
+are <b>row,&nbsp;column</b><br>
+where row zero is at the top, and column zero is on the left.<br>
+This is <i>not</i> the same as <CODE>x,y</CODE> &nbsp;
+it's the other way round.
+</p><p>
+<CODE>stdscr</CODE> is hidden, because it is the only window offered.
+</p>
+<p>
+</p>
+
+<hr />
+<h3><a name="functions">FUNCTIONS</a></h3>
+<p>
+addstr(str)
+<BR>
+attrset(attribute) &nbsp; &nbsp;
+(attribute is <i>BOLD, REVERSE,</i> or <i>NORMAL</i>)
+<BR>
+cbreak()
+<BR>
+clear()
+<BR>
+clrtobot()
+<BR>
+clrtoeol()
+<BR>
+echo()
+<BR>
+endwin()
+<BR>
+getch()
+<BR>
+getnstr(len)
+<BR>
+initscr()
+<BR>
+keypad()
+<BR>
+move(row, col)
+<BR>
+mvaddstr(row, col, str)
+<BR>
+noecho()
+<BR>
+nonl()
+<BR>
+refresh()
+
+</p>
+<hr />
+<h3><a name="constants">CONSTANTS</a></h3>
+<p>BOLD
+&nbsp; &nbsp; REVERSE
+&nbsp; &nbsp; NORMAL
+</p>
+<p>
+</p>
+
+<hr />
+<h3><a name="installation">INSTALLATION</a></h3>
+<P>This module is available as a LuaRock in
+<A HREF="http://luarocks.org/modules/peterbillam">
+luarocks.org/modules/peterbillam</A>
+so you should be able to install it with the command:<BR>
+<CODE>
+ &nbsp; $ su<BR>
+ &nbsp; Password:<BR>
+ &nbsp; # luarocks install minicurses</CODE><BR>
+or:<BR><CODE>
+ &nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.3-0.rockspec</CODE>
+</P>
+
+<hr />
+<h3><a name="changes">CHANGES</a></h3>
+<p>
+  20211209 0.3 add getnstr(len)<BR>
+  20211206 0.2 add addstr, attrset, clrtobot, clrtoeol, keypad, nonl<BR>
+  20211204 0.1 first released version<BR>
+</p>
+
+<hr />
+<h3><a name="author">AUTHOR</a></h3>
+<p>Peter J Billam, &nbsp; <a href="https://www.pjb.com.au/comp/contact.html">
+pjb.com.au/comp/contact.html</a></p>
+<p>
+</p>
+
+<hr />
+<h3><a name="see_also">SEE ALSO</a></h3>
+<pre>  https://luarocks.org/modules/jjandresson/lcurses
+  https://github.com/lcurses/lcurses/issues/13
+  apt install ncurses-doc
+  man ncurses
+</pre>
+
+</body>
+
+</html>
