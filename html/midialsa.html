@@ -765,7 +765,7 @@ so you should be able to install it with the command:<BR>
  &nbsp; Password:<BR>
  &nbsp; # luarocks install midialsa</CODE><BR>
 or:<BR><CODE>
- &nbsp; # luarocks install http://www.pjb.com.au/comp/lua/midialsa-1.23-0.rockspec</CODE>
+ &nbsp; # luarocks install https://www.pjb.com.au/comp/lua/midialsa-1.25-0.rockspec</CODE>
 </P><p>
 If this results in an error message such as:<BR>
 <CODE>
@@ -777,8 +777,8 @@ then you need to find the appropriate directory with:<BR><CODE>
  &nbsp; find /usr/lib -name 'libasound.*' -print</CODE><BR>
 and then invoke:<BR><CODE>
  &nbsp; luarocks install \<BR>
- &nbsp; http://www.pjb.com.au/comp/lua/midialsa-1.23-0.rockspec \<BR>
- &nbsp; ALSA_LIBDIR=/usr/lib/i386-linux-gnu/   # or wherever</CODE><BR>
+ &nbsp; http://www.pjb.com.au/comp/lua/midialsa-1.25-0.rockspec \<BR>
+ &nbsp; ALSA_LIBDIR=/usr/lib/x86_64-linux-gnu/   # or wherever</CODE><BR>
 accordingly.
 </P><P>
 Or if it results in an error message such as:<BR>
@@ -792,12 +792,13 @@ development files, eg on debian that would be:<BR>
  &nbsp; aptitude install libasound-dev</CODE><BR>
 </P><P>
 You can see the source-code in:<BR>
-<CODE> &nbsp; https://pjb.com.au/comp/lua/midialsa-1.23.tar.gz</CODE>
+<CODE> &nbsp; https://pjb.com.au/comp/lua/midialsa-1.25.tar.gz</CODE>
 </p>
 
 <hr />
 <h3><a name="changes">CHANGES</a></h3>
 <p>
+<BR>20211118 1.25 include lua5.4
 <BR>20150421 1.23 include lua5.3, and move pod and doc back to luarocks.org
 <BR>20150416 1.22 asound and asoundlib.h specified as external dependencies
 <BR>20140609 1.21 switch pod and doc over to using moonrocks
@@ -842,7 +843,8 @@ and there's not much can be done about that.
 </p>
 <hr />
 <h3><a name="author">AUTHOR</a></h3>
-<p>Peter J Billam, <a href="http://www.pjb.com.au/comp/contact.html">http://www.pjb.com.au/comp/contact.html</a></p>
+<p>Peter J Billam, &nbsp; <a href="https://www.pjb.com.au/comp/contact.html">
+pjb.com.au/comp/contact.html</a></p>
 <p>
 </p>
 <hr />

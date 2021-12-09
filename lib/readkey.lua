@@ -7,9 +7,8 @@
 ---------------------------------------------------------------------
 
 local M = {} -- public interface
-M.Version = '1.7'  -- if using X over a framebuffer and have su'd
-        -- to a non-root user, then suppress the xwininfo errmsg
-M.VersionDate = '28jul2020'
+M.Version = '1.9'  -- 
+M.VersionDate = '19nov2021'
 
 --  luaposix now has tcgetattr and tcsetattr and the constants ECHONL etc !
 --  https://github.com/luaposix/luaposix/blob/master/examples/termios.lua

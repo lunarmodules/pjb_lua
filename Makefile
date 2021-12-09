@@ -1,15 +1,15 @@
-ALSAVER = 1.24
-CLUIVER = 1.78
-DBMVER  = 20150425.52
-DFILVER = 2.2
-DUMPVER = 1.1
+ALSAVER = 1.26
+CLUIVER = 1.79
+DBMVER  = 20211118.52
+DFILVER = 2.3
+DUMPVER = 1.2
 ECASVER = 0.4
 EVVER   = 1.14
 FENVER  = 1.9
 FSVER   = 2.4
 # Note: No more RK! RUNGE means Runge-Kutta; KEY means Term::ReadKey 
-KEYVER  = 1.8
-MIDIVER = 6.9
+KEYVER  = 1.9
+MIDIVER = 7.0
 MTVER   = 1.18
 RANDVER = 1.7
 RLVER   = 3.1
@@ -20,6 +20,7 @@ TCVER   = 0.1
 TIFVER  = 0.9
 WTVER   = 1.19
 NPVER   = 0.01
+MCVER   = 0.4
 
 # NO! should make these Math-* modules independent of their CPAN equivalents!
 # and give them dist* targets!
@@ -56,6 +57,7 @@ TISRC   = terminfo-0.0
 TCSRC   = testcases-0.0
 TIFSRC  = /home/pjb/lua/lib
 NPSRC   = noiseprotocol-0.0
+MCSRC   = minicurses-0.0
 
 DOCDIR = /home/pjb/www/comp/lua
 
@@ -98,6 +100,8 @@ NPROCKSPEC   = ${DISTDIR}/noiseprotocol-${NPVER}-0.rockspec
 NPTARBALL    = ${DISTDIR}/noiseprotocol-${NPVER}.tar.gz
 WTROCKSPEC   = ${WTDIR}/math-walshtransform-${WTVER}-0.rockspec
 WTTARBALL    = ${WTDIR}/math-walshtransform-${WTVER}.tar.gz
+MCROCKSPEC   = ${DISTDIR}/minicurses-${MCVER}-0.rockspec
+MCTARBALL    = ${DISTDIR}/minicurses-${MCVER}.tar.gz
 
 ALSAMD5 ?= $(shell md5sum -b ${ALSATARBALL} | sed 's/\s.*//')
 CLUIMD5 ?= $(shell md5sum -b ${CLUITARBALL} | sed 's/\s.*//')
@@ -118,6 +122,7 @@ TCMD5   ?= $(shell md5sum -b ${TCTARBALL} | sed 's/\s.*//')
 SOXMD5  ?= $(shell md5sum -b ${SOXTARBALL} | sed 's/\s.*//')
 TIFMD5  ?= $(shell md5sum -b ${TIFTARBALL} | sed 's/\s.*//')
 NPMD5   ?= $(shell md5sum -b ${NPTARBALL} | sed 's/\s.*//')
+MCMD5   ?= $(shell md5sum -b ${MCTARBALL} | sed 's/\s.*//')
 DATESTAMP ?= $(shell /home/pbin/datestamp)
 
 all: \
@@ -132,6 +137,10 @@ all: \
  ${WTROCKSPEC} ${WTTARBALL} ${SOXROCKSPEC} ${SOXTARBALL} ${TIFTARBALL}
 
 dev : ${SOXROCKSPEC}
+
+luavers :
+	grep '"lua ' `ls */*.rockspec | grep -v ^dist | egrep '/[a-z]+.rockspec'`
+	grep '"lua ' dist/*.rockspec
 
 distrunge: ${RUNGEROCKSPEC}
 	/home/pbin/upload ${RUNGEDIR}/RungeKutta.lua
@@ -189,7 +198,7 @@ distmidi: ${MIDIDIR}/MIDI.lua ${MIDIDIR}/MIDI.html ${MIDIROCKSPEC} \
 	/home/pbin/upload ${MIDIDIR}/MIDI.lua
 	#/home/pbin/upload ${MIDIDIR}/MIDI.html
 	/home/pbin/upload ${MIDIDIR}/test_mi.lua
-	# If a trial install works on 5.1, 5.2 and 5.3:
+	# If a trial install works on 5.1, 5.2, 5.3 and 5.4:
 	#  luarocks remove midi
 	#  luarocks install https://www.pjb.com.au/comp/lua/midi-${MIDIVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
@@ -199,9 +208,10 @@ distalsa: ${ALSADIR}/midialsa.html ${ALSAROCKSPEC}
 	/home/pbin/upload ${ALSADIR}/midialsa.html
 	/home/pbin/upload ${ALSADIR}/midialsa-${ALSAVER}-0.rockspec
 	/home/pbin/upload ${ALSADIR}/midialsa-${ALSAVER}.tar.gz
-	# If a trial install works on 5.1, 5.2 and 5.3:
+	# If a trial install works on 5.1, 5.2, 5.3 and 5.4:
 	#  luarocks remove midialsa
 	#  luarocks install https://www.pjb.com.au/comp/lua/midialsa-${ALSAVER}-0.rockspec ALSA_LIBDIR=/usr/lib/i386-linux-gnu/
+	#  luarocks install https://www.pjb.com.au/comp/lua/midialsa-${ALSAVER}-0.rockspec ALSA_LIBDIR=/usr/lib/x86_64-linux-gnu/
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload midialsa-${ALSAVER}-0.rockspec
 
@@ -211,7 +221,7 @@ distclui : ${CLUIDIR}/commandlineui.html ${CLUIROCKSPEC}
 	/home/pbin/upload ${CLUIDIR}/CommandLineUI-${CLUIVER}.tar.gz
 	cp /home/pbin/audio_stuff.lua ${CLUIDIR}/
 	# /home/pbin/upload ${CLUIDIR}/audio_stuff.lua
-	# If a trial install works on 5.1, 5.2 and 5.3:
+	# If a trial install works on 5.1, 5.2, 5.3 and 5.4:
 	#  luarocks remove commandlineui
 	#  luarocks install https://www.pjb.com.au/comp/lua/commandlineui-${CLUIVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
@@ -232,7 +242,7 @@ distdfil : ${DFILROCKSPEC} ${DFILDIR}/test_digitalfilter.lua
 distdump : ${DUMPROCKSPEC}
 	/home/pbin/upload ${DUMPDIR}/datadumper-${DUMPVER}-0.rockspec
 	/home/pbin/upload ${DUMPDIR}/DataDumper-${DUMPVER}.tar.gz
-	# If a trial install works on 5.1, 5.2 and 5.3:
+	# If a trial install works on 5.1, 5.2, 5.3 and 5.4:
 	#  luarocks remove datadumper
 	#  luarocks install https://www.pjb.com.au/comp/lua/datadumper-${DUMPVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
@@ -263,7 +273,7 @@ distfs: ${FSROCKSPEC}
 distrand : ${RANDROCKSPEC}
 	/home/pbin/upload ${RANDDIR}/randomdist-${RANDVER}-0.rockspec
 	/home/pbin/upload ${RANDDIR}/randomdist-${RANDVER}.tar.gz
-	# If a trial install works on 5.1, 5.2 and 5.3:
+	# If a trial install works on 5.1, 5.2, 5.3 and 5.4:
 	#  luarocks remove randomdist
 	#  luarocks install https://www.pjb.com.au/comp/lua/randomdist-${RANDVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
@@ -273,7 +283,7 @@ distrkey: ${KEYDIR}/readkey.html ${KEYROCKSPEC}
 	/home/pbin/upload ${KEYDIR}/readkey.html
 	/home/pbin/upload ${KEYDIR}/readkey-${KEYVER}-0.rockspec
 	/home/pbin/upload ${KEYDIR}/readkey-${KEYVER}.tar.gz
-	# If a trial install works on 5.1, 5.2 and 5.3:
+	# If a trial install works on 5.1, 5.2, 5.3 and 5.4:
 	#  luarocks remove readkey
 	#  luarocks install https://www.pjb.com.au/comp/lua/readkey-${KEYVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
@@ -296,11 +306,21 @@ distterm : ${TIDIR}/terminfo.html ${TIROCKSPEC}
 	/home/pbin/upload ${TIDIR}/terminfo.html
 	/home/pbin/upload ${TIDIR}/terminfo-${TIVER}-0.rockspec
 	/home/pbin/upload ${TIDIR}/terminfo-${TIVER}.tar.gz
-	# If a trial install works on 5.1, 5.2 and 5.3:
+	# If a trial install works on 5.1, 5.2, 5,3 and 5.4:
 	#  luarocks remove terminfo
 	#  luarocks install https://www.pjb.com.au/comp/lua/terminfo-${TIVER}-0.rockspec
 	#  box8 (debian) ~> cd ~/www/comp/lua/
 	#  box8 (debian) lua> luarocks upload terminfo-${TIVER}-0.rockspec
+
+distmc : ${DISTDIR}/minicurses.html ${MCROCKSPEC}
+	/home/pbin/upload ${DISTDIR}/minicurses.html
+	/home/pbin/upload ${DISTDIR}/minicurses-${MCVER}-0.rockspec
+	/home/pbin/upload ${DISTDIR}/minicurses-${MCVER}.tar.gz
+	# If a trial install works on 5.1, 5.2, 5,3 and 5.4:
+	#  luarocks remove minicurses
+	#  luarocks install https://www.pjb.com.au/comp/lua/minicurses-${MCVER}-0.rockspec
+	#  box8 (debian) ~> cd ~/www/comp/lua/
+	#  box8 (debian) lua> luarocks upload minicurses-${MCVER}-0.rockspec
 
 disttc : ${DISTDIR}/testcases.html ${TCROCKSPEC}
 	/home/pbin/upload ${DISTDIR}/testcases.html
@@ -733,3 +753,24 @@ ${NPROCKSPEC} : ${NPTARBALL} /home/pjb/lua/dist/noiseprotocol.rockspec
 	perl -pe \
 	 "s/VERSION/${NPVER}/ ; s/TARBALL/noiseprotocol-${NPVER}.tar.gz/ ; s/MD5/${NPMD5}/" /home/pjb/lua/dist/noiseprotocol.rockspec > $@
 	lua $@
+
+${MCTARBALL} : ${MCSRC}/minicurses.lua ${MCSRC}/C-minicurses.c \
+ ${MCSRC}/test_mc.lua ${DISTDIR}/minicurses.html
+	md5sum ${MCSRC}/minicurses.lua
+	mkdir minicurses-${MCVER}
+	mkdir minicurses-${MCVER}/test
+	mkdir minicurses-${MCVER}/doc
+	cp ${MCSRC}/minicurses.lua minicurses-${MCVER}/
+	cp ${MCSRC}/C-minicurses.c minicurses-${MCVER}/
+	cp ${DISTDIR}/minicurses.html minicurses-${MCVER}/doc
+	cp ${MCSRC}/test_mc.lua minicurses-${MCVER}/test
+	tar cvzf $@ minicurses-${MCVER}
+	rm -rf minicurses-${MCVER}
+${MCROCKSPEC} : ${MCTARBALL} ${MCSRC}/minicurses.rockspec
+	perl -pe \
+	 "s/VERSION/${MCVER}/ ; s/TARBALL/minicurses-${MCVER}.tar.gz/ ; s/MD5/${MCMD5}/" ${MCSRC}/minicurses.rockspec > $@
+	lua $@
+	cp $@ ${MCSRC}/minicurses-${MCVER}-0.rockspec
+#${DISTDIR}/minicurses.html : ${MCSRC}/minicurses.lua
+#	pod2html ${MCSRC}/minicurses.lua | sed 's/h1>/h2>/g' > ${MCSRC}/minicurses.html
+#	cp ${MCSRC}/minicurses.html $@
