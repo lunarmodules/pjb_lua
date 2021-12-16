@@ -67,56 +67,81 @@ replacement for the abandoned <i>lcurses</i> module.<BR>
 It works under Lua 5.4
 </p><p>
 Be aware that, following <i>curses</i> tradition,
-the arguments of <i>move</i> and <i> mvaddstr</I>
+the arguments of <i>move</i>, <i> mvaddstr</I> and <i> mvgetnstr</I>
 are <b>row,&nbsp;column</b><br>
 where row zero is at the top, and column zero is on the left.<br>
 This is <i>not</i> the same as <CODE>x,y</CODE> &nbsp;
 it's the other way round.
 </p><p>
 <CODE>stdscr</CODE> is hidden, because it is the only window offered.
-</p>
-<p>
+</p><p>
+Since version 0.5, the wrapper-function
+<I><A HREF="#getkey">getkey</A></I> is provided,
+which returns the strings
+<CODE>'UP' 'DOWN' 'RIGHT' 'LEFT' 'END' 'HOME' 'PAGEUP'</CODE>
+or <CODE> 'PAGEDOWN'</CODE> when those corresponding keys are pressed.
+</p><p>
+<A HREF="https://en.wikipedia.org/wiki/Box-drawing_character#Box_Drawing">
+Unicode box-drawing characters</A>
+are <CODE>\u{2500} \u{2502}</CODE>
+and <CODE>\u{250C} \u{2510} \u{2514} \u{2518}</CODE><BR>
+and their double-line equivalents
+are <CODE>\u{2550} \u{2551}</CODE>
+and <CODE>\u{2554} \u{2557} \u{255A} \u{255D}</CODE>
 </p>
 
 <hr />
 <h3><a name="functions">FUNCTIONS</a></h3>
-<p>
-addstr(str)
+<P>
+<CODE>addstr(str)</CODE>
 <BR>
-attrset(attribute) &nbsp; &nbsp;
+<CODE>attrset(attribute) &nbsp; &nbsp;</CODE>
 (attribute is <i>BOLD, REVERSE,</i> or <i>NORMAL</i>)
 <BR>
-cbreak()
+<CODE>cbreak()</CODE>
 <BR>
-clear()
+<CODE>clear()</CODE>
 <BR>
-clrtobot()
+<CODE>clrtobot()</CODE>
 <BR>
-clrtoeol()
+<CODE>clrtoeol()</CODE>
 <BR>
-echo()
+<CODE>echo()</CODE>
 <BR>
-endwin()
+<CODE>endwin()</CODE>
 <BR>
-getch()
+<CODE>getch()</CODE>
 <BR>
-getnstr(len)
+<CODE>getnstr(len)</CODE>
 <BR>
-initscr()
+<CODE>initscr()</CODE>
 <BR>
-keypad()
+<CODE>keypad()</CODE>
 <BR>
-move(row, col)
+<CODE>move(row, col)</CODE>
 <BR>
-mvaddstr(row, col, str)
+<CODE>mvaddstr(row, col, str)</CODE>
 <BR>
-noecho()
+<CODE>mvgetnstr(row, col, len)</CODE>
 <BR>
-nonl()
+<CODE>noecho()</CODE>
 <BR>
-refresh()
-
-</p>
+<CODE>nonl()</CODE>
+<BR>
+<CODE>refresh()</CODE>
+</P><A NAME="getkey"></A><P>
+<CODE>getkey()</CODE><BR>
+This function, which is not part of <I>curses</I>,
+is a thin wrapper round <CODE>getch()</CODE>
+which interprets the byte-sequences<BR>
+<CODE>^[[A ^[[B ^[[C^ [[D ^[[F ^[[H ^[[5~</CODE> or <CODE> ^[[6~</CODE>
+and returns<BR>
+<CODE>'UP' 'DOWN' 'RIGHT' 'LEFT' 'END' 'HOME' 'PAGEUP'</CODE>
+or <CODE> 'PAGEDOWN'</CODE>
+accordingly.<BR>
+These escape-sequences are very portable.
+Other keys, such as the Function Keys, are not provided.
+</P>
 <hr />
 <h3><a name="constants">CONSTANTS</a></h3>
 <p>BOLD
@@ -128,7 +153,7 @@ refresh()
 
 <hr />
 <h3><a name="installation">INSTALLATION</a></h3>
-<P>This module is available as a LuaRock in
+<P>This module is a LuaRock in
 <A HREF="http://luarocks.org/modules/peterbillam">
 luarocks.org/modules/peterbillam</A>
 so you should be able to install it with the command:<BR>
@@ -137,12 +162,14 @@ so you should be able to install it with the command:<BR>
  &nbsp; Password:<BR>
  &nbsp; # luarocks install minicurses</CODE><BR>
 or:<BR><CODE>
- &nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.3-0.rockspec</CODE>
+ &nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.5-0.rockspec</CODE>
 </P>
 
 <hr />
 <h3><a name="changes">CHANGES</a></h3>
 <p>
+  20211213 0.5 add getkey()<BR>
+  20211210 0.4 add mvgetnstr(row,col,len)<BR>
   20211209 0.3 add getnstr(len)<BR>
   20211206 0.2 add addstr, attrset, clrtobot, clrtoeol, keypad, nonl<BR>
   20211204 0.1 first released version<BR>
@@ -157,11 +184,20 @@ pjb.com.au/comp/contact.html</a></p>
 
 <hr />
 <h3><a name="see_also">SEE ALSO</a></h3>
-<pre>  https://luarocks.org/modules/jjandresson/lcurses
-  https://github.com/lcurses/lcurses/issues/13
-  apt install ncurses-doc
-  man ncurses
-</pre>
+<p>
+&nbsp; <A HREF="https://luarocks.org/modules/jjandresson/lcurses">
+luarocks.org/modules/jjandresson/lcurses</A><BR>
+&nbsp; <A HREF="https://github.com/lcurses/lcurses/issues/13">
+github.com/lcurses/lcurses/issues/13</A><BR>
+&nbsp; <CODE>apt install ncurses-doc</CODE><BR>
+&nbsp; <CODE>man ncurses</CODE><BR>
+&nbsp; <A HREF="https://gitlab.com/peterbillam/pjb_lua/-/tree/master/minicurses-0.0">
+gitlab.com/peterbillam/pjb_lua/-/tree/master/minicurses-0.0</A><BR>
+&nbsp; <A HREF="https://pjb.com.au/midi/midithru.html">
+pjb.com.au/midi/midithru.html</A><BR>
+&nbsp; <A HREF="https://en.wikipedia.org/wiki/Box-drawing_character#Box_Drawing">
+en.wikipedia.org/wiki/Box-drawing_character#Box_Drawing</A><BR>
+</p>
 
 </body>
 
