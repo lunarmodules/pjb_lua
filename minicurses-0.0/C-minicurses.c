@@ -115,6 +115,15 @@ static const struct constant constants[] = {
 	{"BOLD",     A_BOLD},
 	{"NORMAL",   A_NORMAL},
 	{"REVERSE",  A_REVERSE},
+/* BUT these are not constant :-)  what are they ? unsigned char ?
+	{"VLINE",    (const unsigned char) ACS_VLINE},
+	{"HLINE",    (const unsigned char) ACS_HLINE},
+	{"ULCORNER", (const unsigned char) ACS_ULCORNER},
+	{"URCORNER", (const unsigned char) ACS_URCORNER},
+	{"LLCORNER", (const unsigned char) ACS_LLCORNER},
+	{"LRCORNER", (const unsigned char) ACS_LRCORNER},
+*/
+
 /*	{"A_NORMAL", A_NORMAL},
 	{"A_ATTRIBUTES", A_ATTRIBUTES},
 	{"A_CHARTEXT", A_CHARTEXT},
