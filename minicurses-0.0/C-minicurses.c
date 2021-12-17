@@ -25,6 +25,7 @@ static int c_attrset(lua_State *L) {
 	attrset( (NCURSES_ATTR_T) attr );
 }
 
+
 static int c_cbreak(lua_State *L) {
 	cbreak();
 }
@@ -65,6 +66,11 @@ static int c_getnstr(lua_State *L) {
 	/* from C-readline.c: see PiL4 p.280 */
 }
 
+static int c_hline(lua_State *L) {
+	lua_Integer n  = lua_tointeger(L, 1);
+	hline(ACS_HLINE, n);
+}
+
 static int c_initscr(lua_State *L) {
 	initscr();
 }
@@ -94,6 +100,22 @@ static int c_mvaddstr(lua_State *L) {
 	mvaddstr(row, col, str);
 }
 
+static int c_mvbox(lua_State *L) {
+	int top_row = lua_tointeger(L, 1);
+	int lft_col = lua_tointeger(L, 2);
+	int bot_row = lua_tointeger(L, 3);
+	int rgt_col = lua_tointeger(L, 4);
+	move(top_row, lft_col);
+	addch(ACS_ULCORNER); hline(ACS_HLINE, rgt_col-lft_col-1);
+	move(top_row, rgt_col); addch(ACS_URCORNER); refresh();
+	move(bot_row, lft_col);
+	addch(ACS_LLCORNER); hline(ACS_HLINE, rgt_col-lft_col-1);
+	refresh();
+	move(bot_row, rgt_col); addch(ACS_LRCORNER); refresh();
+	move(top_row+1, lft_col); vline(ACS_VLINE, bot_row-top_row-1); refresh();
+	move(top_row+1, rgt_col); vline(ACS_VLINE, bot_row-top_row-1); refresh();
+}
+
 static int c_noecho(lua_State *L) {
 	noecho();
 }
@@ -105,6 +127,13 @@ static int c_nonl(lua_State *L) {
 static int c_refresh(lua_State *L) {
 	refresh();
 }
+
+static int c_vline(lua_State *L) {
+	lua_Integer n  = lua_tointeger(L, 1);
+	hline(ACS_VLINE, n);
+}
+
+/*------------------------------------------------*/
 
 struct constant {  /* Gems p. 334 */
     const char * name;
@@ -157,13 +186,16 @@ static const luaL_Reg prv[] = {  /* private functions */
     {"echo",     c_echo},
     {"getch",    c_getch},
     {"getnstr",  c_getnstr},
+    {"hline",    c_hline},
     {"initscr",  c_initscr},
     {"keypad",   c_keypad},
     {"noecho",   c_noecho},
     {"endwin",   c_endwin},
-    {"refresh",  c_refresh},
     {"move",     c_move},
     {"mvaddstr", c_mvaddstr},
+    {"mvbox",    c_mvbox},
+    {"refresh",  c_refresh},
+    {"vline",    c_vline},
     {NULL, NULL}
 };
 

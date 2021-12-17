@@ -5,8 +5,8 @@
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
 -- Example usage:
--- local MM = require 'minicurses'
--- MM.foo()
+--   C = require 'minicurses'
+--   C.foo()
 
 local M = {} -- public interface
 M.Version = '0.4'
@@ -20,7 +20,7 @@ M.VersionDate = '09dec2021'
 
 -- to do: getkey (+ LEFT RIGHT UP DOWN PAGEUP PAGEDOWN HOME END)
 -- therefore: echo() and noecho() must remember the state
--- mvgetnstr   (a thin wrapper with move and getnstr)
+-- !? delch() deleteln() insch(c) insertln() insstr(s) scrl(n) setscrreg(t,b)
 
 -- man 3 border
 -- The  border, wborder and box routines draw a box around the edges
@@ -28,6 +28,19 @@ M.VersionDate = '09dec2021'
 -- If any of the arguments are zero, then the corresponding
 --   default values (defined in curses.h) are used instead:
 -- ACS_VLINE ACS_HLINE ACS_ULCORNER ACS_URCORNER ACS_LLCORNER ACS_LRCORNER.
+-- SEEMS int hline(chtype ch, int n); and int vline(chtype ch, int n);
+-- might be worth a try, but 
+-- https://stackoverflow.com/questions/34538814/print-unicode-characters-in-c-using-ncurses
+-- ncurses defines the values ACS_HLINE, ACS_VLINE, ACS_ULCORNER,
+-- ACS_URCORNER, ACS_LLCORNER and ACS_LRCORNER. You can use those constants
+-- in addch and friends, which should result in your seeing the expected
+-- box characters. (There's lots more ACS characters; you'll find a complete
+-- list in man addch.)
+-- ncurses needs to know what it is drawing because it needs to know exactly
+-- where the cursor is all the time. Outputting console control sequences is
+-- not a good idea; if ncurses knows how to handle the sequence, it has its
+-- own abstraction for the feature and you should use that abstraction. The
+-- ACS ("alternate character set") defines are one of those abstractions.
 
 ------------------------------ private ------------------------------
 function warn(...)
@@ -67,6 +80,7 @@ function M.clrtobot()     prv.clrtobot() end
 function M.clrtoeol()     prv.clrtoeol() end
 function M.echo()         prv.echo() ; isecho = true  end
 function M.endwin()       prv.endwin()   end
+function M.hline(n)       prv.hline(tonumber(n))      end
 function M.initscr()      prv.initscr()  end
 function M.getch()        return string.char(prv.getch()) end
 function M.getnstr(len)   return prv.getnstr(len)       end
@@ -75,6 +89,7 @@ function M.move(row, col) prv.move(tonumber(row), tonumber(col)) end
 function M.noecho()       prv.noecho() ; isecho = false end
 function M.nonl()         prv.nonl()     end
 function M.refresh()      prv.refresh()  end
+function M.vline(n)       prv.vline(tonumber(n))      end
 
 function M.getkey()
 	local c1 = M.getch()
@@ -100,6 +115,19 @@ function M.getkey()
 		if wasecho and not isecho then M.echo() end
 		return key
     end
+end
+
+function M.mvbox(y1, x1, y2, x2)
+	local toprow, lftcol, botrow, rgtcol
+    if     x1 < x2 then lftcol = x1 ; rgtcol = x2
+    elseif x1 > x2 then lftcol = x2 ; rgtcol = x1
+    else return
+    end
+    if     y1 < y2 then toprow = y1 ; botrow = y2
+    elseif y1 > y2 then toprow = y2 ; botrow = y1
+    else return
+    end
+	prv.mvbox(toprow, lftcol, botrow, rgtcol)
 end
 
 return M
