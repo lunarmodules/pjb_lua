@@ -20,7 +20,7 @@ TCVER   = 0.1
 TIFVER  = 0.9
 WTVER   = 1.19
 NPVER   = 0.01
-MCVER   = 0.5
+MCVER   = 0.7
 
 # NO! should make these Math-* modules independent of their CPAN equivalents!
 # and give them dist* targets!

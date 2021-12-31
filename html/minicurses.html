@@ -46,14 +46,14 @@ CONTENT="MIDI, ALSA, Lua, module, luarock, score, opus">
 <hr />
 <h3><a name="synopsis">SYNOPSIS</a></h3>
 <pre>
-  local C = require 'minicurses'
-  C.initscr()
-  C.move(0,15); C.addstr('Welcome to minicurses :-)')
-  C.mvaddstr(2, 10, 'All those moments will be lost in time,')
-  C.mvaddstr(3, 16, 'like tears in the rain.  ')  
-  C.refresh()
-  C.echo(); c = C.getch(); C.noecho()
-  C.endwin()
+  local MC = require 'minicurses'
+  local LINES, COLS = MC.initscr()
+  MC.move(0,15); MC.addstr('Welcome to minicurses :-)')
+  MC.mvaddstr(2, 10, 'All those moments will be lost in time,')
+  MC.mvaddstr(3, 16, 'like tears in the rain.  ')  
+  MC.refresh()
+  MC.echo(); c = MC.getch(); MC.noecho()
+  MC.endwin()
 </pre>
 <p>
 </p>
@@ -116,7 +116,9 @@ It seems printing unicode chars under curses is impossible :-(
 <BR>
 <CODE>getnstr(len)</CODE>
 <BR>
-<CODE>initscr()</CODE>
+<CODE>hline(n)</CODE>
+<BR>
+<CODE>LINES, COLS = initscr()</CODE>
 <BR>
 <CODE>keypad()</CODE>
 <BR>
@@ -131,6 +133,8 @@ It seems printing unicode chars under curses is impossible :-(
 <CODE>nonl()</CODE>
 <BR>
 <CODE>refresh()</CODE>
+<BR>
+<CODE>vline(n)</CODE>
 </P><A NAME="getkey"></A><P>
 <CODE>getkey()</CODE><BR>
 This function, which is not part of <I>curses</I>,
@@ -149,6 +153,8 @@ Other keys, such as the Function Keys, are not provided.
 <p>BOLD
 &nbsp; &nbsp; REVERSE
 &nbsp; &nbsp; NORMAL
+&nbsp; &nbsp; LINES
+&nbsp; &nbsp; COLS
 </p>
 <p>
 </p>
@@ -164,16 +170,18 @@ so you should be able to install it with the command:<BR>
  &nbsp; Password:<BR>
  &nbsp; # luarocks install minicurses</CODE><BR>
 or:<BR><CODE>
- &nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.5-0.rockspec</CODE>
+6&nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.6-0.rockspec</CODE>
 </P>
 
 <hr />
 <h3><a name="changes">CHANGES</a></h3>
 <p>
-  20211213 0.5 add getkey()<BR>
+  20211230 0.7 initscr() returns LINES, COLS
+  20211230 0.6 add nonl()
+  20211213 0.5 add getkey(), hline(n), vline(n)<BR>
   20211210 0.4 add mvgetnstr(row,col,len)<BR>
   20211209 0.3 add getnstr(len)<BR>
-  20211206 0.2 add addstr, attrset, clrtobot, clrtoeol, keypad, nonl<BR>
+  20211206 0.2 add addstr, attrset, clrtobot, clrtoeol, keypad<BR>
   20211204 0.1 first released version<BR>
 </p>
 

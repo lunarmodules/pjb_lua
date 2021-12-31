@@ -81,8 +81,14 @@ function M.clrtoeol()     prv.clrtoeol() end
 function M.echo()         prv.echo() ; isecho = true  end
 function M.endwin()       prv.endwin()   end
 function M.hline(n)       prv.hline(tonumber(n))      end
-function M.initscr()      prv.initscr()  end
+function M.initscr()
+	M.LINES, M.COLS = prv.initscr()
+	return M.LINES, M.COLS
+end
 function M.getch()        return string.char(prv.getch()) end
+--	local c = prv.getch() ; io.stderr:write('c = '..tostring(c)..'\n')
+--	return string.char(c)
+--	end
 function M.getnstr(len)   return prv.getnstr(len)       end
 function M.keypad(bool)   prv.keypad(bool)              end
 function M.move(row, col) prv.move(tonumber(row), tonumber(col)) end

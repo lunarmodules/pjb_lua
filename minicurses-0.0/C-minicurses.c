@@ -73,6 +73,9 @@ static int c_hline(lua_State *L) {
 
 static int c_initscr(lua_State *L) {
 	initscr();
+	lua_pushinteger(L, LINES);
+	lua_pushinteger(L, COLS);
+	return 2;
 }
 
 static int c_intrflush(lua_State *L) {
@@ -140,6 +143,7 @@ struct constant {  /* Gems p. 334 */
     int value;
 };
 static const struct constant constants[] = {
+	/* error: initializer element is not constant */
     /* {"COLS",     COLS}, {"LINES",    LINES}, */
 	{"BOLD",     A_BOLD},
 	{"NORMAL",   A_NORMAL},
@@ -184,16 +188,17 @@ static const luaL_Reg prv[] = {  /* private functions */
     {"clrtobot", c_clrtobot},
     {"clrtoeol", c_clrtoeol},
     {"echo",     c_echo},
+    {"endwin",   c_endwin},
     {"getch",    c_getch},
     {"getnstr",  c_getnstr},
     {"hline",    c_hline},
     {"initscr",  c_initscr},
     {"keypad",   c_keypad},
-    {"noecho",   c_noecho},
-    {"endwin",   c_endwin},
     {"move",     c_move},
     {"mvaddstr", c_mvaddstr},
     {"mvbox",    c_mvbox},
+    {"noecho",   c_noecho},
+    {"nonl",     c_nonl},
     {"refresh",  c_refresh},
     {"vline",    c_vline},
     {NULL, NULL}
