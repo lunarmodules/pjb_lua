@@ -119,8 +119,7 @@ It seems printing unicode chars under curses is impossible :-(
 <CODE>hline(n)</CODE>
 <BR>
 <CODE>LINES, COLS = initscr()</CODE>
-<BR>
-<CODE>keypad()</CODE>
+<!-- <BR> <CODE>keypad()</CODE> -->
 <BR>
 <CODE>move(row, col)</CODE>
 <BR>
@@ -170,14 +169,14 @@ so you should be able to install it with the command:<BR>
  &nbsp; Password:<BR>
  &nbsp; # luarocks install minicurses</CODE><BR>
 or:<BR><CODE>
-6&nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.6-0.rockspec</CODE>
+ &nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.7-0.rockspec</CODE>
 </P>
 
 <hr />
 <h3><a name="changes">CHANGES</a></h3>
 <p>
-  20211230 0.7 initscr() returns LINES, COLS
-  20211230 0.6 add nonl()
+  20220101 0.7 remove keypad(); and initscr() returns LINES, COLS<BR>
+  20211230 0.6 add nonl()<BR>
   20211213 0.5 add getkey(), hline(n), vline(n)<BR>
   20211210 0.4 add mvgetnstr(row,col,len)<BR>
   20211209 0.3 add getnstr(len)<BR>

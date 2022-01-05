@@ -90,7 +90,7 @@ function M.getch()        return string.char(prv.getch()) end
 --	return string.char(c)
 --	end
 function M.getnstr(len)   return prv.getnstr(len)       end
-function M.keypad(bool)   prv.keypad(bool)              end
+-- function M.keypad(bool)   prv.keypad(bool)              end --
 function M.move(row, col) prv.move(tonumber(row), tonumber(col)) end
 function M.noecho()       prv.noecho() ; isecho = false end
 function M.nonl()         prv.nonl()     end
@@ -104,6 +104,7 @@ function M.getkey()
 	local wasecho = isecho
 	if isecho then M.noecho() end
 	local c2 = M.getch()
+	-- should do a timeout to allow the ESC key ? or just use getch() ?
 	if c2 == '[' then
 		local c3 = M.getch()
 		if     c3 == 'A' then key = 'UP'
@@ -117,9 +118,13 @@ function M.getkey()
     	else
 			if wasecho then M.echo() end
 			key = M.getch() -- reject unrecognised key, return next char
+			return key
 		end
-		if wasecho and not isecho then M.echo() end
+		if wasecho then M.echo() end
 		return key
+	else
+		if wasecho then M.echo() end
+		return c2
     end
 end
 
