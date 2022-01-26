@@ -139,11 +139,10 @@ It seems printing unicode chars under curses is impossible :-(
 This function, which is not part of <I>curses</I>,
 is a thin wrapper round <CODE>getch()</CODE>
 which interprets the byte-sequences<BR>
-<CODE>^[[A ^[[B ^[[C^ [[D ^[[F ^[[H ^[[5~</CODE> or <CODE> ^[[6~</CODE>
+<CODE>^[[A ^[[B ^[[C^ [[D ^[[F ^[[H ^[[2~ ^[[3~ ^[[5~</CODE> or <CODE> ^[[6~</CODE>
 and returns<BR>
-<CODE>'UP' 'DOWN' 'RIGHT' 'LEFT' 'END' 'HOME' 'PAGEUP'</CODE>
-or <CODE> 'PAGEDOWN'</CODE>
-accordingly.<BR>
+<CODE>'UP' 'DOWN' 'RIGHT' 'LEFT' 'END' 'INSERT' 'DELETE' 'HOME' 'PAGEUP'</CODE>
+or <CODE> 'PAGEDOWN'</CODE> accordingly.<BR>
 These escape-sequences are very portable.
 Other keys, such as the Function Keys, are not provided.
 </P>
@@ -169,12 +168,13 @@ so you should be able to install it with the command:<BR>
  &nbsp; Password:<BR>
  &nbsp; # luarocks install minicurses</CODE><BR>
 or:<BR><CODE>
- &nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.7-0.rockspec</CODE>
+ &nbsp; # luarocks install https://www.pjb.com.au/comp/lua/minicurses-0.8-0.rockspec</CODE>
 </P>
 
 <hr />
 <h3><a name="changes">CHANGES</a></h3>
 <p>
+  20220105 0.8 getkey() handles INS and DEL keys<BR>
   20220101 0.7 remove keypad(); and initscr() returns LINES, COLS<BR>
   20211230 0.6 add nonl()<BR>
   20211213 0.5 add getkey(), hline(n), vline(n)<BR>

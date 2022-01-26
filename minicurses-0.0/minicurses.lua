@@ -104,7 +104,8 @@ function M.getkey()
 	local wasecho = isecho
 	if isecho then M.noecho() end
 	local c2 = M.getch()
-	-- should do a timeout to allow the ESC key ? or just use getch() ?
+	-- should I do a timeout to allow the ESC key ? or just use getch() ?
+	-- as it stands, the user can enter ESC by pressing that key twice.
 	if c2 == '[' then
 		local c3 = M.getch()
 		if     c3 == 'A' then key = 'UP'
@@ -113,6 +114,8 @@ function M.getkey()
 		elseif c3 == 'D' then key = 'LEFT'
 		elseif c3 == 'F' then key = 'END'
 		elseif c3 == 'H' then key = 'HOME'
+		elseif c3 == '2' and M.getch() == '~' then key = 'INSERT'
+	    elseif c3 == '3' and M.getch() == '~' then key = 'DELETE'
 		elseif c3 == '5' and M.getch() == '~' then key = 'PAGEUP'
 	    elseif c3 == '6' and M.getch() == '~' then key = 'PAGEDOWN'
     	else
