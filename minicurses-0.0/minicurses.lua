@@ -50,7 +50,7 @@ function warn(...)
 end
 function die(...) warn(...);  os.exit(1) end
 function qw(s)  -- t = qw[[ foo  bar  baz ]]
-    local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
+	local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
 end
 
 local isecho = false  -- is this the default set by initscr ?
@@ -115,10 +115,10 @@ function M.getkey()
 		elseif c3 == 'F' then key = 'END'
 		elseif c3 == 'H' then key = 'HOME'
 		elseif c3 == '2' and M.getch() == '~' then key = 'INSERT'
-	    elseif c3 == '3' and M.getch() == '~' then key = 'DELETE'
+		elseif c3 == '3' and M.getch() == '~' then key = 'DELETE'
 		elseif c3 == '5' and M.getch() == '~' then key = 'PAGEUP'
-	    elseif c3 == '6' and M.getch() == '~' then key = 'PAGEDOWN'
-    	else
+		elseif c3 == '6' and M.getch() == '~' then key = 'PAGEDOWN'
+		else
 			if wasecho then M.echo() end
 			key = M.getch() -- reject unrecognised key, return next char
 			return key
@@ -128,19 +128,19 @@ function M.getkey()
 	else
 		if wasecho then M.echo() end
 		return c2
-    end
+	end
 end
 
 function M.mvbox(y1, x1, y2, x2)
 	local toprow, lftcol, botrow, rgtcol
-    if     x1 < x2 then lftcol = x1 ; rgtcol = x2
-    elseif x1 > x2 then lftcol = x2 ; rgtcol = x1
-    else return
-    end
-    if     y1 < y2 then toprow = y1 ; botrow = y2
-    elseif y1 > y2 then toprow = y2 ; botrow = y1
-    else return
-    end
+	if     x1 < x2 then lftcol = x1 ; rgtcol = x2
+	elseif x1 > x2 then lftcol = x2 ; rgtcol = x1
+	else return
+	end
+	if     y1 < y2 then toprow = y1 ; botrow = y2
+	elseif y1 > y2 then toprow = y2 ; botrow = y1
+	else return
+	end
 	prv.mvbox(toprow, lftcol, botrow, rgtcol)
 end
 
