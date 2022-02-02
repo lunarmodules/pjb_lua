@@ -20,9 +20,13 @@ local function warn(...)
 end
 local function die(...) warn(...);  os.exit(1) end
 local function qw(s)  -- t = qw[[ foo  bar  baz ]]
-    local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
+	local t = {} ; for x in s:gmatch("%S+") do t[#t+1] = x end ; return t
 end
 local function printf (...) print(string.format(...)) end
+local function round(x)
+	if not x then return nil end
+	return math.floor(x+0.5)
+end
 
 require 'DataDumper'
 local function Dump(...)
@@ -115,7 +119,7 @@ function M.prim (points, distance_func)
 	return links, distances
 end
 
-function M.gnuplot(points, links, xpixels, ypixels, output_file)
+function M.gnuplot(points, links, xpixels, ypixels, output_file, run_it)
 	-- must inspect points to measure xrange, yrange and circle-radius
 	-- gnuplot> help lines   ;   help circles   ;    help datablocks
 	-- use datablocks: $P for points, $L for lines, $N for point=numbers
@@ -125,10 +129,13 @@ function M.gnuplot(points, links, xpixels, ypixels, output_file)
 	if not   ypixels   then   ypixels   =  770 end
 	if not   xpixels   then   xpixels   = 1300 end
 	local radius = 0.03 * math.sqrt((xmax-xmin)*(ymax-ymin))
+	local fontsz = round(0.025 * math.sqrt(xpixels * ypixels))
+	local offset =  tostring(radius * -0.8)
+	printf('radius=%g  fontsz=%d  offset=%g\n', radius,fontsz,offset)
 	xpixels = tostring(xpixels)
 	ypixels = tostring(ypixels)
 	local arr = {'set terminal png enhanced size ',xpixels,',',ypixels,
-	  ' font "sans, 16"\n set colorsequence classic\n',
+	  string.format(' font "sans, %d"\n set colorsequence classic\n',fontsz),
 	  points_datablock(points),
 	  links_datablock(links),
 	  string.format('set output "%s"\n', output_file),
@@ -140,7 +147,13 @@ function M.gnuplot(points, links, xpixels, ypixels, output_file)
    [[) with circles linecolor rgb "white" \
    lw 2 fill solid border lc lt 0 notitle, \
   $P using 1:2:3 with labels offset (0,0) font 'Arial Bold' notitle
-]]}
+]]
+}
+	if run_it then
+		local P = assert(io.popen('gnuplot', 'w'))
+		P:write(table.concat(arr))
+		P:close()
+	end
 	return table.concat(arr)
 end
 

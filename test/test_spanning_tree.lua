@@ -29,5 +29,6 @@ links, distances = ST.prim(points, distance_func)
 -- print(ST.links_datablock(links))
 -- os.exit()
 
-printf(ST.gnuplot(points,links,700,600,'/tmp/sp.png'))
+-- printf(ST.gnuplot(points,links,700,600,'/tmp/sp.png'))
+ST.gnuplot(points,links,700,600,'/tmp/sp.png',1)
 os.execute('feh /tmp/sp.png')
