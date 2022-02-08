@@ -30,5 +30,40 @@ links, distances = ST.prim(points, distance_func)
 -- os.exit()
 
 -- printf(ST.gnuplot(points,links,700,600,'/tmp/sp.png'))
-ST.gnuplot(points,links,700,600,'/tmp/sp.png',1)
-os.execute('feh /tmp/sp.png')
+
+--local src = ST.gnuplot_src(points,links,1000,900,'/tmp/sp.png')
+--ST.gnuplot_run(src)
+--os.execute('feh /tmp/sp.png')
+
+math.randomseed(os.time())
+for n,npoints in ipairs({50,100,200}) do
+	points = {}
+	min = 1 ; max = 10 ; range = max - min
+	for i = 1,npoints do
+		points[i] = {min + range*math.random(), min + range*math.random() }
+	end
+	start_time = os.clock()
+	links, distances = ST.prim(points, distance_func)
+	local src = ST.gnuplot_src(points,links,distances, 1000,900,'/tmp/sp.png')
+	end_time = os.clock()
+	printf('#points = %d   elapsed time = %g', #points, end_time-start_time)
+	ST.gnuplot_run(src)
+	os.execute('feh /tmp/sp.png')
+end
+
+for n,npoints in ipairs({100}) do
+	points = {}
+	min = 1 ; max = 10 ; range = max - min
+	for i = 1,npoints do
+		points[i] = {min + range*math.random(), min + range*math.random() }
+	end
+	start_time = os.clock()
+	links, distances = ST.prim(points, distance_func)
+	local src = ST.gnuplot_src(points,links,distances, 1000,900,'/tmp/sp.eps')
+	end_time = os.clock()
+	printf('#points = %d   elapsed time = %g', #points, end_time-start_time)
+	ST.gnuplot_run(src)
+	run_time = os.clock()
+	printf('           gnuplot run time = %g', run_time-end_time)
+	-- os.execute('gv /tmp/sp.eps')
+end

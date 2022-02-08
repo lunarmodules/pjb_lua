@@ -59,6 +59,7 @@ local function points_datablock ( points )
 end
 
 local function links_datablock ( links )
+	-- lines are  "x1 y1 \nx2 y2"    where a link is {{x1,y1}, {x2,y2}}
 	local arr = {'$L << EOL\n',}
 	local format = string.format
 	local  push  = table.insert
@@ -69,6 +70,17 @@ local function links_datablock ( links )
 		)
 	end
 	push(arr, 'EOL\n')
+	return table.concat(arr)
+end
+
+local function numbers_datablock ( points, offset )
+	local arr = {'$N << EON\n',}
+	local format = string.format
+	local  push  = table.insert
+	for i, point in ipairs(points) do
+		push(arr, string.format('%g %g %d\n',point[1], point[2]-offset, i))
+	end
+	push(arr, 'EON\n')
 	return table.concat(arr)
 end
 
@@ -85,6 +97,12 @@ local function ranges (points)
 	local xmargin = (xmax-xmin) * 0.06
 	local ymargin = (ymax-ymin) * 0.06
 	return xmin-xmargin, xmax+xmargin, ymin-ymargin, ymax+ymargin
+end
+
+local function average (dists)
+	local av = 0
+	for i, dist in ipairs(dists) do av = av + dist end
+	return av / #dists
 end
 
 ------------------------------ public ------------------------------
@@ -119,25 +137,46 @@ function M.prim (points, distance_func)
 	return links, distances
 end
 
-function M.gnuplot(points, links, xpixels, ypixels, output_file, run_it)
-	-- must inspect points to measure xrange, yrange and circle-radius
-	-- gnuplot> help lines   ;   help circles   ;    help datablocks
-	-- use datablocks: $P for points, $L for lines, $N for point=numbers
-	-- lines are  "x1 y1 \nx2 y2"    where a link is {{x1,y1}, {x2,y2}}
-	local xmin, xmax, ymin, ymax = ranges(points)
-	if not output_file then output_file = '/tmp/spanning_tree' end
+
+function M.gnuplot_run(src)
+	local P = assert(io.popen('gnuplot', 'w'))
+	P:write(src)
+	P:close()
+end
+function M.gnuplot_src(
+  points, links, distances, xpixels, ypixels, output_file, run_it)
 	if not   ypixels   then   ypixels   =  770 end
 	if not   xpixels   then   xpixels   = 1300 end
-	local radius = 0.03 * math.sqrt((xmax-xmin)*(ymax-ymin))
-	local fontsz = round(0.025 * math.sqrt(xpixels * ypixels))
-	local offset =  tostring(radius * -0.8)
-	printf('radius=%g  fontsz=%d  offset=%g\n', radius,fontsz,offset)
+	if not output_file then output_file = '/tmp/spanning_tree' end
+	-- If output_file is *.ps should change to 'set terminal postscript'
+	--   and if *.eps 'set terminal postscript eps'
+	--   see: 'gnuplot> help set terminal postscript'
+	-- If points are 3D, should use `set view`
+	--   http://hirophysics.com/gnuplot/gnuplot10.html
+	--   http://lowrank.net/gnuplot/plotpm3d-e.html
+	--   https://sites.science.oregonstate.edu/~landaur/nacphy/DATAVIS/gnuplot.html
+	--   https://psy.swansea.ac.uk/staff/Carter/gnuplot/gnuplot_3d.htm
+	-- gnuplot> help lines   ;   help circles   ;    help datablocks  etc...
+	local xmin, xmax, ymin, ymax = ranges(points)
+	local r1 = 0.03 * math.sqrt((xmax-xmin)*(ymax-ymin))
+	local r2 = 0.1 * average(distances)
+	local radius = 0.3*r1 + 0.7*r2
+	local fontsz = round((radius/r1) * 0.025 * math.sqrt(xpixels*ypixels))
+	-- printf('#links = %d   radius/r1 = %g', #links, radius/r1)
+	local offset =  tostring((radius/r1) * 0.006 * (ymax-ymin))
+	-- printf('radius=%g  fontsz=%d  offset=%g\n', radius,fontsz,offset)
 	xpixels = tostring(xpixels)
 	ypixels = tostring(ypixels)
-	local arr = {'set terminal png enhanced size ',xpixels,',',ypixels,
+	-- use datablocks: $P for points, $L for lines, $N for point=numbers
+	local terminal = 'set terminal png enhanced '
+	if string.match(output_file, '%.eps$') then
+		terminal = 'set terminal postscript eps '
+	end
+	local arr = {terminal, ' size ',xpixels,',',ypixels,
 	  string.format(' font "sans, %d"\n set colorsequence classic\n',fontsz),
 	  points_datablock(points),
 	  links_datablock(links),
+	  numbers_datablock(points, offset),
 	  string.format('set output "%s"\n', output_file),
 	  string.format('set xrange [%g:%g]\n',xmin,xmax),
 	  string.format('set yrange [%g:%g]\n',ymin,ymax),
@@ -146,15 +185,11 @@ function M.gnuplot(points, links, xpixels, ypixels, output_file, run_it)
   $P using 1:2:(]], tostring(radius),
    [[) with circles linecolor rgb "white" \
    lw 2 fill solid border lc lt 0 notitle, \
-  $P using 1:2:3 with labels offset (0,0) font 'Arial Bold' notitle
+  $N using 1:2:3 with labels offset (0,0) font 'Arial Bold' notitle
 ]]
 }
-	if run_it then
-		local P = assert(io.popen('gnuplot', 'w'))
-		P:write(table.concat(arr))
-		P:close()
-	end
-	return table.concat(arr)
+	local src = table.concat(arr)
+	if run_it then M.gnuplot_run(src) else return src end
 end
 
 return M
@@ -316,7 +351,38 @@ the 3rd field instead of the $0 field, which is a sequential number.
  as though they are being read from a file, one data point per record.
  The letter "e" at the start of the first column terminates data entry.
 
- or could try '/dev/stdin' ...
+ ( or could try '/dev/stdin' ... )
+
+
+
+ https://staff.itee.uq.edu.au/ksb/howto/gnuplot-pdf-howto.html
+ Gnuplot output to PDF (via eps).
+
+  First, make a gnuplot "plot" file which uses "postscript" terminal output
+  Although the new gnuplot supports pdf terminal output,
+  it doesnt seem as full featured as the eps/pdf output.
+  The important terminal lines are as follows:
+   set terminal postscript portrait enhanced color dashed lw 1 "DejaVuSans" 12
+   set output "temp.ps"
+  Next run gnuplot on your plot file:
+    gnuplot temp.plot
+  Then convert the eps to pdf:
+    epstopdf temp.ps
+  Then use pdfcrop to make sure the bounding box is aligned with the output:
+    pdfcrop temp.pdf; mv temp-crop.pdf temp.pdf
+
+  This can all be done via a script (eg: save it as gnuplotcrop):
+    #!/usr/bin
+    bn=`basename $1 .plot`
+    gnuplot $bn.plot
+    epstopdf $bn.ps
+    pdfcrop $bn.pdf
+    mv $bn-crop.pdf $bn.pdf
+
+  Then, just run gnuplotcrop file.plot
+  - make sure the output is defined as file.ps inside this file.
+
+
 
 =back
 
@@ -334,6 +400,17 @@ Peter J Billam, https://pjb.com.au/comp/contact.html
  https://pjb.com.au/
  https://en.wikipedia.org/wiki/Prim%27s_algorithm
  https://stackoverflow.com/questions/20406346/how-to-plot-tree-graph-web-data-on-gnuplot
+ https://staff.itee.uq.edu.au/ksb/howto/gnuplot-pdf-howto.html
+ 3D :
+ http://hirophysics.com/gnuplot/gnuplot10.html
+ http://lowrank.net/gnuplot/plotpm3d-e.html
+ https://sites.science.oregonstate.edu/~landaur/nacphy/DATAVIS/gnuplot.html
+ 3D with mouse :
+ https://stackoverflow.com/questions/17507727/rotating-3d-plots-with-the-mouse-in-multiplot-mode
+   set terminal x11
+   splot sin(x)
+ http://gnuplot.sourceforge.net/docs_4.2/node201.html
+ http://gnuplot.sourceforge.net/demo_canvas_5.2/
 
 =cut
 
