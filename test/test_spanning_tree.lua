@@ -59,7 +59,7 @@ for n,npoints in ipairs({100}) do
 	end
 	start_time = os.clock()
 	links, distances = ST.prim(points, distance_func)
-	local src = ST.gnuplot_src(points,links,distances, 1000,900,'/tmp/sp.eps')
+	local src = ST.gnuplot_src(points,links,distances, 1000,900,'/tmp/sp.jpg')
 	end_time = os.clock()
 	printf('#points = %d   elapsed time = %g', #points, end_time-start_time)
 	ST.gnuplot_run(src)

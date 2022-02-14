@@ -34,7 +34,7 @@ local function Dump(...)
 	return d
 end
 
-function closest_point (point, isolated_points, distance_func)
+function closest_point (points, point, isolated_points, distance_func)
 	local closest_isolated
 	local minimum_distance = math.huge
 	for k,v in pairs(isolated_points) do
@@ -58,7 +58,7 @@ local function points_datablock ( points )
 	return table.concat(arr)
 end
 
-local function links_datablock ( links )
+local function links_datablock (points, links )
 	-- lines are  "x1 y1 \nx2 y2"    where a link is {{x1,y1}, {x2,y2}}
 	local arr = {'$L << EOL\n',}
 	local format = string.format
@@ -121,7 +121,7 @@ function M.prim (points, distance_func)
 		for ic, nc in pairs(connected) do
 			if nc then
 				local closest, dist =
-				  closest_point(nc, isolated, distance_func)
+				  closest_point(points, nc, isolated, distance_func)
 				if dist < minimum_distance then -- a new shortest !
 					minimum_distance  = dist
 					closest_connected = nc
@@ -162,6 +162,7 @@ function M.gnuplot_src(
 	local r2 = 0.1 * average(distances)
 	local radius = 0.3*r1 + 0.7*r2
 	local fontsz = round((radius/r1) * 0.025 * math.sqrt(xpixels*ypixels))
+-- warn(string.format('radius=%g r1=%g xpixels=%d ypixels=%d\n',radius,r1,xpixels,ypixels))
 	-- printf('#links = %d   radius/r1 = %g', #links, radius/r1)
 	local offset =  tostring((radius/r1) * 0.006 * (ymax-ymin))
 	-- printf('radius=%g  fontsz=%d  offset=%g\n', radius,fontsz,offset)
@@ -169,13 +170,16 @@ function M.gnuplot_src(
 	ypixels = tostring(ypixels)
 	-- use datablocks: $P for points, $L for lines, $N for point=numbers
 	local terminal = 'set terminal png enhanced '
-	if string.match(output_file, '%.eps$') then
+	if string.match(output_file, '%.jpg$') then
+		terminal = 'set terminal jpeg enhanced'
+	elseif string.match(output_file, '%.eps$') then
 		terminal = 'set terminal postscript eps '
 	end
+-- warn(string.format('fontsz=%g type(fontsz)=%s\n',fontsz,type(fontsz)))
 	local arr = {terminal, ' size ',xpixels,',',ypixels,
 	  string.format(' font "sans, %d"\n set colorsequence classic\n',fontsz),
 	  points_datablock(points),
-	  links_datablock(links),
+	  links_datablock(points, links),
 	  numbers_datablock(points, offset),
 	  string.format('set output "%s"\n', output_file),
 	  string.format('set xrange [%g:%g]\n',xmin,xmax),
