@@ -159,11 +159,16 @@ function M.gnuplot_src(
 	-- gnuplot> help lines   ;   help circles   ;    help datablocks  etc...
 	local xmin, xmax, ymin, ymax = ranges(points)
 	local r1 = 0.03 * math.sqrt((xmax-xmin)*(ymax-ymin))
-	local r2 = 0.1 * average(distances)
-	local radius = 0.3*r1 + 0.7*r2
+	local radius
+	if #links == 0 then
+		radius = 0.4*r1
+	else
+		local r2 = 0.1 * average(distances)
+		radius = 0.3*r1 + 0.7*r2
+	end
 	local fontsz = round((radius/r1) * 0.025 * math.sqrt(xpixels*ypixels))
 -- warn(string.format('radius=%g r1=%g xpixels=%d ypixels=%d\n',radius,r1,xpixels,ypixels))
-	-- printf('#links = %d   radius/r1 = %g', #links, radius/r1)
+-- printf('#links = %d   radius/r1 = %g', #links, radius/r1)
 	local offset =  tostring((radius/r1) * 0.006 * (ymax-ymin))
 	-- printf('radius=%g  fontsz=%d  offset=%g\n', radius,fontsz,offset)
 	xpixels = tostring(xpixels)
