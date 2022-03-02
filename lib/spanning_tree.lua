@@ -143,8 +143,7 @@ function M.gnuplot_run(src)
 	P:write(src)
 	P:close()
 end
-function M.gnuplot_src(
-  points, links, distances, xpixels, ypixels, output_file, run_it)
+function M.gnuplot_src(points,links,distances, xpixels,ypixels, output_file)
 	if not   ypixels   then   ypixels   =  770 end
 	if not   xpixels   then   xpixels   = 1300 end
 	if not output_file then output_file = '/tmp/spanning_tree' end
@@ -171,8 +170,6 @@ function M.gnuplot_src(
 -- printf('#links = %d   radius/r1 = %g', #links, radius/r1)
 	local offset =  tostring((radius/r1) * 0.006 * (ymax-ymin))
 	-- printf('radius=%g  fontsz=%d  offset=%g\n', radius,fontsz,offset)
-	xpixels = tostring(xpixels)
-	ypixels = tostring(ypixels)
 	-- use datablocks: $P for points, $L for lines, $N for point=numbers
 	local terminal = 'set terminal png enhanced '
 	if string.match(output_file, '%.jpg$') then
@@ -181,7 +178,8 @@ function M.gnuplot_src(
 		terminal = 'set terminal postscript eps '
 	end
 -- warn(string.format('fontsz=%g type(fontsz)=%s\n',fontsz,type(fontsz)))
-	local arr = {terminal, ' size ',xpixels,',',ypixels,
+	local arr = {terminal,
+	  string.format(' size %d,%d',xpixels,ypixels),
 	  string.format(' font "sans, %d"\n set colorsequence classic\n',fontsz),
 	  points_datablock(points),
 	  links_datablock(points, links),
@@ -197,8 +195,7 @@ function M.gnuplot_src(
   $N using 1:2:3 with labels offset (0,0) font 'Arial Bold' notitle
 ]]
 }
-	local src = table.concat(arr)
-	if run_it then M.gnuplot_run(src) else return src end
+	return table.concat(arr)
 end
 
 return M
