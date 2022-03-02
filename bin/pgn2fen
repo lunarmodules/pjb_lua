@@ -9,6 +9,8 @@ local Version = '1.6  for Lua5'
 local VersionDate  = '20191013'
 local Synopsis = [[
   pgn2fen.lua  1. d4 f5 2. g3
+  pgn2fen.lua < t.pgn
+  cat t.pgn | pgn2fen | fen2img - t.png
 ]]
 
 local FEN = require 'chess.fen'
@@ -74,7 +76,7 @@ pgn2fen.lua - Constructs PGN into its resulting FEN position
   rnbqkb1r/pp3ppp/3p1n2/2pP4/8/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 6
   ~> pgn2fen e4 e6 d4 d5 Nd2 c5
   rnbqkbnr/pp3ppp/4p3/2pp4/3PP3/8/PPPN1PPP/R1BQKBNR w KQkq c6 0 4
-  ~> pgn2fen foo.png 
+  ~> pgn2fen < foo.png 
 
   ~> pgn2fen -v    # displays the manual
 
