@@ -9,19 +9,21 @@ local Version = '1.0  for Lua5'
 local VersionDate  = '12jun2021'
 -- 1.1 a "-a" option to let the ascii range through unscathed ?
 local Synopsis = [[
-  utf2codepoint  [filename]
+  utf2codepoint  [filename]     # default is HTML output
   utf2codepoint -h [filename]   # output in HTML syntax
   utf2codepoint -l [filename]   # output in Lua syntax
   utf2codepoint -P [filename]   # output in Perl syntax
   utf2codepoint -p [filename]   # output in Python syntax
   utf2codepoint -u [filename]   # output in Unicode codepoint syntax
-  utf2codepoint -n [other args] # supress any final newline
-  utf2codepoint -v              # print the version
+  utf2codepoint -a [other args] # leave the 7-bit Ascii untouched
+  utf2codepoint -n [other args] # supress any final Newline
+  utf2codepoint -v              # print the Version
   perldoc utf2codepoint         # read the manual
 ]]
 local function printf (...) io.stdout:write(string.format(...)) end
 Mode = 'html'
 SuppressNewline = false
+AsciiThru = false
 local iarg=1; while arg[iarg] ~= nil do
 	if not string.find(arg[iarg], '^-[a-zA-Z]') then break end
 	local first_letter = string.sub(arg[iarg],2,2)
@@ -29,6 +31,7 @@ local iarg=1; while arg[iarg] ~= nil do
 		local n = string.gsub(arg[0],"^.*/","",1)
 		print(n.." version "..Version.."  "..VersionDate)
 		os.exit(0)
+	elseif first_letter == 'a' then AsciiThru = true
 	elseif first_letter == 'h' then Mode = 'html'
 	elseif first_letter == 'l' then Mode = 'lua'
 	elseif first_letter == 'P' then Mode = 'perl'
@@ -46,7 +49,13 @@ if arg[iarg] then F = assert(io.open(arg[iarg], 'r')) else F = io.stdin end
 c = {utf8.codepoint(F:read('a'),1,-1)}
 if SuppressNewline and (c[#c] == 0x000A) then c[#c] = nil end
 if Mode == 'html' then
-	for i,v in ipairs(c) do printf('&#x%04X;', v) end
+	for i,v in ipairs(c) do
+		if AsciiThru and (v<128 and v>8) then
+			io.stdout:write(string.char(v))
+		else
+			printf('&#x%04X;', v)
+		end
+	end
 elseif Mode == 'lua' then
 	for i,v in ipairs(c) do printf('\\u{%04X}', v) end
 elseif Mode == 'perl' then
