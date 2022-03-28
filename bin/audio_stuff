@@ -660,7 +660,7 @@ local function rip_dvd()
 	--  # check out scale, in_w, in_h    -s   Set frame size.
 	--  # -s wxh     The format is wxh (default - same as source).  Hmm....
 	local ffmp
-	if ffmpeg then ffmp='ffmpeg' else ffmp='avonv' end
+	if ffmpeg then ffmp='ffmpeg' else ffmp='avconv' end
 	print([[
 
   # then find out which streams you wish to copy, so  ls -lh  then eg:
