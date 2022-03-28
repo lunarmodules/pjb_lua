@@ -5,12 +5,20 @@
 --  This script is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
-local Version = '1.0  for Lua5'
-local VersionDate  = '14mar2022'
+local Version = '1.1  for Lua5'
+local VersionDate  = '24mar2022'
 local Synopsis = [[
-  ru2ascii [options] [filenames]
+  ru2ascii    [filenames]  # cyrillic-to-ascii
+  ru2ascii -r [filenames]  # Reverse, ie: ascii-to-cyrillic
+  ru2ascii -d [filenames]  # reverse, and output PS format for DejaVu fonts
+OR PERHAPS BETTER:
+  ru2ascii -d [filenames]  # output PS format for DejaVu fonts
+  ru2ascii                 # reads from standard input
 ]]
 local function printf (...) io.stdout:write(string.format(...)) end
+
+Reverse = false
+DejaVu  = false
 local iarg=1; while arg[iarg] ~= nil do
 	if not string.find(arg[iarg], '^-[a-z]') then break end
 	local first_letter = string.sub(arg[iarg],2,2)
@@ -18,8 +26,15 @@ local iarg=1; while arg[iarg] ~= nil do
 		local n = string.gsub(arg[0],"^.*/","",1)
 		print(n.." version "..Version.."  "..VersionDate)
 		os.exit(0)
-	elseif first_letter == 'c' then
-		whatever()
+	elseif first_letter == 'r' then
+		Reverse = true
+		if string.match(arg[iarg], '^-rd') then DejaVu  = true end
+	elseif first_letter == 'd' then
+		DejaVu  = true
+		-- should -d set -r automatically ?
+		-- Reverse = true
+		-- HMM.. probably not; there is a need for utf8-to-dejavu translation
+		-- if string.match(arg[iarg], '^-dr') then Reverse = true end
 	else
 		local n = string.gsub(arg[0],"^.*/","",1)
 		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
@@ -28,7 +43,10 @@ local iarg=1; while arg[iarg] ~= nil do
 	iarg = iarg+1
 end
 if arg[iarg] then F = assert(io.open(arg[iarg], 'r')) else F = io.stdin end
-local c = {utf8.codepoint(F:read('a'),1,-1)}
+local str    = F:read('a')
+local utftab = {utf8.codepoint(str,1,-1)}
+
+-- print('Reverse =', Reverse) ; print('DejaVu  =', DejaVu)
 
 local codepoint2ascii = {
 	[0x0410] = 'A',  [0x0411] = 'B',   [0x0412] = 'V',  [0x0413] = 'G',
@@ -47,17 +65,101 @@ local codepoint2ascii = {
 	[0x0444] = 'f',  [0x0445] = 'kh',  [0x0446] = 'ts', [0x0447] = 'ch',
 	[0x0448] = 'sh', [0x0449] = 'sch', [0x044A] = '"',  [0x044B] = 'y',
 	[0x044C] = "'",  [0x044D] = 'e',   [0x044E] = 'yu', [0x044F] = 'ya',
-	[0x0401] = 'IO', [0x0451] = 'io',  [0x0407] = 'YI', [0x0457] = 'yi',
+	[0x0401] = 'Io', [0x0451] = 'io',  [0x0407] = 'Yi', [0x0457] = 'yi',
+	[0x0408] = 'Je', [0x0458] = 'je',  [0x0301] = '', 
 }
+-- 0x0301 means acute accent on the previous character.
+-- could do 0x0430 0x0301 -> á U+00E1 and 0x043E 0x0301 -> ó U+00F3 ?
+local ascii2codepoint = {}
+for k,v in pairs(codepoint2ascii) do ascii2codepoint[v] = k end
+local codepoint2dejavu = {
+	[0x0410]='\\300', [0x0411]='\\301', [0x0412]='\\302', [0x0413]='\\303',
+	[0x0414]='\\304', [0x0415]='\\305', [0x0416]='\\306', [0x0417]='\\307',
+	[0x0418]='\\310', [0x0419]='\\311', [0x041A]='\\312', [0x041B]='\\313',
+	[0x041C]='\\314', [0x041D]='\\315', [0x041E]='\\316', [0x041F]='\\317',
+	[0x0420]='\\320', [0x0421]='\\321', [0x0422]='\\322', [0x0423]='\\323',
+	[0x0424]='\\324', [0x0425]='\\325', [0x0426]='\\326', [0x0427]='\\327',
+	[0x0428]='\\330', [0x0429]='\\331', [0x042A]='\\332', [0x042B]='\\303',
+	[0x042C]='\\334', [0x042D]='\\335', [0x042E]='\\336', [0x042F]='\\307',
+	[0x0430]='\\340', [0x0431]='\\341', [0x0432]='\\342', [0x0433]='\\343',
+	[0x0434]='\\344', [0x0435]='\\345', [0x0436]='\\346', [0x0437]='\\347',
+	[0x0438]='\\350', [0x0439]='\\351', [0x043A]='\\352', [0x043B]='\\353',
+	[0x043C]='\\354', [0x043D]='\\355', [0x043E]='\\356', [0x043F]='\\357',
+	[0x0440]='\\360', [0x0441]='\\361', [0x0442]='\\362', [0x0443]='\\363',
+	[0x0444]='\\364', [0x0445]='\\365', [0x0446]='\\366', [0x0447]='\\367',
+	[0x0448]='\\370', [0x0449]='\\371', [0x044A]='\\372', [0x044B]='\\373',
+	[0x044C]='\\374', [0x044D]='\\375', [0x044E]='\\376', [0x044F]='\\377',
+	[0x0401]='\\250', [0x0451]='\\270', [0x0407]='\\257', [0x0457]='\\277',
+	[0x0408]='\\243', [0x0458]='\\274', [0x0301] = '', 
+}
+local ascii2dejavu = {}
+for k,v in pairs(ascii2codepoint) do
+	ascii2dejavu[k] = codepoint2dejavu[v]
+end   -- print(ascii2dejavu['Yi'])
 
 local char = string.char
-function ru2str (v) return codepoint2ascii[v] or char(v) end
+local sub  = string.sub
 
-local strtab = {}
-local insert = table.insert
-for i,v in ipairs(c) do insert(strtab, ru2str(v)) end
-
-io.write(table.concat(strtab, ''))
+if not Reverse then
+	local function ru2str (v) return codepoint2ascii[v] or char(v) end
+	local strtab = {}
+	local insert = table.insert
+	for i,v in ipairs(utftab) do insert(strtab, ru2str(v)) end
+	io.write(table.concat(strtab, ''))
+else
+	local i = 1   -- index into the string str starts at 1 !!
+	local n = string.len(str)   -- i is 1<=i<=n
+	local cyrtab = {}
+	while i <= n do
+		local c = sub(str,i,i)
+--io.stderr:write(string.format('i = %d, n = %d, c = %s\n',i,n,c))
+		if i<(n-1) and (c=='S' or c=='s') and 
+		  sub(str,i+1,i+1)== 'c' and sub(str,i+2,i+2) == 'h' then
+			cyrtab[#cyrtab+1] = ascii2codepoint[c..'ch']  -- sch
+			i = i + 3
+		elseif i<n and (c=='C' or c=='c') and sub(str,i+1,i+1)== 'h' then
+			cyrtab[#cyrtab+1] = ascii2codepoint[c..'h']   -- ch
+			i = i + 2
+		elseif i<n and (c=='I' or c=='i') and sub(str,i+1,i+1)== 'o' then
+			cyrtab[#cyrtab+1] = ascii2codepoint[c..'o']   -- ch
+			i = i + 2
+		elseif i<n and (c=='K' or c=='k') and sub(str,i+1,i+1)== 'h' then
+			cyrtab[#cyrtab+1] = ascii2codepoint[c..'h']   -- kh
+			i = i + 2
+		elseif i<n and (c=='S' or c=='s') and sub(str,i+1,i+1)== 'h' then
+			cyrtab[#cyrtab+1] = ascii2codepoint[c..'h']   -- sh
+			i = i + 2
+		elseif i<n and (c=='T' or c=='t') and sub(str,i+1,i+1)== 's' then
+			cyrtab[#cyrtab+1] = ascii2codepoint[c..'s']   -- ts
+			i = i + 2
+		elseif i<n and (c=='Y' or c=='y') and -- ya, ye or yu ?
+		  string.find(sub(str,i+1,i+1), '[aeiu]') then
+--io.stderr:write(string.format('  sub(str,i+1,i+1) = %s\n',sub(str,i+1,i+1)))
+			cyrtab[#cyrtab+1] = ascii2codepoint[c..sub(str,i+1,i+1)]
+			i = i + 2
+		elseif i<n and (c=='Z' or c=='z') and sub(str,i+1,i+1)== 'h' then
+			cyrtab[#cyrtab+1] = ascii2codepoint[c..'h']   -- zh
+			i = i + 2
+		else
+			cyrtab[#cyrtab+1] = ascii2codepoint[c] or c
+			i = i + 1
+		end
+	end
+	if not DejaVu then
+		for i,v in ipairs(cyrtab) do
+			if type(v) == 'string' then io.write(v)
+			else io.write(utf8.char(v)) -- convert codepoint to string char
+			end
+		end
+	else
+		for i,v in ipairs(cyrtab) do
+			if type(v) == 'string' then io.write(v)
+			else io.write(codepoint2dejavu[v])  -- codepoint to dejavu
+			end
+		end
+	end
+	
+end
 
 --[=[
 
@@ -98,6 +200,11 @@ Print the Version
 =head1 DOWNLOAD
 
 This at is available at
+
+=head1 CHANGES
+
+ 20220314 first working version
+ 20220324 -r ascii-to-cyrillic
 
 =head1 AUTHOR
 
