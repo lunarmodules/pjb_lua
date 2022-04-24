@@ -7,8 +7,8 @@
 ---------------------------------------------------------------------
 
 local M = {} -- public interface
-M.Version     = '2.9' -- fix version number again
-M.VersionDate = '27jan2021'
+M.Version     = '3.1' -- reset OldHistoryLength if histfile gets set
+M.VersionDate = '20apr2022'
 
 --[[
 Alexander Adler suggests adding four Alternate-Interface functions:
@@ -141,6 +141,7 @@ function M.set_options ( tbl )
 				Option[k] = v
 				prv.clear_history()
 				local rc = M.read_history( Option['histfile'] )  -- 1.2
+				OldHistoryLength = prv.history_length()  -- 3.1
 			end
 		elseif k == 'keeplines' or k == 'minlength' then
 			if type(v) ~= 'number' then
@@ -204,9 +205,46 @@ function M.save_history ( )
 		if rc ~= 0 then warn('append_history: '..prv.strerror(rc)) end
 		rc = prv.history_truncate_file ( histfile, Option['keeplines'] )
 		if rc ~= 0 then warn('history_truncate_file: '..prv.strerror(rc)) end
+		-- reset OldHistoryLength in case it's used again ... er: 3.1?
+		-- OldHistoryLength = n   -- is this useful ?
 	end
 	return
 end
+
+--[[
+20220420
+https://tiswww.cwru.edu/php/chet/readline/history.html#SEC15
+
+Function: int read_history (const char *filename)
+    Add the contents of filename to the history list, a line at a 
+    time. If filename is NULL, then read from `~/.history'. Returns 0
+    if successful, or errno if not.
+
+Function: int read_history_range (const char *filename, int from, int to)
+    Read a range of lines from filename, adding them to the history 
+    list. Start reading at line from and end at to. If from is zero, start
+    at the beginning. If to is less than from, then read until the end of
+    the file. If filename is NULL, then read from `~/.history'. Returns 
+    0 if successful, or errno if not.
+
+Function: int write_history (const char *filename)
+    Write the current history to filename, overwriting filename if 
+    necessary. If filename is NULL, then write the history list to
+    `~/.history'. Returns 0 on success, or errno on a read or write error.
+
+Function: int append_history (int nelements, const char *filename)
+    Append the last nelements of the history list to filename. If filename 
+    is NULL, then append to `~/.history'. Returns 0 on success, or errno
+    on a read or write error.
+
+Function: int history_truncate_file (const char *filename, int nlines)
+    Truncate the history file filename, leaving only the last nlines 
+    lines. If filename is NULL, then `~/.history' is truncated. Returns
+    0 on success, or errno on failure.
+
+Seems something's going wrong with n-OldHistoryLength ...
+]]
+
 
 function M.strerror ( errnum )
 	return prv.strerror(tonumber(errnum))
@@ -516,7 +554,8 @@ or on Centos you may need:
 
 =head1 CHANGES
 
-
+ 20220420 3.1 reset OldHistoryLength if histfile gets set
+ 20210418 3.0 pass READLINE_INCDIR and READLINE_LIBDIR to gcc
  20210127 2.9 fix version number again
  20210106 2.8 add set_readline_name() and fix version number
  20200801 2.7 add 5.4
@@ -548,6 +587,7 @@ Alternate Interface functions.
  man readline
  http://www.gnu.org/s/readline
  https://tiswww.case.edu/php/chet/readline/readline.html
+ https://tiswww.cwru.edu/php/chet/readline/history.html#SEC15
  https://tiswww.case.edu/php/chet/readline/readline.html#SEC41
  https://tiswww.case.edu/php/chet/readline/readline.html#SEC45
  /usr/share/readline/inputrc

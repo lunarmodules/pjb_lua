@@ -12,7 +12,7 @@ KEYVER  = 1.9
 MIDIVER = 7.0
 MTVER   = 1.18
 RANDVER = 1.7
-RLVER   = 3.1
+RLVER   = 3.2
 RUNGEVER = 1.09
 SOXVER  = 0.1
 TIVER   = 1.8
@@ -20,10 +20,8 @@ TCVER   = 0.1
 TIFVER  = 0.9
 WTVER   = 1.19
 NPVER   = 0.01
-MCVER   = 0.7
+MCVER   = 0.8
 
-# NO! should make these Math-* modules independent of their CPAN equivalents!
-# and give them dist* targets!
 ALSADIR  = /home/pjb/www/comp/lua
 CLUIDIR  = /home/pjb/www/comp/lua
 DFILDIR  = /home/pjb/www/comp/lua
