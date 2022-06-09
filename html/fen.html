@@ -45,7 +45,7 @@ CONTENT="chess, FEN, notation, luarock">
 
 <pre><code> local FEN = require 'chess.fen'
 
- french = 'rnbqkbnr/ppp2ppp/4p3/3p4/3PP3//PPP2PPP/RNBQKNR w KQkq - 0 3'
+ french = 'rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3'
  newfen = FEN.fenstr_move(french, 'Nc3')
  print(newfen)
  print(FEN.fenstr2asciidiag(newfen))
@@ -174,11 +174,12 @@ To use <A HREF="pgn2eco">pgn2eco</A> you will also need the
 <pre><code>  luarocks install lgdbm</code></pre>
 </P><P>
 You can see the source-code in:<BR>
-<CODE> &nbsp; https://pjb.com.au/comp/lua/chess-fen-1.8.tar.gz</CODE>
+<CODE> &nbsp; https://pjb.com.au/comp/lua/chess-fen-1.9.tar.gz</CODE>
 </p>
 
 <H3 id="CHANGES">CHANGES</H3>
 <pre><code>
+ 20220601 2.0 trivial doc fix
  20200422 1.8 remove require 'DataDumper', just used for testing
  20200422 1.7 fix bug in posstr2postab()
  20191013 1.6 ./bin files use /usr/bin/env lua, and pgn2fen gets perldoc

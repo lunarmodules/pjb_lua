@@ -827,7 +827,7 @@ fen.lua - This module manipulates FEN files.
 =head1 SYNOPSIS
 
  local FEN = require 'chess.fen'
- french = 'rnbqkbnr/ppp2ppp/4p3/3p4/3PP3//PPP2PPP/RNBQKNR w KQkq - 0 3'
+ french = 'rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3'
  newfen = FEN.fenstr_move(french, 'Nc3')
  print(newfen)
  print(FEN.fenstr2asciidiag(newfen))
