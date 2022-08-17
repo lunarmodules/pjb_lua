@@ -1,0 +1,124 @@
+#!/usr/bin/env lua
+---------------------------------------------------------------------
+--     This Lua5 script is Copyright (c) 2022, Peter J Billam      --
+--                         pjb.com.au                              --
+--  This script is free software; you can redistribute it and/or   --
+--         modify it under the same terms as Lua5 itself.          --
+---------------------------------------------------------------------
+local Version = '1.0  for Lua5'
+local VersionDate  = '7aug2022'
+local Synopsis = [[
+  eread [options] [filenames]
+  eread /home/somewhere/foo.epub
+]]
+
+
+local function printf (...) io.stdout:write(string.format(...)) end
+local iarg=1; while arg[iarg] ~= nil do
+	if not string.find(arg[iarg], '^-[a-z]') then break end
+	local first_letter = string.sub(arg[iarg],2,2)
+	if first_letter == 'v' then
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate)
+		os.exit(0)
+	elseif first_letter == 'c' then
+		whatever()
+	else
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
+		os.exit(0)
+	end
+	iarg = iarg+1
+end
+-- if arg[iarg] then fn = arg[iarg] else print(Synopsis) ; os.exit() end
+
+local P = require 'posix'
+local C = require 'CommandLineUI'
+
+HOME = P.getpwuid(P.getuid())['pw_dir'] or os.getenv('HOME')
+epubdir = (os.getenv('EPUBDIR')..'/') or (HOME..'/epub/')
+txtdir  = HOME .. '/.eread/'
+if not P.stat(txtdir) then os.execute('mkdir '..txtdir) end
+
+-- if necessary:
+-- local sys_stat = require "posix.sys.stat"
+-- could then use sys_stat.mkdir(txtdir) instead of os.execute() ...
+-- for a, b in pairs (sys_stat.stat(epubdir)) do print (a, b) end
+if arg[iarg] then
+	epubfile = arg[iarg]
+	stripped = string.match(string.gsub(epubfile, '.epub$', ''), '[^/]+$')
+	-- print('stripped = '..stripped) ; os.exit()
+else
+	local dirent = require "posix.dirent"
+	epubfiles = {}
+	for a in dirent.files(epubdir) do
+		if string.find(a, '.epub') then
+			local stripped = string.gsub(a, '.epub$', '')
+			table.insert(epubfiles, stripped)
+		end
+	end
+	table.sort(epubfiles)
+	stripped = C.choose('  read which .epub file ?', epubfiles)
+	epubfile = epubdir .. stripped .. '.epub'
+end
+
+-- print('stripped = ',stripped)
+-- print('epubdir = ',epubdir)
+-- print('epubfile =',epubfile)
+
+txtfile  = txtdir  .. stripped .. '.txt'
+local Pstat = require "posix.sys.stat"
+epub_mtime = Pstat.stat(epubfile) ['st_mtime']
+txt_stat   = Pstat.stat(txtfile)
+if not txt_stat then
+	os.execute('pandoc -t plain -o '..txtfile..' '..epubfile)
+end
+txt_mtime  = Pstat.stat(txtfile) ['st_mtime']
+if txt_mtime < epub_mtime then
+	os.execute('pandoc -t plain -o '..txtfile..' '..epubfile)
+end
+
+os.execute('vi -R '..txtfile)
+os.exit()
+
+--[=[
+
+=pod
+
+=head1 NAME
+
+eread - what it does
+
+=head1 SYNOPSIS
+
+ eread infile > outfile
+
+=head1 DESCRIPTION
+
+This script
+
+=head1 ARGUMENTS
+
+=over 3
+
+=item I<-v>
+
+Print the Version
+
+=back
+
+=head1 DOWNLOAD
+
+This at is available at
+
+=head1 AUTHOR
+
+Peter J Billam, https://pjb.com.au/comp/contact.html
+
+=head1 SEE ALSO
+
+ https://pjb.com.au/
+
+=cut
+
+]=]
