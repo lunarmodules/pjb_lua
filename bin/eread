@@ -105,6 +105,11 @@ Uses pandoc and vi -R or view to read the text of epub ebooks.
 This at is available at
 https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread
 
+You will also need to install
+
+    luarocks install commandlineui
+    luarocks install luaposix
+
 =head1 AUTHOR
 
 Peter J Billam, https://pjb.com.au/comp/contact.html
@@ -113,6 +118,7 @@ Peter J Billam, https://pjb.com.au/comp/contact.html
 
  https://pjb.com.au/
  https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread
+ https://pjb.com.au/comp/lua/commandlineui.html
 
 =cut
 
