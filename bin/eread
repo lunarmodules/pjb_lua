@@ -8,10 +8,13 @@
 local Version = '1.0  for Lua5'
 local VersionDate  = '7aug2022'
 local Synopsis = [[
-  eread [options] [filenames]
-  eread /home/somewhere/foo.epub
+  export EPUBDIR=/home/unusual/epub  # default is ~/epub
+  eread
+  # or:
+  eread /tmp/old_man_and_the_sea.epub
+  # but usually this would be better:
+  cp /tmp/old_man_and_the_sea.epub ~/epub/
 ]]
-
 
 local function printf (...) io.stdout:write(string.format(...)) end
 local iarg=1; while arg[iarg] ~= nil do
@@ -21,8 +24,8 @@ local iarg=1; while arg[iarg] ~= nil do
 		local n = string.gsub(arg[0],"^.*/","",1)
 		print(n.." version "..Version.."  "..VersionDate)
 		os.exit(0)
-	elseif first_letter == 'c' then
-		whatever()
+	-- elseif first_letter == 'c' then
+	--  	whatever()
 	else
 		local n = string.gsub(arg[0],"^.*/","",1)
 		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
@@ -39,15 +42,14 @@ HOME = P.getpwuid(P.getuid())['pw_dir'] or os.getenv('HOME')
 epubdir = (os.getenv('EPUBDIR')..'/') or (HOME..'/epub/')
 txtdir  = HOME .. '/.eread/'
 if not P.stat(txtdir) then os.execute('mkdir '..txtdir) end
-
 -- if necessary:
 -- local sys_stat = require "posix.sys.stat"
 -- could then use sys_stat.mkdir(txtdir) instead of os.execute() ...
 -- for a, b in pairs (sys_stat.stat(epubdir)) do print (a, b) end
+
 if arg[iarg] then
 	epubfile = arg[iarg]
 	stripped = string.match(string.gsub(epubfile, '.epub$', ''), '[^/]+$')
-	-- print('stripped = '..stripped) ; os.exit()
 else
 	local dirent = require "posix.dirent"
 	epubfiles = {}
@@ -61,10 +63,6 @@ else
 	stripped = C.choose('  read which .epub file ?', epubfiles)
 	epubfile = epubdir .. stripped .. '.epub'
 end
-
--- print('stripped = ',stripped)
--- print('epubdir = ',epubdir)
--- print('epubfile =',epubfile)
 
 txtfile  = txtdir  .. stripped .. '.txt'
 local Pstat = require "posix.sys.stat"
@@ -87,29 +85,25 @@ os.exit()
 
 =head1 NAME
 
-eread - what it does
+eread - simple text-only epub reader
 
 =head1 SYNOPSIS
 
- eread infile > outfile
+ export EPUBDIR=/home/unusual/epub  # default is ~/epub
+ eread
+ # or:
+ eread /tmp/old_man_and_the_sea.epub
+ # but usually this would be better:
+ cp /tmp/old_man_and_the_sea.epub ~/epub/
 
 =head1 DESCRIPTION
 
-This script
-
-=head1 ARGUMENTS
-
-=over 3
-
-=item I<-v>
-
-Print the Version
-
-=back
+Uses pandoc and vi -R or view to read the text of epub ebooks.
 
 =head1 DOWNLOAD
 
 This at is available at
+https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread
 
 =head1 AUTHOR
 
@@ -118,6 +112,7 @@ Peter J Billam, https://pjb.com.au/comp/contact.html
 =head1 SEE ALSO
 
  https://pjb.com.au/
+ https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread
 
 =cut
 
