@@ -76,7 +76,7 @@ if txt_mtime < epub_mtime then
 	os.execute('pandoc -t plain -o '..txtfile..' '..epubfile)
 end
 
-os.execute('vi -R '..txtfile)
+os.execute('vi -R -c "noremap z zz" -c "noremap q :q" '..txtfile)
 os.exit()
 
 --[=[
@@ -98,17 +98,38 @@ eread - simple text-only epub reader
 
 =head1 DESCRIPTION
 
-Uses pandoc and vi -R or view to read the text of epub ebooks.
+Uses C<pandoc> and C<vi -R> or C<view> to read the text of epub ebooks.
+Images are not displayed.
+
+C<eread> uses C<pandoc> to translate the C<.epub> file into
+plain text, which it keeps in the directory C<$HOME/.eread/>
+and this translation is only performed if the text file does not
+exist or if the C<.epub> file is more recent than the text file.
+This makes C<eread> very fast to display.
+
+C<vim> functionality remembers your cursor position from session to session.
+
+A couple of C<vim> keyboard aliases are provided:
+C<z> means C<zz> to bring the cursor-line to the centre in one keystroke,
+and C<q> means C<:q> to quit more ergonomically.
+After C<q> an C<Enter> quits, but if you change your mind,
+then C<Backspace Enter> will return you to your text.
 
 =head1 DOWNLOAD
 
-This at is available at
+C<eread>  is available at
 https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread
 
 You will also need to install
 
     luarocks install commandlineui
     luarocks install luaposix
+    apt install pandoc vim
+
+The following line should be present in your C</etc/vim/vimrc> file
+or your C<$HOME/.vimrc> file:
+
+    au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 
 =head1 AUTHOR
 
