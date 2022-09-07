@@ -5,15 +5,22 @@
 --  This script is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
-local Version = '1.0  for Lua5'
-local VersionDate  = '7aug2022'
+local Version = '1.1  for Lua5'
+local VersionDate  = '31aug2022'
 local Synopsis = [[
-  export EPUBDIR=/home/unusual/epub  # default is ~/epub
+  mv the_machine_stops.epub room_at_the_top.epub ~/epub
+  mv la_vie_mode_d_emploi.epub reindeer_moon.epub ~/epub
   eread
-  # or:
+
+  # or by filename:
   eread /tmp/old_man_and_the_sea.epub
   # but usually this would be better:
   cp /tmp/old_man_and_the_sea.epub ~/epub/
+  eread
+
+  export EPUBDIR=/home/unusual/epub  # default is ~/epub
+
+  perldoc eread   # read the manual
 ]]
 
 local function printf (...) io.stdout:write(string.format(...)) end
@@ -63,6 +70,7 @@ else
 	stripped = C.choose('  read which .epub file ?', epubfiles)
 	epubfile = epubdir .. stripped .. '.epub'
 end
+-- print(epubfile) ; os.exit()
 
 txtfile  = txtdir  .. stripped .. '.txt'
 local Pstat = require "posix.sys.stat"
@@ -89,12 +97,19 @@ eread - simple text-only epub reader
 
 =head1 SYNOPSIS
 
- export EPUBDIR=/home/unusual/epub  # default is ~/epub
- eread
- # or:
- eread /tmp/old_man_and_the_sea.epub
- # but usually this would be better:
- cp /tmp/old_man_and_the_sea.epub ~/epub/
+  mv the_machine_stops.epub room_at_the_top.epub ~/epub
+  mv la_vie_mode_d_emploi.epub reindeer_moon.epub ~/epub
+  eread
+
+  # or by filename:
+  eread /tmp/old_man_and_the_sea.epub
+  # but usually this would be better:
+  cp /tmp/old_man_and_the_sea.epub ~/epub/
+  eread
+
+  export EPUBDIR=/home/unusual/epub  # default is ~/epub
+
+  perldoc eread   # read the manual
 
 =head1 DESCRIPTION
 
