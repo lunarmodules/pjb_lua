@@ -1,0 +1,130 @@
+<HTML><HEAD><TITLE>eread</TITLE>
+<LINK rel=stylesheet type="text/css"
+href="../styles.css" title="PJB Computing Styles">
+<META HTTP-EQUIV="Keywords"
+CONTENT="eread, Lua, epub">
+</HEAD>
+<BODY LINK="#000066" VLINK="#000066" ALINK="#000066">
+<DIV>
+<H1><IMG SRC="../logo.jpg" ALT=" " WIDTH=126 HEIGHT=52>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+<FONT COLOR="#800000"><I>eread</I></FONT>
+</H1>
+
+<!-- INDEX BEGIN -->
+<A NAME="index"></A>
+
+<TABLE ALIGN="center" WIDTH="85%" BORDER=0 CELLSPACING=0>
+<TR><TD ALIGN="left">
+<ul>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+	<li><a href="#download">DOWNLOAD</a></li>
+	<li><a href="#changes">CHANGES</a></li>
+</ul>
+</TD><TD ALIGN="left">
+<ul>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+</TD></TR></TABLE>
+
+<!-- INDEX END -->
+<hr />
+<h3><a name="name">NAME</a></h3>
+<p> &nbsp; <code>eread</code> &nbsp; - &nbsp; a simple text-only epub reader</p>
+<p>
+</p>
+<hr />
+<h3><a name="synopsis">SYNOPSIS</a></h3>
+<pre>
+  mv the_machine_stops.epub room_at_the_top.epub ~/epub
+  mv bal_du_compte_dorgel.epub reindeer_moon.epub ~/epub
+  eread
+
+  # or by filename:
+  eread /tmp/old_man_and_the_sea.epub
+  # but usually this would be better:
+  cp /tmp/old_man_and_the_sea.epub ~/epub/
+  eread
+
+  export EPUBDIR=/home/unusual/epub  # default is ~/epub
+
+  eread -v        # prints the version
+  perldoc eread   # read the manual
+</pre><p>
+</p>
+<hr />
+<h3><a name="description">DESCRIPTION</a></h3>
+<p>
+Uses <CODE>pandoc</CODE> and <CODE>vi -R</CODE> or <CODE>view</CODE>
+to read the text of epub ebooks. &nbsp;
+Images are not displayed.
+</P><P>
+<CODE>eread</CODE> uses <CODE>pandoc</CODE> to translate the
+<CODE>.epub</CODE> file into plain text, which it keeps in the directory
+<CODE>$HOME/.eread/</CODE> and this translation is only performed if the
+text file does not exist, or if the <CODE>.epub</CODE> file is more recent
+than the text file.<BR>
+This makes <CODE>eread</CODE> very fast to display.
+</P><P>
+<CODE>vim</CODE> functionality remembers your cursor position from
+session to session.
+</P><P>
+A few <CODE>vim</CODE> keyboard aliases are provided:<BR>
+&nbsp; <CODE>z</CODE> means <CODE>zz</CODE>
+to bring the cursor-line to the centre in one keystroke,<BR>
+&nbsp; <CODE>HOME</CODE> takes you to the start of the file,<BR>
+&nbsp; and <CODE>q</CODE> means <CODE>:q</CODE> to quit more
+ergonomically. After <CODE>q</CODE> an <CODE>Enter</CODE> quits,
+but if you change your mind, then <CODE>Backspace Enter</CODE>
+will return you to your text.
+</p><p>
+</p >
+<HR />
+<h3><a name="download">DOWNLOAD</a></h3>
+<p>
+<CODE>eread</CODE> is available at
+ &nbsp; <A HREF="https://pjb.com.au/comp/lua/eread">pjb.com.au/lua/eread</A>
+<BR> or at &nbsp;
+<A HREF="https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread">
+gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread</A><BR>
+You will also need to install<BR><CODE>
+ &nbsp; &nbsp; luarocks install commandlineui<BR>
+ &nbsp; &nbsp; luarocks install luaposix<BR>
+ &nbsp; &nbsp; apt install pandoc vim<BR>
+</CODE><BR>
+The following line should be present in your <CODE>/etc/vim/vimrc</CODE>
+file, or your <CODE>$HOME/.vimrc</CODE> file:<BR><CODE>
+au BufReadPost * if line("'\"") &gt; 1 &amp;&amp; line("'\"") &lt;= line("$") | exe "normal! g'\"" | endif
+</CODE></p><p>
+</p>
+<hr />
+<h3><a name="changes">CHANGES</a></h3>
+<pre>
+ &nbsp; 20220909 1.2 map &lt;HOME&gt; to :1&lt;CR&gt;
+ &nbsp; 20220831 1.1 first released version
+ &nbsp; 20220807 1.0 first working version</pre>
+<p>
+</p>
+<hr />
+<h3><a name="author">AUTHOR</a></h3>
+<p> &nbsp; Peter Billam, 
+<a href="http://www.pjb.com.au/comp/contact.html">www.pjb.com.au/comp/contact.html</a>
+<p>
+</p>
+<hr />
+<h3><a name="see_also">SEE ALSO</a></h3>
+<pre>
+ &nbsp; <A HREF="https://pjb.com.au/comp/lua/eread">pjb.com.au/lua/eread</A>
+ &nbsp; <A HREF="https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread">gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread</A>
+ &nbsp; <A HREF="https://pjb.com.au/comp/lua/commandlineui.html">pjb.com.au/comp/lua/commandlineui.html</A>
+ &nbsp; <A HREF="https://pjb.com.au/">pjb.com.au</A>
+</pre>
+</DIV>
+</body>
+
+</html>
