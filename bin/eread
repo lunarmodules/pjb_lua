@@ -5,11 +5,11 @@
 --  This script is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
-local Version = '1.1  for Lua5'
-local VersionDate  = '31aug2022'
+local Version = '1.2  for Lua5'
+local VersionDate  = '09sep2022'
 local Synopsis = [[
   mv the_machine_stops.epub room_at_the_top.epub ~/epub
-  mv la_vie_mode_d_emploi.epub reindeer_moon.epub ~/epub
+  mv bal_du_compte_dorgel.epub reindeer_moon.epub ~/epub
   eread
 
   # or by filename:
@@ -20,6 +20,7 @@ local Synopsis = [[
 
   export EPUBDIR=/home/unusual/epub  # default is ~/epub
 
+  eread -v        # prints the version
   perldoc eread   # read the manual
 ]]
 
@@ -84,7 +85,10 @@ if txt_mtime < epub_mtime then
 	os.execute('pandoc -t plain -o '..txtfile..' '..epubfile)
 end
 
-os.execute('vi -R -c "noremap z zz" -c "noremap q :q" '..txtfile)
+os.execute(
+	'vi -R -c "noremap z zz" -c "noremap q :q" -c "noremap <HOME> :1<CR>" '
+	.. txtfile
+)
 os.exit()
 
 --[=[
@@ -98,7 +102,7 @@ eread - simple text-only epub reader
 =head1 SYNOPSIS
 
   mv the_machine_stops.epub room_at_the_top.epub ~/epub
-  mv la_vie_mode_d_emploi.epub reindeer_moon.epub ~/epub
+  mv bal_du_compte_dorgel.epub reindeer_moon.epub ~/epub
   eread
 
   # or by filename:
@@ -109,6 +113,7 @@ eread - simple text-only epub reader
 
   export EPUBDIR=/home/unusual/epub  # default is ~/epub
 
+  eread -v        # prints the version
   perldoc eread   # read the manual
 
 =head1 DESCRIPTION
@@ -124,8 +129,9 @@ This makes C<eread> very fast to display.
 
 C<vim> functionality remembers your cursor position from session to session.
 
-A couple of C<vim> keyboard aliases are provided:
+A few C<vim> keyboard aliases are provided:
 C<z> means C<zz> to bring the cursor-line to the centre in one keystroke,
+C<<HOME>> takes you to the top of the file,
 and C<q> means C<:q> to quit more ergonomically.
 After C<q> an C<Enter> quits, but if you change your mind,
 then C<Backspace Enter> will return you to your text.
