@@ -61,10 +61,13 @@ static int c_readline(lua_State *L) {  /* prompt in, line out */
 		}
 	}
 	/* rl_catch_sigwinch = 0; rl_set_signals();  no effect :-( 1.3 */
-    const char *line   = readline(prompt);
+    char *line   = readline(prompt);  /* 3.2 it's not a const */
 	/* rl_cleanup_after_signal(); rl_clear_signals();  no effect :-( 1.3 */
-	lua_pushstring(L, line);
+	/* lua_pushstring(L, line); */
+	/* 3.2 did lua_pushstring create a copy of the string ? */
+	lua_pushfstring(L, "%s", line);   /* 3.2 */
 	if (tty_stream != NULL) { fclose(tty_stream); }
+	free(line);  /* 3.2 fixes memory leak */
 	return 1;
 }
 
@@ -132,13 +135,15 @@ static int c_stifle_history(lua_State *L) {  /* Lua stack: num */
 	return 0;
 }
 
-static int c_write_history(lua_State *L) {  /* filename in, returncode out */
+/* unused ...
+static int c_write_history(lua_State *L) {  //  filename in, returncode out
 	size_t len;
 	const char *filename  = lua_tolstring(L, 1, &len);
     lua_Integer rc = write_history(filename);
 	lua_pushinteger(L, rc);
 	return 1;
 }
+*/
 
 static int c_history_truncate_file(lua_State *L) { /* filename,num in rc out */
 	size_t len;
