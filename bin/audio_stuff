@@ -583,7 +583,7 @@ local function copy_dvd()
 	end
 	do   --make the copy region-agnostic
 		local ifo = tmp_mnt..'/'..title..'/VIDEO_TS/VIDEO_TS.IFO'
-		local F = io.open(ifo, 'r'); txt = F:read('a'); F:close()
+		local F = io.open(ifo, 'r'); txt = F:read('*all'); F:close()
 		local head = string.sub(txt, 1, 35); tail = string.sub(txt, 37, -1)
 		local newtxt = head..string.char(0x40)..tail
 		F = io.open(ifo, 'w')

@@ -5,7 +5,7 @@
 --  This script is free software; you can redistribute it and/or   --
 --         modify it under the same terms as Lua5 itself.          --
 ---------------------------------------------------------------------
-local Version = '1.0  for Lua5'
+local Version = '1.1  for Lua5'
 local VersionDate  = '26jul2021'
 local Synopsis = [[
   dvdregion [options]
@@ -37,6 +37,20 @@ end
 
 local function printf (...) print(string.format(...)) end
 
+local numeric_version = string.gsub(_VERSION, "^%D+", "")
+if tonumber(numeric_version) < 5.2 then
+	_G.bit = require 'bit'  -- LuaBitOp http://bitop.luajit.org/api.html
+elseif _G.bit32 then
+	_G.bit = _G.bit32
+else
+	local f = load([[
+	_G.bit.bor    = function (a,b) return a|b  end
+	_G.bit.band   = function (a,b) return a&b  end
+	_G.bit.rshift = function (a,n) return a>>n end
+	]])
+	f()
+end
+
 -- mount /dev/dvd /mnt
 os.execute("mkdir "..TmpMnt)
 assert(os.execute("mount -o ro "..Device.." "..TmpMnt))
@@ -50,28 +64,29 @@ assert(os.execute("umount "..TmpMnt))
 os.remove(TmpMnt)  -- os.remove works on empty directories !
 region_mask = string.byte(contents, 36) -- look at byte at offset x0022 = 34
 if Debug then printf("0x%02X", region_mask) end
-if (region_mask & 1) == 0 then
+--  if (region_mask & 1) == 0 then   and &2, &4, &8, &16, etc needs lua5.3
+if bit.band(region_mask, 1) == 0 then
 	print("1: United States, Canada, Bermuda")
 end 
-if (region_mask & 2) == 0 then
+if bit.band(region_mask, 2) == 0 then
 	print("2: Europe, Greenland, Turkey, Middle East, Egypt, South Africa, Japan")
 end 
-if (region_mask & 4) == 0 then
+if bit.band(region_mask, 4) == 0 then
 	print("3: Southeast Asia, South Korea, Taiwan, Hong Kong, Macau")
 end 
-if (region_mask & 8) == 0 then
+if bit.band(region_mask, 8) == 0 then
 	print("4: Latin America, Caribbean, Australia, New Zealand")
 end 
-if (region_mask & 16) == 0 then
+if bit.band(region_mask,16) == 0 then
 	print("5: Africa, Russia, Belarus, Ukraine, Central and South Asia, North Korea")
 end 
-if (region_mask & 32) == 0 then
+if bit.band(region_mask,32) == 0 then
 	print("6: Mainland China")
 end 
-if (region_mask & 64) == 0 then
+if bit.band(region_mask,64) == 0 then
 	print('7: MPAA-related DVDs and "media copies" of pre-releases in Asia')
 end 
-if (region_mask & 128) == 0 then
+if bit.band(region_mask,128) == 0 then
 	print("8: International venues such as aircraft, cruise ships, spacecraft")
 end 
 
