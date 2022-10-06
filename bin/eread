@@ -69,6 +69,7 @@ else
 	end
 	table.sort(epubfiles)
 	stripped = C.choose('  read which .epub file ?', epubfiles)
+	if not stripped then os.exit(0) end
 	epubfile = epubdir .. stripped .. '.epub'
 end
 -- print(epubfile) ; os.exit()
