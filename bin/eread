@@ -87,9 +87,10 @@ if txt_mtime < epub_mtime then
 end
 
 os.execute(
-	'vi -R -c "noremap z zz" -c "noremap q :q" -c "noremap <HOME> :1<CR>" '
+	'/usr/bin/vim -R -c "noremap z zz" -c "noremap q :q" -c "noremap <HOME> :1<CR>" '
 	.. txtfile
 )
+-- or vis +"some command" txtfile
 os.exit()
 
 --[=[
