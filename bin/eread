@@ -82,15 +82,16 @@ if not txt_stat then
 	os.execute('pandoc -t plain -o '..txtfile..' '..epubfile)
 end
 txt_mtime  = Pstat.stat(txtfile) ['st_mtime']
-if txt_mtime < epub_mtime then
-	os.execute('pandoc -t plain -o '..txtfile..' '..epubfile)
+if txt_mtime < epub_mtime then os.execute(
+	'pandoc -t plain -o '..txtfile..' | sed "s/ *— */ - /g" >'..epubfile
+)
 end
 
 os.execute(
 	'/usr/bin/vim -R -c "noremap z zz" -c "noremap q :q" -c "noremap <HOME> :1<CR>" '
 	.. txtfile
 )
--- or vis +"some command" txtfile
+-- or vis +"some command" txtfile ?
 os.exit()
 
 --[=[
