@@ -2,6 +2,7 @@
 image: python:3-alpine
 pages:
     script:
+        /usr/bin/env true
 artifacts:
     paths:
         - public/
