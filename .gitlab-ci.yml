@@ -7,6 +7,6 @@ pages:
 artifacts:
   script:
     - echo 2
-  paths:
-    - public/
+ # paths:
+#    - public/
 ...
