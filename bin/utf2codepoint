@@ -7,6 +7,7 @@
 ---------------------------------------------------------------------
 local Version = '1.0  for Lua5'
 local VersionDate  = '12jun2021'
+local utf8 = require "lua-utf8"
 -- 1.1 a "-a" option to let the ascii range through unscathed ?
 local Synopsis = [[
   utf2codepoint  [filename]     # default is HTML output
@@ -46,7 +47,7 @@ local iarg=1; while arg[iarg] ~= nil do
 	iarg = iarg+1
 end
 if arg[iarg] then F = assert(io.open(arg[iarg], 'r')) else F = io.stdin end
-c = {utf8.codepoint(F:read('a'),1,-1)}
+c = {utf8.codepoint(F:read('*a'),1,-1)}
 if SuppressNewline and (c[#c] == 0x000A) then c[#c] = nil end
 if Mode == 'html' then
 	for i,v in ipairs(c) do

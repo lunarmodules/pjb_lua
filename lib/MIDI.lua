@@ -1148,6 +1148,19 @@ function M.play_score(score)
 	else
 		midi = M.score2midi(score)
 	end
+-- local FS = require 'fluidsynth'   -- 20220917
+-- if FS then
+-- 	local soundfonts = FS.read_config_file() -- default is ~/.fluidsynth
+-- 	local synth1   = FS.new_synth( {
+-- 	FS.sf_load(synth1, soundfonts)
+-- 	local player1  = FS.new_player(synth1,'foo.mid')
+-- 	assert(FS.player_play(player1))
+-- 	assert(FS.player_join(player1))   -- wait for foo.mid to finish
+-- 	os.execute('sleep 1')             -- don't chop final reverb
+-- 	FS.delete_synth(synth1)
+-- 	os.remove(FS.error_file_name())
+-- end
+-- See functions play_midi and inputfile2player in /home/pbin/fluadity
 	local posix  -- 6.0 in lua5.2 require posix returns the posix table
 	pcall(function() posix = require 'posix' end)
 	if posix and posix.fork then   -- 4.2
@@ -1649,6 +1662,15 @@ function M.timeshift(...)
 	clean_up_warnings()
 	return new_score
 end
+
+--[[  -- "Michael J. Meador" <mjmeador@mjmeador.de> 20220108
+local function my_to_millisecs(opus)
+    -- local midi = require "midi"
+    local tracklist = {}
+    for i = 2, #opus do table.insert(tracklist, opus[i]) end
+    return midi.to_millisecs { opus[1], midi.mix_opus_tracks(tracklist) }
+end
+]]
 
 function M.to_millisecs(old_opus)   -- 6.7
 	if old_opus == nil then return {1000,{},}; end
