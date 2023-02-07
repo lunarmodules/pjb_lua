@@ -1,2 +1,7 @@
 # The Docker image that will be used to build your app
 image: python:3-alpine
+pages:
+    script:
+artifacts:
+    paths:
+        - public/
