@@ -7,8 +7,6 @@ pages:
     - pelican -s publishconf.py
 #    - cp -r _root/* output/
 artifacts:
-  script:
-    - echo 2
- paths:
+  paths:
     - public/
 ...
