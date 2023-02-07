@@ -1,0 +1,404 @@
+<HTML><HEAD><TITLE>P J B Computing</TITLE>
+<LINK rel=stylesheet type="text/css" href="styles.css" title="PJB Comp Styles">
+<META HTTP-EQUIV="Keywords"
+CONTENT="Internet Commerce, E-Commerce, Perl, HTML, PostScript, Python, Lua">
+</HEAD>
+<BODY LINK="#000066" VLINK="#000066" ALINK="#000066">
+<DIV>
+<H1><IMG SRC="logo.jpg" ALT=" " WIDTH=126 HEIGHT=52>
+<!--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<I>P J B Computing</I>-->
+</H1>
+
+<TABLE ALIGN="center" WIDTH="85%" BORDER=0 CELLSPACING=0>
+<TR><TD ALIGN="left">
+<UL>
+    <LI><B><A HREF="#lua">LUA</A></B></LI>
+    <LI><B><A HREF="#postscript">POSTSCRIPT</A></B></LI>
+</UL>
+</TD><TD ALIGN="left">
+<UL>
+    <LI><B><A HREF="#perl">PERL</A></B></LI>
+    <LI><B><A HREF="#python">PYTHON</A></LI>
+</UL>
+</TD><TD ALIGN="left">
+<UL>
+    <LI><B><A HREF="#javascript">JAVASCRIPT</A></B></LI>
+    <LI><B><A HREF="#electronics">ELECTRONICS</A></B></LI>
+</UL>
+</TD><TD ALIGN="left">
+<UL>
+    <LI><B><A HREF="#talks">TALKS</A></B></LI>
+    <LI><B><A HREF="#see_also">SEE ALSO</A></B></LI>
+</UL>
+</TD></TR>
+</TABLE>
+
+
+<A NAME="lua"><HR></A><H3>Lua
+</H3>
+<P></P>
+<UL><LI>
+<B><A HREF="https://github.com/TheLinx/lao">ao</A></B>,
+a module of bindings to
+<A HREF="https://xiph.org/ao/">libao</A>
+to provide portable audio output,
+<!-- and <A HREF="./lua/aowrapper.html">aowrapper.lua</A> -->
+<A HREF="http://www.lua.org">
+  <IMG ALIGN="right" SRC="lua/Lua-Logo_64x64.png">
+</A>
+</LI><LI>
+<A HREF="./lua/commandlineui.html"><B>CommandLineUI.lua</B></A>,
+a command-line user interface, like CPAN's
+<A HREF="http://search.cpan.org/perldoc?Term::Clui">Term::Clui</A>
+</LI><LI>
+<A HREF="./lua/digitalfilter.html"><B>digitalfilter.lua</B></A>,
+provides some
+<!--<A HREF="http://en.wikipedia.org/wiki/Digital_filter">
+digital filters</A>-->
+<A HREF="./lua/digitalfilter_talk/index.html">digital filters</A>
+- Butterworth, Chebyschev and Bessel.
+</LI><LI>
+<A HREF="./lua/Evol.html"><B>Evol.lua</B></A>,
+a call-compatible translation of the
+<A HREF="#perl">Math::Evol</A> Perl module
+</LI><LI>
+<A HREF="./lua/ecasound.html"><B>ecasound.lua</B></A>,
+a high-level Lua interface to
+the <I>ecasound</I> interactive mode.
+</LI><LI>
+<FONT COLOR=#990000><B>New !</B>&nbsp;&nbsp;</FONT>
+<A HREF="./lua/eread.html"><B>eread</B></A>
+-   a simple text-only <I>epub</I> reader.
+</LI><LI>
+<A HREF="./lua/fen.html"><B>fen.lua</B></A>,
+This module manipulates chess positions in FEN syntax.
+It can apply moves to a position, and provides an application
+<A HREF="lua/pgn2eco">pgn2eco</A>,
+which takes opening moves and outputs the corresponding ECO number.
+</LI><LI>
+<A HREF="./lua/fluidsynth.html"><B>fluidsynth.lua</B></A>,
+a high-level Lua interface to
+<A HREF="http://fluidsynth.sourceforge.net">
+the fluidsynth library</A>
+</LI><LI>
+<A HREF="./lua/lgdbm.html"><B>lgdbm</B></A>,
+the manual page for Luiz Henrique de Figueiredo's <I>lgdbm</I> module
+</LI><LI>
+<A HREF="./lua/midialsa.html"><B>midialsa.lua</B></A>,
+a call-compatible translation of the
+<A HREF="#perl">MIDI::ALSA</A> Perl module,
+based on the Python modules
+<A HREF=" http://pp.com.mx/python/alsaseq">alsaseq and alsamidi</A>
+by Patricio Paez
+</LI><LI>
+<A HREF="./lua/MIDI.html"><B>MIDI.lua</B></A>,
+a call-compatible translation of the
+<A HREF="../midi/MIDI.html">MIDI.py</A> Python module
+</LI><LI>
+<B><A HREF="../midi/midisox.html">midisox_lua</A></B>,
+the <I><A HREF="http://sox.sourceforge.net/">SoX</A></I>-like
+workalike, for handling MIDI files
+</LI><LI>
+<B><A HREF="./lua/minicurses.html">minicurses.lua</A></B>,
+a stripped-down, easy-to-use access to the <I>ncurses</I> library
+</LI><LI>
+<A HREF="../muscript/index.html"><B>muscript</B></A>,
+the free music typesetting software
+</LI><LI>
+<A HREF="./lua/randomdist.html"><B>randomdist.lua</B></A>,
+a few simple procedures for generating random numbers
+</LI><LI>
+<A HREF="./lua/readkey.html"><B>readkey.lua</B></A>,
+simple terminal control, like CPAN's
+<A HREF="http://search.cpan.org/perldoc?Term::ReadKey">Term::ReadKey</A>
+</LI><LI>
+<A HREF="./lua/readline.html"><B>readline.lua</B></A>,
+an interface to the
+<A HREF="http://www.gnu.org/s/readline">Readline library</A>
+now with
+<A HREF="./lua/readline.html#alternate">Alternate Interface</A>
+and
+<A HREF="./lua/readline.html#custom">Custom Completion</A>
+</LI><LI>
+<A HREF="./lua/RungeKutta.html"><B>RungeKutta.lua</B></A>,
+a call-compatible translation of the
+<A HREF="#perl">Math::RungeKutta</A> Perl module
+</LI><LI>
+<A HREF="./lua/terminfo.html"><B>terminfo.lua</B></A>, a translation of the
+<A HREF="http://search.cpan.org/perldoc?Term::Terminfo">Term::Terminfo</A>
+CPAN module, with an added convenience
+<I><A HREF="./lua/terminfo.html#functions">get(name)</A></I>,
+and the important extra function
+<I><A HREF="./lua/terminfo.html#functions">tparm(capability,&nbsp;params...)</A></I>
+</LI><LI>
+<A HREF="./lua/terminfofont.html"><B>terminfofont.lua</B></A>, 
+a big font, seven lines high, inspired by 
+<B><A HREF="./ps/fonts.html#Bitfont5x7">Bitfont5x7</A></B>
+for use when <I>terminfo</I> is supported
+such as in a console, or an <I>xterm</I>.
+</LI><LI>
+<A HREF="./lua/WalshTransform.html"><B>WalshTransform.lua</B></A>,
+a call-compatible translation of the
+<A HREF="#perl">Math::WalshTransform</A> Perl module
+</LI><LI>
+A talk
+<B><A HREF="lua/taslug_talk/index.html">Introduction to Lua</A></B>
+given to the Tasmanian Linux User Group in February 2016
+</LI><LI>
+See: &nbsp;
+<A HREF="https://gitlab.com/peterbillam/pjb_lua">
+gitlab.com/peterbillam/pjb_lua</A>
+</LI></UL>
+
+<A NAME="postscript"><HR></A><H3>PostScript</H3>
+<UL><LI>
+The
+<B><A HREF="./ps/brownian.html">brownian.ps</A></B>
+procedures for "Brownian Noise" curves and landscapes,
+to generate horizons, cloudscapes, etc&nbsp;.&nbsp;.&nbsp;.
+</LI><LI>
+<FONT COLOR=#990000><B>New !</B>&nbsp;&nbsp;</FONT>
+The
+<B><A HREF="ps/chess.html">chess.ps</A></B>
+procedures for making diagrams of chess positions,
+and its associated
+<B><A HREF="fen2img.html">fen2img</A></B>
+script.
+</LI><LI>
+The
+<B><A HREF="./ps/colours.html">colours.ps</A></B>
+colour-handling procedures for artists
+</LI><LI>
+The
+<B><A HREF="./ps/fonts.html">fonts.ps</A></B>
+collection of some simple custom fonts
+</LI><LI>
+The
+<B><A HREF="./ps/line_drawing.html">line_drawing.ps</A></B>
+line-drawing procedures for artists
+</LI><LI>
+The
+<B><A HREF="./ps/muscript_ps.html">muscript.ps</A></B>
+music-typesetting procedures as used by
+<B><A HREF="../muscript/index.html">muscript</A></B>
+</LI><LI>
+The
+<B><A HREF="./ps/random.html">random.ps</A></B>
+collection of simple procedures for handling random numbers
+</LI><LI>
+The
+<B><A HREF="./ps/text.html">text.ps</A></B>
+collection of text-handling procedures
+</LI><LI>
+<FONT COLOR=#990000><B>New !</B>&nbsp;&nbsp;</FONT>
+The
+<B><A HREF="./ps/transforms.html">transforms.ps</A></B>
+collection of fun path-transforms
+</LI><LI>
+<!--A <B><A HREF="./free/selfportrait.pdf">self-portrait</A></B>-->
+Some <B><A HREF="../art/posters/index.html">poster graphics</A></B>
+using the above routines
+</LI><LI>
+The Perl script
+<B><A HREF="./include_run.html">include_run</A></B>
+to include all run-files into a PostScript file
+</LI><LI>
+<A HREF="../muscript/index.html"><B>muscript</B></A>,
+the free music typesetting software
+</LI><LI>
+A <A HREF="ps/ps_v_perl.html"><B>comparison of Perl and PostScript</B></A>
+as programming languages, for Perl-folk
+as an introduction to PostScript
+</LI><LI>
+Various patterns for making
+<B><A HREF="../jug/index.html">juggling equipment</A></B>
+</LI><LI>
+A movie of
+<B><A HREF="free/connett.mp4">John Connett's pattern</A></B>,
+as published by A.K. Dewdney in his
+"Computer Recreations" column in the <I>Scientific American</I>.
+Sept 1986.  &nbsp;
+It's a big file, so it may be better to download it
+and play it from a local disc. &nbsp; And also, the script
+<A HREF="free/make_connett_video">make_connett_video</A>
+which synthesised it.
+</LI><LI>
+A short movie (it's a small file!) of
+<B><A HREF="free/droplet_video.mp4">three droplets</A></B>.
+&nbsp; Also, the script
+<A HREF="free/make_droplet_video">make_droplet_video</A>
+which synthesised it.
+</LI><LI>
+See: &nbsp;
+<A HREF="https://gitlab.com/peterbillam/postscriptlib">
+gitlab.com/peterbillam/postscriptlib</A>
+</LI></UL>
+
+<A NAME="perl"><HR></A><H3>Perl</H3>
+<UL><LI>
+<B><A HREF="../muscript/index.html">muscript</A></B>,
+the free music typesetting software
+</LI><LI>
+<B><A HREF="../midi/midisox.html">midisox_pl</A></B>,
+the <I><A HREF="http://sox.sourceforge.net/">SoX</A></I>-like
+workalike, for handling MIDI files
+</LI><LI>
+  The CPAN Perl Modules,
+  available from <A HREF="http://search.cpan.org/~pjb">search.cpan.org/~pjb</A>
+  <UL><LI>
+  <B><A HREF="http://search.cpan.org/perldoc?Crypt::Tea_JS">
+  Crypt::Tea_JS</A></B>
+  &nbsp; (the Tiny-Encryption-Algorithm in Perl and JavaScript)
+  </LI><LI>
+  <B><A HREF="http://search.cpan.org/perldoc?Math::Evol">
+  Math::Evol</A></B>
+  &nbsp; (Evolution-search optimisation)
+  </LI><LI>
+  <B><A HREF="http://search.cpan.org/perldoc?Math::RungeKutta">
+  Math::RungeKutta</A></B>
+  &nbsp; (Integrating Differential Equations by Runge-Kutta methods)
+  </LI><LI>
+  <B><A HREF="http://search.cpan.org/perldoc?Math::WalshTransform">
+  Math::WalshTransform</A></B>
+  &nbsp; (Fast Hadamard and Walsh Transforms)
+  </LI><LI>
+  <B><A HREF="http://search.cpan.org/perldoc?MIDI::ALSA">
+  MIDI::ALSA</A></B>
+  &nbsp; (an interface to the ALSA library)
+  </LI><LI>
+  <B><A HREF="http://search.cpan.org/perldoc?MIDI::SoundFont">
+  MIDI::SoundFont</A></B>
+  &nbsp; (handles SoundFont .sf2 and Gravis .pat and .zip files)
+  </LI><LI>
+  <B><A HREF="http://search.cpan.org/perldoc?Speech::Speakup">
+  Speech::Speakup</A></B>
+  &nbsp; (gets and sets parameters for the
+  <A HREF="http://linux-speakup.org">Speakup</A> screen-reader)
+  </LI><LI>
+  <B><A HREF="http://search.cpan.org/perldoc?Term::Clui">
+  Term::Clui</A></B>
+  &nbsp; (a Command-Line User Interface, my favourite module),
+  now maintained by
+  <A HREF="https://github.com/plicease/Term-Clui/">Graham Ollis</A>
+  </LI></UL>
+</LI></UL>
+
+<A NAME="python"><HR></A><H3>Python</H3>
+<UL><LI>
+<A HREF="../midi/MIDI.html"><B>MIDI.py</B></A>,
+&nbsp; which translates MIDI events into and from Python3 list-structures
+</LI><LI>
+<A HREF="../midi/TermClui.html"><B>TermClui.py</B></A>,
+&nbsp; a Command-Line User Interface,  a translation of the
+<A HREF="#perl">Term::Clui</A> Perl module
+</LI><LI>
+<B><A HREF="../midi/midisox.html">midisox</A></B>,
+&nbsp; the <I><A HREF="http://sox.sourceforge.net/">SoX</A></I>-like
+workalike, for handling MIDI files
+</LI></UL>
+
+<A NAME="javascript"><HR></A><H3>JavaScript</H3>
+<UL><LI>
+The Perl CPAN Module &nbsp;
+<B><A HREF="http://search.cpan.org/perldoc?Crypt::Tea_JS">Crypt::Tea_JS</A></B>
+</LI><LI>
+The online game of Laska &nbsp;
+<B><A HREF="../laska/play_laska.html">play_laska.html</A></B>
+</LI><LI>
+The online Esperanto dictionary &nbsp;
+<B><A HREF="../esperanto/eo_en.html">eo_en.html</A></B>
+</LI><LI>
+The &nbsp;
+<B><A HREF="../mus/wagner/index.html">Leitmotifs of Wagner's Ring Cycle</A></B>
+</LI></UL>
+
+
+
+<A NAME="electronics"><HR></A><H3>Electronics</H3>
+<UL><LI>
+Lecture-notes of the course by Prof. Stanley Raimes on
+<B><A HREF="free/1967_differential_equations.pdf">
+Differential Equations
+</A></B>, taken by Peter Billam while studying Physics at Imperial College
+in 1967
+</LI><LI>
+The paper on
+<B><A HREF="free/1978_JAES_paper.pdf">
+Harmonic Distortion in a Class of Linear Active Filter Networks
+</A></B>,
+published in the <I>Journal of the Audio Engineering Society</I> in June 1978
+</LI><LI>
+The paper on
+<B><A HREF="free/1979_IEE_SCC_paper.pdf">
+Practical Optimisation of Noise and Distortion
+in Sallen and Key Filter Sections
+</A></B>,
+published in the <I>IEEE Journal of Solid State Circuits</I> in August 1979
+</LI><LI>
+The paper by Oscar Juan Bonello on
+<B><A HREF="free/1984_JAES_bonello_paper.pdf">
+Distortion in Positive- and Negative-Feedback Filters
+</A></B>,
+published in the <I>Journal of the Audio Engineering Society</I> in April 1984
+</LI></UL>
+
+<A NAME="talks"><HR></A><H3>Talks</H3>
+<UL><LI>
+1997 talk on &nbsp; <A HREF="security.html"><B>Security</B></A>
+&nbsp; to the <I>AUUG Summer Seminar</I> in Hobart
+</LI><LI>
+1998 talk on &nbsp;
+<B><A HREF="ingrestalk.html">Internet Payment Systems</A></B>
+&nbsp; to the <I>Tasmanian Ingres User Group</I> on 28 Oct
+</LI><LI>
+2015 talk on &nbsp;
+<B><A HREF="../midi/osdc/index.html">Much MIDI stuff - and its Lessons</A></B>
+&nbsp; to the <I>Open Source Developers Conference</I>
+</LI><LI>
+2016 talk on &nbsp;
+<B><A HREF="lua/taslug_talk/index.html">Introduction to Lua</A></B>
+&nbsp; to the <I>Tasmanian Linux User Group</I>
+</LI><LI>
+2017 talk on &nbsp;
+<B><A HREF="lua/digitalfilter_talk/index.html">Digital Filters</A></B>
+&nbsp; to the <I>Tasmanian Linux User Group</I>
+</LI><LI>
+2018 talk on &nbsp;
+<B><A HREF="2018_taslug_random_talk.html">Random Stuff</A></B>
+&nbsp; to the <I>Tasmanian Linux User Group</I> &nbsp; ( see also
+<A HREF="free/2018_random_stuff.mp4" TYPE="video/mp4">the video</A> . . . )
+</LI></UL>
+
+
+<A NAME="see_also"><HR></A><H3>See also&nbsp;.&nbsp;.&nbsp;.</H3>
+<UL><LI>
+A first &nbsp;
+<B><A HREF="html-intro.html">Introduction to HTML</A></B>
+</LI><LI>
+A reference list of
+<B><A HREF="diacritics.html">ISO characters</A></B>
+(European accents like grave, cedilla, umlaut)
+and how to express them in Octal, Hex and HTML
+and produce them with the ALT key on a US-ascii keyboard
+</LI><LI>
+A collection of useful
+<B><A HREF="keystrokes.html">keystrokes</A></B>
+for various common programs.
+</LI><LI>
+Peter Billam's &nbsp; <B><A HREF="cv.html">C.V.</A></B> &nbsp; and &nbsp;
+<B><A HREF="resume_peter_billam.html">resume</A></B> &nbsp; and &nbsp;
+<B><A HREF="contact.html">contact details</A></B>
+</LI></UL>
+
+<!--<A NAME="other_sites"><HR></A><H3>Other Sites&nbsp;.&nbsp;.&nbsp;.</H3>
+<UL><LI>
+<B><A HREF="http://www.pos-software.org/" target="new">POS Software &
+Systems Group</A></B> - Point of sale software and equipment for small
+to large retailers
+</LI><LI>
+<B><A HREF="http://www.inkguides.com/postscript.asp">www.inkguides.com</A></B>
+is a collection of PostScript and GhostScript resources
+</LI></UL>-->
+
+<HR>
+</DIV></BODY></HTML>
