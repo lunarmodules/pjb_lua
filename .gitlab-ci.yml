@@ -6,7 +6,7 @@ pages:
     - pip install -r requirements.txt
     - pelican -s publishconf.py
 #    - cp -r _root/* output/
-artifacts:
-  paths:
-    - public/
+  artifacts:
+    paths:
+      - public/
 ...
