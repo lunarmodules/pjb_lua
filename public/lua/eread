@@ -1,0 +1,170 @@
+#!/usr/bin/env lua
+---------------------------------------------------------------------
+--     This Lua5 script is Copyright (c) 2022, Peter J Billam      --
+--                         pjb.com.au                              --
+--  This script is free software; you can redistribute it and/or   --
+--         modify it under the same terms as Lua5 itself.          --
+---------------------------------------------------------------------
+local Version = '1.2  for Lua5'
+local VersionDate  = '09sep2022'
+local Synopsis = [[
+  mv the_machine_stops.epub room_at_the_top.epub ~/epub
+  mv bal_du_compte_dorgel.epub reindeer_moon.epub ~/epub
+  eread
+
+  # or by filename:
+  eread /tmp/old_man_and_the_sea.epub
+  # but usually this would be better:
+  cp /tmp/old_man_and_the_sea.epub ~/epub/
+  eread
+
+  export EPUBDIR=/home/unusual/epub  # default is ~/epub
+
+  eread -v        # prints the version
+  perldoc eread   # read the manual
+]]
+
+local function printf (...) io.stdout:write(string.format(...)) end
+local iarg=1; while arg[iarg] ~= nil do
+	if not string.find(arg[iarg], '^-[a-z]') then break end
+	local first_letter = string.sub(arg[iarg],2,2)
+	if first_letter == 'v' then
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate)
+		os.exit(0)
+	-- elseif first_letter == 'c' then
+	--  	whatever()
+	else
+		local n = string.gsub(arg[0],"^.*/","",1)
+		print(n.." version "..Version.."  "..VersionDate.."\n\n"..Synopsis)
+		os.exit(0)
+	end
+	iarg = iarg+1
+end
+-- if arg[iarg] then fn = arg[iarg] else print(Synopsis) ; os.exit() end
+
+local P = require 'posix'
+local C = require 'CommandLineUI'
+
+HOME = P.getpwuid(P.getuid())['pw_dir'] or os.getenv('HOME')
+epubdir = (os.getenv('EPUBDIR')..'/') or (HOME..'/epub/')
+txtdir  = HOME .. '/.eread/'
+if not P.stat(txtdir) then os.execute('mkdir '..txtdir) end
+-- if necessary:
+-- local sys_stat = require "posix.sys.stat"
+-- could then use sys_stat.mkdir(txtdir) instead of os.execute() ...
+-- for a, b in pairs (sys_stat.stat(epubdir)) do print (a, b) end
+
+if arg[iarg] then
+	epubfile = arg[iarg]
+	stripped = string.match(string.gsub(epubfile, '.epub$', ''), '[^/]+$')
+else
+	local dirent = require "posix.dirent"
+	epubfiles = {}
+	for a in dirent.files(epubdir) do
+		if string.find(a, '.epub') then
+			local stripped = string.gsub(a, '.epub$', '')
+			table.insert(epubfiles, stripped)
+		end
+	end
+	table.sort(epubfiles)
+	stripped = C.choose('  read which .epub file ?', epubfiles)
+	if not stripped then os.exit(0) end
+	epubfile = epubdir .. stripped .. '.epub'
+end
+-- print(epubfile) ; os.exit()
+
+txtfile  = txtdir  .. stripped .. '.txt'
+local Pstat = require "posix.sys.stat"
+epub_mtime = Pstat.stat(epubfile) ['st_mtime']
+txt_stat   = Pstat.stat(txtfile)
+if not txt_stat then
+	os.execute('pandoc -t plain -o '..txtfile..' '..epubfile)
+end
+txt_mtime  = Pstat.stat(txtfile) ['st_mtime']
+if txt_mtime < epub_mtime then os.execute(
+	'pandoc -t plain -o '..txtfile..' | sed "s/ *— */ - /g" >'..epubfile
+)
+end
+
+os.execute(
+	'/usr/bin/vim -R -c "noremap z zz" -c "noremap q :q" -c "noremap <HOME> :1<CR>" '
+	.. txtfile
+)
+-- or vis +"some command" txtfile ?
+os.exit()
+
+--[=[
+
+=pod
+
+=head1 NAME
+
+eread - simple text-only epub reader
+
+=head1 SYNOPSIS
+
+  mv the_machine_stops.epub room_at_the_top.epub ~/epub
+  mv bal_du_compte_dorgel.epub reindeer_moon.epub ~/epub
+  eread
+
+  # or by filename:
+  eread /tmp/old_man_and_the_sea.epub
+  # but usually this would be better:
+  cp /tmp/old_man_and_the_sea.epub ~/epub/
+  eread
+
+  export EPUBDIR=/home/unusual/epub  # default is ~/epub
+
+  eread -v        # prints the version
+  perldoc eread   # read the manual
+
+=head1 DESCRIPTION
+
+Uses C<pandoc> and C<vi -R> or C<view> to read the text of epub ebooks.
+Images are not displayed.
+
+C<eread> uses C<pandoc> to translate the C<.epub> file into
+plain text, which it keeps in the directory C<$HOME/.eread/>
+and this translation is only performed if the text file does not
+exist or if the C<.epub> file is more recent than the text file.
+This makes C<eread> very fast to display.
+
+C<vim> functionality remembers your cursor position from session to session.
+
+A few C<vim> keyboard aliases are provided:
+C<z> means C<zz> to bring the cursor-line to the centre in one keystroke,
+C<<HOME>> takes you to the top of the file,
+and C<q> means C<:q> to quit more ergonomically.
+After C<q> an C<Enter> quits, but if you change your mind,
+then C<Backspace Enter> will return you to your text.
+
+=head1 DOWNLOAD
+
+C<eread>  is available at
+https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread
+
+You will also need to install
+
+    luarocks install commandlineui
+    luarocks install luaposix
+    apt install pandoc vim
+
+The following line should be present in your C</etc/vim/vimrc> file
+or your C<$HOME/.vimrc> file:
+
+    au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+
+=head1 AUTHOR
+
+Peter J Billam, https://pjb.com.au/comp/contact.html
+
+=head1 SEE ALSO
+
+ https://pjb.com.au/
+ https://gitlab.com/peterbillam/pjb_lua/-/blob/master/bin/eread
+ https://pjb.com.au/comp/lua/commandlineui.html
+
+=cut
+
+]=]
