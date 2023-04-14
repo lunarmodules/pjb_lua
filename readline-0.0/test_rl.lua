@@ -176,7 +176,6 @@ while true do
     end
     if line then sA = line ; break end
 end
--- print (sA)
 
 -- print(type(TC.empty_the_stack))
 --[[
@@ -209,6 +208,9 @@ comp_func_3 = function ()
 end
 RL.set_complete_function(comp_func_3)
 local sD = RL.readline("the completion_append_character is ' ' again: ")
+
+line = 'NULL'
+local sE = RL.readline('now enter ctrl-D to see if nil is returned ...')
 
 RL.save_history()
 
@@ -245,10 +247,10 @@ end
 if not ok(lines[9] == sA, 'line 9 was '..sA) then
 	print('lines[9]="'..tostring(lines[9])..'" sA="'..tostring(sA)..'"')
 end
---[[
-if not ok(lines[10] == sB, 'line 10 was '..sB) then
-	print('lines[10]="'..tostring(lines[10])..'" sB="'..tostring(sB)..'"')
+if not ok(sE == nil, 'line 10 was '..tostring(sE)) then
+	print('sE="'..tostring(sE)..'"')
 end
+--[[
 if not ok(lines[11] == sC, 'line 11 was '..sC) then
 	print('lines[11]="'..tostring(lines[11])..'" sC="'..tostring(sC)..'"')
 end

@@ -65,7 +65,13 @@ static int c_readline(lua_State *L) {  /* prompt in, line out */
 	/* rl_cleanup_after_signal(); rl_clear_signals();  no effect :-( 1.3 */
 	/* lua_pushstring(L, line); */
 	/* 3.2 did lua_pushstring create a copy of the string ? */
-	lua_pushfstring(L, "%s", line);   /* 3.2 */
+	/* lua_pushfstring(L, "%s", line);   3.2 */
+	if (line == NULL) { /* 3.3 fix by zash.se, Prosody developer */
+		lua_pushnil(L);
+	} else {
+		lua_pushfstring(L, "%s", line);
+		// lua_pushstring(L, line); should be fine as well
+	}
 	if (tty_stream != NULL) { fclose(tty_stream); }
 	free(line);  /* 3.2 fixes memory leak */
 	return 1;
