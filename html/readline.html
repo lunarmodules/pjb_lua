@@ -376,7 +376,7 @@ so you should be able to install it with the command:<BR><CODE>
  &nbsp; # luarocks install readline</CODE>
 </p><p>
 or:<BR><CODE>
-&nbsp; # luarocks install https://pjb.com.au/comp/lua/readline-3.2-0.rockspec
+&nbsp; # luarocks install https://pjb.com.au/comp/lua/readline-3.3-0.rockspec
 </CODE>
 </P><p>
 If this results in an error message such as:<BR>
@@ -400,11 +400,12 @@ or on Centos you may need:<BR>
 <CODE> &nbsp; # yum install readline-devel</CODE></P>
 </P><P>
 You can see the source-code in:<BR>
-<CODE> &nbsp; https://pjb.com.au/comp/lua/readline-3.2.tar.gz</CODE>
+<CODE> &nbsp; https://pjb.com.au/comp/lua/readline-3.3.tar.gz</CODE>
 </P>
 <hr />
 <h2><a name="changes">CHANGES</a></h2>
 <pre>
+ 20230414 3.3 return nil if ctrl-D is first char
  20221001 3.2 fix a memory leak in readline()
  20220420 3.1 reset OldHistoryLength if histfile gets set
  20210418 3.0 pass READLINE_INCDIR and READLINE_LIBDIR to gcc
@@ -440,7 +441,11 @@ Jesse Wertheim, one of the developers of
 contributed the
 <A HREF="#set_readline_name">set_readline_name()</A> function,<BR>
 wenxichang fixed the memory leak in
-<A HREF="#readline">readline()</A>.
+<A HREF="#readline">readline()</A>,<BR>
+<A HREF="https://www.zash.se/"> Kim Alvefur</A>,
+one of the developers of
+<A HREF="https://prosody.im/">Prosody</A>,
+restored the return-nil response to first-character-ctrl-D.
 </p>
 <hr />
 <h2><a name="see_also">SEE ALSO</a></h2>
