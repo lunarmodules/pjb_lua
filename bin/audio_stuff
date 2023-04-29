@@ -662,13 +662,14 @@ local function rip_dvd()
 	local ffmp
 	if ffmpeg then ffmp='ffmpeg' else ffmp='avconv' end
 	print([[
+  # find out the aspect ratio of the film on the DVD, eg. 16:9
 
   # then find out which streams you wish to copy, so  ls -lh  then eg:
     F=02   # or whichever
     cat VTS_${F}_*.VOB | ffmpeg -i - -map list 2>&1 | grep Stream
   # then 'map' them accordingly ...
     cat VTS_${F}*.VOB | ffmpeg -i - -map 0:0 -map 0:2 \
-    -c:v h264 -b:v 800k -g 300 -bf 2 \
+    -c:v h264 -b:v 800k -g 300 -bf 2 -aspect 16:9 \
     -c:a libmp3lame -b:a 128k /tmp/vts_$F.mp4
 
   # you may need :
