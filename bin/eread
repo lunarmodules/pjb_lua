@@ -44,10 +44,19 @@ end
 -- if arg[iarg] then fn = arg[iarg] else print(Synopsis) ; os.exit() end
 
 local P = require 'posix'
+if not P then print("You need to 'luarocks install luaposix'") ; os.exit(1) end
 local C = require 'CommandLineUI'
+if not C then print("You need to 'luarocks install commandlineui'") ; os.exit(1) end
 
 HOME = P.getpwuid(P.getuid())['pw_dir'] or os.getenv('HOME')
-epubdir = (os.getenv('EPUBDIR')..'/') or (HOME..'/epub/')
+-- print("P =",P," HOME =",HOME) ; os.exit()
+if os.getenv('EPUBDIR') then
+	epubdir = os.getenv('EPUBDIR')..'/'
+else
+	epubdir = HOME..'/epub/'
+end
+-- epubdir = (os.getenv('EPUBDIR')..'/') or (HOME..'/epub/')
+-- print("epubdir =",epubdir) ; os.exit()
 txtdir  = HOME .. '/.eread/'
 if not P.stat(txtdir) then os.execute('mkdir '..txtdir) end
 -- if necessary:
